@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PirateStorm.info · V8</title>
+<title>PirateStorm.info · V10</title>
 <meta name="description" content="Unofficial Pirate Storm community database">
 <style>
 :root{
@@ -303,14 +303,34 @@ const decks=[
 ];
 
 const upgrades=[
-{group:'PvP / Kriegsrang',name:'Galionsfigur Hades',normal:'1.000 💀 Schädel',premium:null,effect:'Reparatur −20%',status:'verified'},
-{group:'Arena',name:'Galionsfigur „Arene“',normal:'15.000 💎',premium:'14.550 💎',effect:null,unlock:'1.600 Arena-Punkte',status:'verified'},
+{group:'Arena',name:'Galionsfigur „Arene“',normal:'15.000 💎',premium:'14.550 💎',effect:'Kanonen-/Harpunen-Nachladen −15%; Kanonen-/Harpunen-Streuung −10%',unlock:'1.600 Arena-Punkte',status:'verified'},
 {group:'Arena',name:'Verstärktes Bugschott',normal:'12.000 💎',premium:'11.640 💎',effect:'Max. Trefferpunkte +3.150; erhöht beim Erwerb auch die momentanen Trefferpunkte.',status:'verified'},
-{group:'Arena',name:'Arena-Anker',normal:'12.000 💎',premium:'11.640 💎',effect:null,status:'verified'},
-{group:'Arena',name:'Galionsfigur „Astarte“',normal:'10.000 💎',premium:'9.700 💎',effect:null,status:'verified'},
-{group:'Arena',name:'Galionsfigur „Nornen“',normal:'10.000 💎',premium:'9.700 💎',effect:null,status:'verified'},
-{group:'Sturmtag',name:'Kleines Sturmschott',normal:'Spezialinhalt',premium:null,effect:'Max. Trefferpunkte +4.000; kann zusätzlich zu normalen Bugschotten ausgerüstet werden. Erhältlich am Sturmtag am 1. jedes Monats.',status:'verified'},
-{group:'Sturmtag',name:'Großes Sturmschott',normal:'Sturmtag',premium:null,effect:'Erhältlich ausschließlich am 1. August.',status:'verified'}
+{group:'Arena',name:'Arena-Anker',normal:'12.000 💎',premium:'11.640 💎',effect:'Arena-Verbesserung',status:'verified'},
+{group:'Arena',name:'Arena-Ruder',normal:null,premium:null,effect:'Arena-Verbesserung',unlock:'2.000 Arena-Punkte',status:'verified'},
+{group:'Arena',name:'Arena-Kiel',normal:null,premium:null,effect:'Max. Trefferpunkte +2.000; Max. Tempo +0,7 Knoten; K.T.-Ausweichchance +4%',unlock:'1.500 Arena-Punkte',status:'verified'},
+{group:'Arena',name:'Arena-Mast',normal:'10.000.000 Gold',premium:'7.500.000 Gold',effect:'Arena-Verbesserung',unlock:'5.500 Arena-Punkte',status:'verified'},
+{group:'Arena',name:'Arena-Glocke',normal:'1.500.000 Gold',premium:'1.125.000 Gold',effect:'Arena-Verbesserung',status:'verified'},
+
+{group:'PvP / Kriegsrang',name:'Galionsfigur Hades',normal:'1.000 💀 Schädel',premium:null,effect:'Reparatur −20%',unlock:'Kriegsrang 5',status:'verified'},
+{group:'PvP / Kriegsrang',name:'Kriegsschott',normal:'400 💀 Schädel',premium:null,effect:'Max. Trefferpunkte +3.500',unlock:'Kriegsrang 12',status:'verified'},
+{group:'PvP / Kriegsrang',name:'Kriegerkiel',normal:'150 💀 Schädel',premium:null,effect:'Max. Trefferpunkte +1.300; Max. Tempo +0,7 Knoten',unlock:'Kriegsrang 14',status:'verified'},
+
+{group:'Standard',name:'Galionsfigur „Astarte“',normal:'10.000 💎',premium:'9.700 💎',effect:'Galionsfigur / Standard-Verbesserung',status:'verified'},
+{group:'Standard',name:'Galionsfigur „Nornen“',normal:'10.000 💎',premium:'9.700 💎',effect:'Galionsfigur / Standard-Verbesserung',status:'verified'},
+{group:'Standard',name:'Galionsfigur „Oya“',normal:'10.000 💎',premium:'9.700 💎',effect:'Galionsfigur / Standard-Verbesserung',status:'verified'},
+{group:'Standard',name:'Verstärkter Schiffskiel',normal:'10.000 💎',premium:'9.700 💎',effect:'Schiffskiel / Standard-Verbesserung',status:'verified'},
+{group:'Standard',name:'Professioneller Treibanker',normal:'6.000 💎',premium:'5.820 💎',effect:'Treibanker / Standard-Verbesserung',status:'verified'},
+{group:'Standard',name:'Leinensegel',normal:'6.000 💎',premium:'5.820 💎',effect:'Segel / Standard-Verbesserung',status:'verified'},
+{group:'Standard',name:'Hanfsegel',normal:'3.000 💎',premium:'2.910 💎',effect:'Segel / Standard-Verbesserung',status:'verified'},
+{group:'Standard',name:'Einfacher Schiffskiel',normal:'200.000 Gold',premium:'150.000 Gold',effect:'Schiffskiel / Standard-Verbesserung',status:'verified'},
+{group:'Standard',name:'Einfaches Bugschott',normal:'100.000 Gold',premium:'75.000 Gold',effect:'Bugschott / Standard-Verbesserung',status:'verified'},
+{group:'Standard',name:'Galionsfigur „Andarta“',normal:'80.000 Gold',premium:'60.000 Gold',effect:'Galionsfigur / Standard-Verbesserung',status:'verified'},
+{group:'Standard',name:'Improvisierter Treibanker',normal:'60.000 Gold',premium:'45.000 Gold',effect:'Treibanker / Standard-Verbesserung',status:'verified'},
+{group:'Standard',name:'Grobe Leinensegel',normal:'30.000 Gold',premium:'22.500 Gold',effect:'Segel / Standard-Verbesserung',status:'verified'},
+{group:'Standard',name:'Grobe Hanfsegel',normal:'5.000 Gold',premium:'3.750 Gold',effect:'Segel / Standard-Verbesserung',status:'verified'},
+
+{group:'Sturmtag',name:'Kleines Sturmschott',normal:'Sturmtag',premium:null,effect:'Max. Trefferpunkte +4.000; zusätzlich zu normalen Bugschotten ausrüstbar.',unlock:'Jeden 1. des Monats',status:'verified'},
+{group:'Sturmtag',name:'Großes Sturmschott',normal:'Großer Sturmtag',premium:null,effect:'Große Sturmtag-Verbesserung.',unlock:'Nur am 1. August',status:'verified'}
 ];
 
 const sets=[
@@ -344,18 +364,19 @@ const sets=[
 ];
 
 const cannons=[
-{group:'Standard / Spezial',name:'Die Bombastische',source:'Voodoo-Schädel',level:1,damage:19,spread:30,destroy:'Nein',status:'verified'},
-{group:'Standard / Spezial',name:'Die Bombastische',source:'Voodoo-Schädel',level:3,damage:21,spread:30,destroy:'Nein',status:'verified'},
+{group:'Spezial',name:'Die Bombastische',source:'Voodoo-Schädel',level:1,damage:19,spread:30,destroy:'Nein',status:'verified'},
+{group:'Spezial',name:'Die Bombastische',source:'Voodoo-Schädel',level:3,damage:21,spread:30,destroy:'Nein',status:'verified'},
 {group:'Blutmond',name:'Mondstahl Kanone',level:1,damage:18,spread:45,destroy:'Nein',status:'verified'},
 {group:'Winter',name:'Eissturm',level:1,damage:16,spread:50,destroy:'Nein',status:'verified'},
 {group:'Adler',name:'Adler-Geschütz',level:1,damage:16,spread:20,destroy:'Nein',status:'verified'},
+{group:'PvP / Kriegsrang',name:'Kleiner Krieger',level:1,damage:null,spread:null,destroy:'Nein',source:'Kriegsrang 19 · 30 💀 Schädel',price:'30 💀 Schädel',status:'verified'},
 {group:'PvP / Kriegsrang',name:'Großer Krieger',level:1,damage:16,spread:50,destroy:'Nein',source:'Rang 10 · 90 💀 Schädel',price:'90 💀 Schädel',status:'verified'},
 {group:'Event',name:'Schallbrecher',level:1,damage:17,spread:40,destroy:'Nein',status:'verified'},
 {group:'Arena',name:'Dampfhammer',level:1,damage:12,spread:60,destroy:'Ja',source:'Arena 2vs2 · 300 Arena-Punkte',price:'850.000 Gold (historischer Forumspreis)',status:'verified'},
 {group:'Arena',name:'Bestienschrei',level:1,damage:17,spread:45,destroy:'Nein',source:'Arena 1vs1 · 900 Arena-Punkte',price:'9.000 💎 (historischer Forumspreis)',status:'verified'},
 {group:'Bonusmap',name:'Lochmacher',source:'Schwarzer Rum',level:1,damage:16,spread:60,destroy:'Nein',status:'verified'},
-{group:'Standard / Spezial',name:'Eisenhagel',source:'Blutiger Haken',level:1,damage:12,spread:40,destroy:'Nein',status:'verified'},
-{group:'Standard / Spezial',name:'Friedensstifter',source:'Schützenfest',level:1,damage:16,spread:35,destroy:'Nein',status:'verified'},
+{group:'Spezial',name:'Eisenhagel',source:'Blutiger Haken',level:1,damage:12,spread:40,destroy:'Nein',status:'verified'},
+{group:'Spezial',name:'Friedensstifter',source:'Schützenfest',level:1,damage:16,spread:35,destroy:'Nein',status:'verified'},
 
 {group:'Standard',name:'6-Pfünder',level:1,damage:6,spread:80,destroy:'Ja',source:'Händler / Standardausrüstung',price:'425 Gold (historischer Forumspreis)',status:'historical'},
 {group:'Standard',name:'9-Pfünder',level:1,damage:9,spread:70,destroy:'Ja',source:'Händler / Standardausrüstung',price:'1.700 Gold (historischer Forumspreis)',status:'historical'},
@@ -386,7 +407,7 @@ const ammo=[
 {group:'Kanonenkugeln · Standard',name:'Stahlkanonenkugeln',effect:'Standard-/Bonusmap-Munition',price:'Händler / Bonusmap',source:'Händler; Blutiger Haken; Voodoo-Schädel'},
 {group:'Kanonenkugeln · Spezial',name:'Irrlicht-Kanonenkugeln',effect:'Spezialmunition',price:'Event / Bonusmap',source:'Voodoo-Schädel'},
 {group:'Kanonenkugeln · Spezial',name:'Knochenbrecher-Kanonenkugeln',effect:'Spezialmunition',price:'Eventpreis',source:'Geburtstag / Sturmtag'},
-{group:'Harpunen · Standard',name:'Steinharpunen',effect:'Standardmunition',price:'Händlerpreis',source:'Händler'},
+{group:'Harpunen · Standard',name:'Harpunen',effect:'Standardmunition',price:'Händlerpreis',source:'Händler'},
 {group:'Harpunen · Standard',name:'Eisenharpunen',effect:'Standardmunition',price:'Händlerpreis',source:'Händler'},
 {group:'Harpunen · Standard',name:'Stahlharpunen',effect:'Standard-/Bonusmap-Munition',price:'Händler / Bonusmap',source:'Händler; Blutiger Haken; Voodoo-Schädel'},
 {group:'Harpunen · Spezial',name:'Gangrän-Harpunen',effect:'Spezialmunition',price:'Event / Bonusmap',source:'Voodoo-Schädel'},
