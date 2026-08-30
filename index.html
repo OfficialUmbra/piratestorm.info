@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PirateStorm.info</title>
+<title>PirateStorm.info · V6</title>
 <meta name="description" content="Unofficial Pirate Storm community database">
 <style>
 :root{
@@ -17,7 +17,7 @@ button,input,select{font:inherit}
 header{position:sticky;top:0;z-index:50;background:rgba(6,16,25,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .head{max-width:1500px;margin:auto;padding:13px 18px}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.brand{font-weight:950;font-size:18px}.brand small{display:block;font-size:11px;color:var(--muted);font-weight:600}
+.brand{font-weight:950;font-size:18px}.online{font-size:12px;color:var(--green);margin-left:auto;margin-right:8px;white-space:nowrap}.brand small{display:block;font-size:11px;color:var(--muted);font-weight:600}
 .btn,.search,select,input{border:1px solid var(--line);background:#0a1822;color:var(--text);border-radius:10px}
 .btn{padding:8px 11px;cursor:pointer}.search{width:100%;margin-top:11px;padding:11px 13px}
 .layout{max-width:1500px;margin:auto;display:grid;grid-template-columns:250px 1fr;gap:20px;padding:20px 18px 54px}
@@ -62,7 +62,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
   <div class="head">
     <div class="top">
       <div class="brand">⚓ PirateStorm.info<small id="brandSub">Inoffizielles Community-Projekt</small></div>
-      <button class="btn" id="langBtn">EN</button>
+      <div id="onlineCount" class="online">🟢 Besucher online: –</div><button class="btn" id="langBtn">EN</button>
     </div>
     <input id="search" class="search" placeholder="Schiffe, Decks, Sets, Kanonen, Items … durchsuchen">
   </div>
@@ -123,7 +123,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 </main>
 </div>
 
-<footer id="footerText">Unofficial community project. Pirate Storm and related trademarks/assets belong to Bigpoint. Live values are based on in-game screenshots from August 2026; historical references are marked separately.</footer>
+<footer id="footerText">Unofficial community project. Pirate Storm and related trademarks/assets belong to Bigpoint. Die Live-Besucherzahl nutzt /api/online und benötigt auf Cloudflare Pages eine kleine Worker/Function-Anbindung. Live values are based on in-game screenshots from August 2026; historical references are marked separately.</footer>
 
 <script>
 const t={
@@ -167,16 +167,16 @@ let lang='de';
 const verified='2026-08';
 
 const ships=[
-{group:'Adler-Event',name:'Kriegsfregatte „Piranha“',hp:9750,baseSpeed:5.5,maxSpeed:14,c:55,h:45,dodge:4,res:4,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'500 Adler-Orden',status:'verified'},
-{group:'PvP / Kriegsrang',name:'Kriegsfregatte „Baphomet“',hp:13500,baseSpeed:5.5,maxSpeed:14,c:85,h:40,dodge:4,res:4,range:235,sight:350,decks:'Unteres · Mittleres · Oberes',price:'15.000 Kriegswährung · Rang 1',status:'verified'},
-{group:'PvP / Kriegsrang',name:'Kriegsfregatte „Orca“',hp:13750,baseSpeed:5.5,maxSpeed:14,c:78,h:40,dodge:6,res:6,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'9.000 Kriegswährung · Rang 3',status:'verified'},
-{group:'PvP / Kriegsrang',name:'Kriegsfregatte „Barracuda“',hp:13000,baseSpeed:5.5,maxSpeed:14,c:66,h:42,dodge:4,res:4,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'5.500 Kriegswährung · Rang 8',status:'verified'},
-{group:'Arena',name:'Weltenzerstörer',hp:14500,baseSpeed:null,maxSpeed:14,c:90,h:50,dodge:10,res:10,range:220,sight:'—',decks:'Event-/Spezialdecks möglich',price:'Arena-Saisonbelohnung',status:'historical'},
+{group:'PvP / Kriegsrang',name:'Kriegsfregatte „Piranha“',hp:9750,baseSpeed:5.5,maxSpeed:14,c:55,h:45,dodge:4,res:4,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'500 💀 Schädel · Rang 16',status:'verified'},
+{group:'PvP / Kriegsrang',name:'Kriegsfregatte „Baphomet“',hp:13500,baseSpeed:5.5,maxSpeed:14,c:85,h:40,dodge:4,res:4,range:235,sight:350,decks:'Unteres · Mittleres · Oberes',price:'15.000 💀 Schädel · Rang 1',status:'verified'},
+{group:'PvP / Kriegsrang',name:'Kriegsfregatte „Orca“',hp:13750,baseSpeed:5.5,maxSpeed:14,c:78,h:40,dodge:6,res:6,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'9.000 💀 Schädel · Rang 3',status:'verified'},
+{group:'PvP / Kriegsrang',name:'Kriegsfregatte „Barracuda“',hp:13000,baseSpeed:5.5,maxSpeed:14,c:66,h:42,dodge:4,res:4,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'5.500 💀 Schädel · Rang 8',status:'verified'},
+{group:'Arena',name:'Weltenzerstörer',hp:14500,baseSpeed:null,maxSpeed:14,c:90,h:50,dodge:10,res:10,range:220,sight:'—',decks:'Event-/Spezialdecks möglich',price:'Arena-Saisongewinner',status:'historical'},
 {group:'Arena',name:'Gladiator',hp:'siehe Screenshot-Datensatz',baseSpeed:null,maxSpeed:null,c:170,h:'siehe Screenshot-Datensatz',dodge:'—',res:'—',range:'—',sight:'—',decks:'Sturmdeck-Konfiguration bekannt',price:'Arena',status:'historical'},
 {group:'Standard / Händler',name:'Cordone',hp:13750,baseSpeed:5.5,maxSpeed:14,c:77,h:42,dodge:10,res:10,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'97.000 💎',status:'verified'},
 {group:'Standard / Händler',name:'Große Fregatte',hp:12000,baseSpeed:5.5,maxSpeed:14,c:60,h:30,dodge:4,res:4,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'77.600 💎',status:'verified'},
 {group:'Standard / Händler',name:'Fregatte',hp:8000,baseSpeed:5.5,maxSpeed:13.3,c:50,h:40,dodge:2,res:2,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'24.250 💎',status:'verified'},
-{group:'Standard / Händler',name:'Verwüster',hp:6750,baseSpeed:5.5,maxSpeed:13.3,c:50,h:40,dodge:2,res:2,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'7.500.000 Gold',status:'verified'},
+{group:'Arena',name:'Verwüster',hp:6750,baseSpeed:5.5,maxSpeed:13.3,c:50,h:40,dodge:2,res:2,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'7.500.000 Gold',status:'verified'},
 {group:'Standard / Händler',name:'Dhuka',hp:13000,baseSpeed:5.5,maxSpeed:13.3,c:60,h:28,dodge:5,res:5,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'2.250.000 Gold',status:'verified'},
 {group:'Standard / Händler',name:'Kriegsbrigantine',hp:6000,baseSpeed:5.5,maxSpeed:11.8,c:30,h:30,dodge:0,res:0,range:200,sight:350,decks:'Unteres · Mittleres',price:'750.000 Gold',status:'verified'},
 {group:'Standard / Händler',name:'Brigantine',hp:4500,baseSpeed:5.5,maxSpeed:11.1,c:20,h:20,dodge:0,res:0,range:200,sight:350,decks:'Unteres · Mittleres',price:'112.500 Gold',status:'verified'},
@@ -184,33 +184,34 @@ const ships=[
 ];
 
 const decks=[
-{group:'PvP / Kriegsrang',name:'Großes Kriegsdeck',c:10,h:12,ind:'Ja',slot:'Eigener Deckplatz',normal:'7.000 Kriegswährung',premium:null,note:'Nur für Kriegsfregatten „Orca“ und „Baphomet“.',status:'verified'},
+{group:'PvP / Kriegsrang',name:'Großes Kriegsdeck',c:10,h:12,ind:'Ja',slot:'Eigener Deckplatz',normal:'7.000 💀 Schädel',premium:null,note:'Nur für Kriegsfregatten „Orca“ und „Baphomet“.',status:'verified'},
 {group:'Blutmond',name:'Blutmond Deck',c:12,h:12,ind:'Ja',slot:'Eigener Deckplatz',normal:'Event/Auktion',premium:null,note:'Nach Erwerb auf allen Schiffen verfügbar.',status:'verified'},
 {group:'Blutmond',name:'Corona-Deck',c:12,h:12,ind:'Ja',slot:'Blutmond-Spezialdeck',normal:'Event/Auktion',premium:null,note:'Für das Blutmond/Eclipse-System.',status:'verified'},
 {group:'Panther',name:'Mittleres Pantherdeck',c:10,h:6,ind:'ab Set-Level 3',slot:'Mittlerer Deckplatz',normal:'Event',premium:null,note:'Teil von Macht des Panthers.',status:'verified'},
 {group:'Adler',name:'Riff-Deck',c:6,h:6,ind:'ab Set-Level 4',slot:'Vorderer Deckplatz',normal:'Event',premium:null,note:'Teil von Macht des Adlers.',status:'verified'},
 {group:'Skorpion',name:'Oberes Stacheldeck',c:10,h:6,ind:'ab Set-Level 4',slot:'Oberer Deckplatz',normal:'Event',premium:null,note:'Teil von Macht des Skorpions.',status:'verified'},
 {group:'Sobek',name:'Unteres Sobek Deck',c:10,h:6,ind:'Ja',slot:'Unterer Deckplatz',normal:'Event',premium:null,note:'Sobek-Eventdeck.',status:'verified'},
-{group:'Gilde',name:'Gildendeck',c:10,h:6,ind:'Ja',slot:'Eigener Deckplatz',normal:'Gildeninhalt',premium:null,note:'Eigenständiger Deckplatz.',status:'verified'},
-{group:'Weitere Events',name:'Raunacht-Deck',c:40,h:36,ind:'Ja',slot:'Eigener Deckplatz',normal:'Event',premium:null,note:'Eventdeck.',status:'verified'},
+{group:'Gilde',name:'Gildendeck',c:10,h:6,ind:'Ja',slot:'Eigener Deckplatz',normal:'Gildeninhalt',premium:null,note:'Eigenständiger Deckplatz. Voraussetzung: Die Gilde muss im vorherigen Monat unter den Top 10 beim Plündern gewesen sein.',status:'verified'},
+{group:'Winterevent',name:'Raunacht-Deck',c:40,h:36,ind:'Ja',slot:'Eigener Deckplatz',normal:'Event',premium:null,note:'Eventdeck.',status:'verified'},
 {group:'Weitere Events',name:'Donnerschall-Deck',c:12,h:18,ind:'Ja',slot:'Hinterer Deckplatz',normal:'Event',premium:null,note:'Eventdeck.',status:'verified'},
-{group:'Arena / Händler',name:'Oberes Mahagonideck',c:8,h:4,ind:'Nein',slot:'Oberer Deckplatz',dur:50,normal:'40.000 💎',premium:'38.800 💎',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
-{group:'Arena / Händler',name:'Arena-Zwischendeck',c:'Werte aus Screenshotbestand übernehmen',h:'Werte aus Screenshotbestand übernehmen',ind:'—',slot:'Zwischendeck',dur:'—',normal:'20.000 💎',premium:'19.400 💎',note:'Arena-Deck; Preis live verifiziert.',status:'verified'},
-{group:'Arena / Händler',name:'Mittleres Mahagonideck',c:8,h:4,ind:'Nein',slot:'Mittlerer Deckplatz',dur:50,normal:'20.000 💎',premium:'19.400 💎',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
-{group:'Arena / Händler',name:'Unteres Mahagonideck',c:8,h:4,ind:'Nein',slot:'Unterer Deckplatz',dur:50,normal:'10.000 💎',premium:'9.700 💎',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
+{group:'Standard / Händler',name:'Oberes Mahagonideck',c:8,h:4,ind:'Nein',slot:'Oberer Deckplatz',dur:50,normal:'40.000 💎',premium:'38.800 💎',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
+{group:'Arena / Händler',name:'Arena-Zwischendeck',c:null,h:null,ind:null,slot:'Zwischendeck',dur:'—',normal:'20.000 💎',premium:'19.400 💎',note:'Arena-Deck; Preis live verifiziert.',status:'verified'},
+{group:'Standard / Händler',name:'Mittleres Mahagonideck',c:8,h:4,ind:'Nein',slot:'Mittlerer Deckplatz',dur:50,normal:'20.000 💎',premium:'19.400 💎',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
+{group:'Standard / Händler',name:'Unteres Mahagonideck',c:8,h:4,ind:'Nein',slot:'Unterer Deckplatz',dur:50,normal:'10.000 💎',premium:'9.700 💎',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
 {group:'Standard / Händler',name:'Oberes Buchendeck',c:4,h:0,ind:'Nein',slot:'Oberer Deckplatz',dur:25,normal:'800.000 Gold',premium:'600.000 Gold (25% Gildenrabatt)',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
 {group:'Standard / Händler',name:'Mittleres Buchendeck',c:4,h:0,ind:'Nein',slot:'Mittlerer Deckplatz',dur:25,normal:'400.000 Gold',premium:'300.000 Gold (25% Gildenrabatt)',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
 {group:'Standard / Händler',name:'Unteres Buchendeck',c:4,h:0,ind:'Nein',slot:'Unterer Deckplatz',dur:25,normal:'30.000 Gold',premium:'22.500 Gold (25% Gildenrabatt)',note:'Geht nach einigen Versenkungen verloren.',status:'verified'}
 ];
 
 const upgrades=[
-{group:'PvP / Kriegsrang',name:'Galionsfigur Hades',normal:'1.000 Kriegswährung',premium:null,effect:'Reparatur −20%',status:'verified'},
-{group:'Arena',name:'Galionsfigur „Arene“',normal:'15.000 💎',premium:'14.550 💎',effect:'Wert aus Screenshotbestand',status:'verified'},
+{group:'PvP / Kriegsrang',name:'Galionsfigur Hades',normal:'1.000 💀 Schädel',premium:null,effect:'Reparatur −20%',status:'verified'},
+{group:'Arena',name:'Galionsfigur „Arene“',normal:'15.000 💎',premium:'14.550 💎',effect:null,status:'verified'},
 {group:'Arena',name:'Verstärktes Bugschott',normal:'12.000 💎',premium:'11.640 💎',effect:'Max. Trefferpunkte +3.150; erhöht beim Erwerb auch die momentanen Trefferpunkte.',status:'verified'},
-{group:'Arena',name:'Arena-Anker',normal:'12.000 💎',premium:'11.640 💎',effect:'Wert aus Screenshotbestand',status:'verified'},
-{group:'Arena',name:'Galionsfigur „Astarte“',normal:'10.000 💎',premium:'9.700 💎',effect:'Wert aus Screenshotbestand',status:'verified'},
-{group:'Arena',name:'Galionsfigur „Nornen“',normal:'10.000 💎',premium:'9.700 💎',effect:'Wert aus Screenshotbestand',status:'verified'},
-{group:'Spezial',name:'Kleines Sturmschott',normal:'Spezialinhalt',premium:null,effect:'Max. Trefferpunkte +4.000; kann zusätzlich zu normalen Bugschotten ausgerüstet werden.',status:'verified'}
+{group:'Arena',name:'Arena-Anker',normal:'12.000 💎',premium:'11.640 💎',effect:null,status:'verified'},
+{group:'Arena',name:'Galionsfigur „Astarte“',normal:'10.000 💎',premium:'9.700 💎',effect:null,status:'verified'},
+{group:'Arena',name:'Galionsfigur „Nornen“',normal:'10.000 💎',premium:'9.700 💎',effect:null,status:'verified'},
+{group:'Sturmtag',name:'Kleines Sturmschott',normal:'Spezialinhalt',premium:null,effect:'Max. Trefferpunkte +4.000; kann zusätzlich zu normalen Bugschotten ausgerüstet werden. Erhältlich am Sturmtag am 1. jedes Monats.',status:'verified'},
+{group:'Sturmtag',name:'Großes Sturmschott',normal:'Sturmtag',premium:null,effect:'Erhältlich ausschließlich am 1. August.',status:'verified'}
 ];
 
 const sets=[
@@ -244,8 +245,8 @@ const sets=[
 ];
 
 const cannons=[
-{group:'Standard / Spezial',name:'Die Bombastische',level:1,damage:19,spread:30,destroy:'Nein',status:'verified'},
-{group:'Standard / Spezial',name:'Die Bombastische',level:3,damage:21,spread:30,destroy:'Nein',status:'verified'},
+{group:'Standard / Spezial',name:'Die Bombastische',source:'Voodoo-Schädel',level:1,damage:19,spread:30,destroy:'Nein',status:'verified'},
+{group:'Standard / Spezial',name:'Die Bombastische',source:'Voodoo-Schädel',level:3,damage:21,spread:30,destroy:'Nein',status:'verified'},
 {group:'Blutmond',name:'Mondstahl Kanone',level:1,damage:18,spread:45,destroy:'Nein',status:'verified'},
 {group:'Winter',name:'Eissturm',level:1,damage:16,spread:50,destroy:'Nein',status:'verified'},
 {group:'Adler',name:'Adler-Geschütz',level:1,damage:16,spread:20,destroy:'Nein',status:'verified'},
@@ -253,25 +254,44 @@ const cannons=[
 {group:'Event',name:'Schallbrecher',level:1,damage:17,spread:40,destroy:'Nein',status:'verified'},
 {group:'Standard',name:'Dampfhammer',level:1,damage:12,spread:60,destroy:'Ja',status:'verified'},
 {group:'Event',name:'Bestienschrei',level:1,damage:17,spread:45,destroy:'Nein',status:'verified'},
-{group:'Bonusmap',name:'Lochmacher',level:1,damage:16,spread:60,destroy:'Nein',status:'verified'},
-{group:'Standard / Spezial',name:'Eisenhagel',level:1,damage:12,spread:40,destroy:'Nein',status:'verified'},
-{group:'Standard / Spezial',name:'Friedensstifter',level:1,damage:16,spread:35,destroy:'Nein',status:'verified'}
+{group:'Bonusmap',name:'Lochmacher',source:'Schwarzer Rum',level:1,damage:16,spread:60,destroy:'Nein',status:'verified'},
+{group:'Standard / Spezial',name:'Eisenhagel',source:'Blutiger Haken',level:1,damage:12,spread:40,destroy:'Nein',status:'verified'},
+{group:'Standard / Spezial',name:'Friedensstifter',source:'Schützenfest',level:1,damage:16,spread:35,destroy:'Nein',status:'verified'},
+
+{group:'Standard',name:'6-Pfünder',level:1,damage:6,spread:50,destroy:'Ja',source:'Händler / Standardausrüstung',status:'verified'},
+{group:'Standard',name:'9-Pfünder',level:1,damage:9,spread:50,destroy:'Ja',source:'Händler / Standardausrüstung',status:'verified'},
+{group:'Standard',name:'10-Pfünder',level:1,damage:10,spread:50,destroy:'Ja',source:'Händler / Standardausrüstung',status:'verified'},
+{group:'Standard',name:'12-Pfünder',level:1,damage:12,spread:50,destroy:'Ja',source:'Händler / Standardausrüstung / Bonusmaps',status:'verified'},
+{group:'Standard',name:'18-Pfünder',level:1,damage:18,spread:50,destroy:'Ja',source:'Händler / Standardausrüstung',status:'verified'}
 ];
 
 const harpoonlaunchers=[
-{group:'Standard',name:'Repetierschleuder',level:1,damage:16,spread:60,destroy:'Nein',status:'verified'},
+{group:'Standard',name:'Repetierschleuder',source:'Schwarzer Rum',level:1,damage:16,spread:60,destroy:'Nein',status:'verified'},
 {group:'Sommer',name:'Reißzahn',level:2,damage:16,spread:60,destroy:'Ja',status:'verified'},
 {group:'Blutmond',name:'Blutmond Balliste',level:1,damage:16,spread:30,destroy:'Nein',status:'verified'},
-{group:'Event',name:'Manticor',level:1,damage:16,spread:40,destroy:'Nein',status:'verified'},
-{group:'Skorpion',name:'Skorpion',level:1,damage:12,spread:40,destroy:'Nein',status:'verified'},
-{group:'Bonusmap',name:'Sargnagel',level:1,damage:20,spread:30,destroy:'Nein',status:'verified'}
+{group:'Event',name:'Manticor',source:'Schützenfest',level:1,damage:16,spread:40,destroy:'Nein',status:'verified'},
+{group:'Skorpion',name:'Skorpion',source:'Blutiger Haken',level:1,damage:12,spread:40,destroy:'Nein',status:'verified'},
+{group:'Bonusmap',name:'Sargnagel',source:'Voodoo-Schädel',level:1,damage:20,spread:30,destroy:'Nein',status:'verified'},
+
+{group:'Standard',name:'Harpunenwerfer Klasse I',level:1,damage:6,spread:50,destroy:'Ja',source:'Händler / Standardausrüstung',status:'verified'},
+{group:'Standard',name:'Harpunenwerfer Klasse II',level:1,damage:9,spread:50,destroy:'Ja',source:'Händler / Standardausrüstung',status:'verified'},
+{group:'Standard',name:'Harpunenwerfer Klasse III',level:1,damage:12,spread:50,destroy:'Ja',source:'Händler / Bonusmaps',status:'verified'},
+{group:'Standard',name:'Harpunenwerfer Klasse IV',level:1,damage:16,spread:50,destroy:'Ja',source:'Händler / Bonusmaps',status:'verified'},
+{group:'Standard',name:'Stabiler Harpunenwerfer',level:1,damage:12,spread:50,destroy:'Nein',source:'Händler / Standardausrüstung',status:'verified'}
+
 ];
 
 const ammo=[
-{group:'Kanonenkugeln · Standard',name:'Stahlkanonenkugeln',effect:'Standard-/Bonusmap-Munition',price:'Quelle/Shop je nach Bestand',source:'Bonusmaps u. a. Bloody Hook/Voodoo'},
-{group:'Kanonenkugeln · Event',name:'Irrlicht-Kanonenkugeln',effect:'Spezialmunition',price:'Event/Bonusmap',source:'Voodoo-Bonusmap möglich'},
-{group:'Harpunen · Standard',name:'Stahlharpunen',effect:'Standard-/Bonusmap-Munition',price:'Quelle/Shop je nach Bestand',source:'Bonusmaps u. a. Bloody Hook/Voodoo'},
-{group:'Harpunen · Event',name:'Gangrän-Harpunen',effect:'Spezialmunition',price:'Event/Bonusmap',source:'Voodoo-Bonusmap möglich'}
+{group:'Kanonenkugeln · Standard',name:'Steinkanonenkugeln',effect:'Standardmunition',price:'Händlerpreis',source:'Händler'},
+{group:'Kanonenkugeln · Standard',name:'Eisenkanonenkugeln',effect:'Standardmunition',price:'Händlerpreis',source:'Händler'},
+{group:'Kanonenkugeln · Standard',name:'Stahlkanonenkugeln',effect:'Standard-/Bonusmap-Munition',price:'Händler / Bonusmap',source:'Händler; Blutiger Haken; Voodoo-Schädel'},
+{group:'Kanonenkugeln · Spezial',name:'Irrlicht-Kanonenkugeln',effect:'Spezialmunition',price:'Event / Bonusmap',source:'Voodoo-Schädel'},
+{group:'Kanonenkugeln · Spezial',name:'Knochenbrecher-Kanonenkugeln',effect:'Spezialmunition',price:'Eventpreis',source:'Geburtstag / Sturmtag'},
+{group:'Harpunen · Standard',name:'Steinharpunen',effect:'Standardmunition',price:'Händlerpreis',source:'Händler'},
+{group:'Harpunen · Standard',name:'Eisenharpunen',effect:'Standardmunition',price:'Händlerpreis',source:'Händler'},
+{group:'Harpunen · Standard',name:'Stahlharpunen',effect:'Standard-/Bonusmap-Munition',price:'Händler / Bonusmap',source:'Händler; Blutiger Haken; Voodoo-Schädel'},
+{group:'Harpunen · Spezial',name:'Gangrän-Harpunen',effect:'Spezialmunition',price:'Event / Bonusmap',source:'Voodoo-Schädel'},
+{group:'Harpunen · Spezial',name:'Todesklingen-Harpunen',effect:'Spezialmunition',price:'Eventpreis',source:'Geburtstag / Sturmtag'}
 ];
 
 const items=[
@@ -289,14 +309,14 @@ const items=[
 {group:'Briefe',name:'Gildenbrief 100 · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Spieler-XP +100%; Gilden-XP +100%; Dauer 30 min; Abklingzeit 30 min'},
 {group:'Briefe',name:'Kaperbrief 25 · 10×',normal:'100.000 Gold',premium:'75.000 Gold',effect:'Ab Level 10; Spieler-Gold 0%; Gilden-Gold-Bonus 25%; Dauer 30 min; Abklingzeit 1 h'},
 {group:'Briefe',name:'Kaperbrief 75 · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Ab Level 10; Spieler-Gold +100%; Gilden-Gold-Bonus 75%; Dauer 30 min; Abklingzeit 30 min'},
-{group:'Arena',name:'Arena-Schnelles Nachladen · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Arena-Item; Wert aus Screenshotbestand'},
-{group:'Arena',name:'Arena-Blutspender · 10×',normal:'5.000 💎',premium:'4.850 💎',effect:'Arena-Item; Wert aus Screenshotbestand'},
-{group:'Arena',name:'Arenaversicherung · 10×',normal:'100.000 Gold',premium:'75.000 Gold',effect:'Arena-Item; Wert aus Screenshotbestand'},
-{group:'Arena',name:'Arena-Treibladung · 10×',normal:'400.000 Gold',premium:'300.000 Gold',effect:'Arena-Item; Wert aus Screenshotbestand'},
-{group:'Arena',name:'Arena-Platten · 10×',normal:'300.000 Gold',premium:'225.000 Gold',effect:'Arena-Item; Wert aus Screenshotbestand'},
-{group:'Spezial',name:'Kapitäns-Teleskop · 10×',normal:'1.750 💎',premium:'1.698 💎',effect:'Spezialitem; Wert aus Screenshotbestand'},
-{group:'Spezial',name:'Invasions-Rakete · 10×',normal:'5.000 💎',premium:'4.850 💎',effect:'Spezialitem; Wert aus Screenshotbestand'},
-{group:'Spezial',name:'Phiole der Absorption',normal:'5.000 💎',premium:'4.850 💎',effect:'Spezialitem; Menge nicht als 10× annehmen'},
+{group:'Arena',name:'Arena-Schnelles Nachladen · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:null},
+{group:'Arena',name:'Arena-Blutspender · 10×',normal:'5.000 💎',premium:'4.850 💎',effect:null},
+{group:'Arena',name:'Arenaversicherung · 10×',normal:'100.000 Gold',premium:'75.000 Gold',effect:null},
+{group:'Arena',name:'Arena-Treibladung · 10×',normal:'400.000 Gold',premium:'300.000 Gold',effect:null},
+{group:'Arena',name:'Arena-Platten · 10×',normal:'300.000 Gold',premium:'225.000 Gold',effect:null},
+{group:'Arena',name:'Kapitäns-Teleskop · 10×',normal:'1.750 💎',premium:'1.698 💎',effect:null},
+{group:'Arena',name:'Invasions-Rakete · 10×',normal:'5.000 💎',premium:'4.850 💎',effect:null},
+{group:'Arena',name:'Phiole der Absorption',normal:'5.000 💎',premium:'4.850 💎',effect:null},
 {group:'Gilde',name:'Gildenversicherung',normal:'10.000 Gold',premium:'7.500 Gold',effect:'24 h Echtzeit; in der Gildenzone kein Verlust von Decks, Kanonen oder Harpunenwerfern'},
 {group:'Gilde',name:'Rum · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Ab Level 20; Zeit-Reduzierung 50%; Piraten arbeiten auf der Gildeninsel doppelt so schnell'}
 ];
@@ -304,15 +324,15 @@ const items=[
 const pvp=[
 {group:'PvP-Schutz',name:'PvP-Schutz · 7 Tage',normal:'5.000 💎',premium:'4.850 💎',effect:'Dauer 168 h; Abklingzeit 720 h. Schützt PvP-Punkte vor Inaktivitätsverfall; PvP-Teilnahme beendet den Schutz sofort.'},
 {group:'PvP-Schutz',name:'PvP-Schutz · 14 Tage',normal:'10.000 💎',premium:'9.700 💎',effect:'Dauer 336 h; Abklingzeit 720 h. Schützt PvP-Punkte vor Inaktivitätsverfall; PvP-Teilnahme beendet den Schutz sofort.'},
-{group:'Kriegsrang',name:'Kriegsfregatte „Baphomet“',normal:'15.000 Kriegswährung',premium:null,effect:'Rang 1 · 13.500 HP · 85 Kanonen · 40 Harpunenwerfer · Reichweite 235'},
-{group:'Kriegsrang',name:'Großes Kriegsdeck',normal:'7.000 Kriegswährung',premium:null,effect:'Rang 2 · Extra-Kanonen +10 · Extra-Harpunenwerfer +12 · Unversenkbar · nur Orca/Baphomet'},
-{group:'Kriegsrang',name:'Kriegsfregatte „Orca“',normal:'9.000 Kriegswährung',premium:null,effect:'Rang 3 · 13.750 HP · 78 Kanonen · 40 Harpunenwerfer'},
-{group:'Kriegsrang',name:'Kriegsblut',normal:'20 Kriegswährung',premium:null,effect:'Rang 4 · Max. Trefferpunkte +3.000; Sofortreparatur +3.000; Dauer 24 h; Abklingzeit 1 h'},
-{group:'Kriegsrang',name:'Galionsfigur Hades',normal:'1.000 Kriegswährung',premium:null,effect:'Rang 5 · Reparatur −20%'},
-{group:'Kriegsrang',name:'Vorderes Kriegsdeck',normal:'400 Kriegswährung',premium:null,effect:'Rang 6 · PvP/Kriegsrang-Deck'},
-{group:'Kriegsrang',name:'Kriegsfregatte „Barracuda“',normal:'5.500 Kriegswährung',premium:null,effect:'Rang 8 · 13.000 HP · 66 Kanonen · 42 Harpunenwerfer'},
-{group:'Kriegsrang',name:'Kriegsfregatte „Piranha“',normal:'500 Kriegswährung',premium:null,effect:'Rang 16'},
-{group:'Kriegsrang',name:'Kleiner Krieger',normal:'30 Kriegswährung',premium:null,effect:'Rang 19'}
+{group:'Kriegsrang',name:'Kriegsfregatte „Baphomet“',normal:'15.000 💀 Schädel',premium:null,effect:'Rang 1 · 13.500 HP · 85 Kanonen · 40 Harpunenwerfer · Reichweite 235'},
+{group:'Kriegsrang',name:'Großes Kriegsdeck',normal:'7.000 💀 Schädel',premium:null,effect:'Rang 2 · Extra-Kanonen +10 · Extra-Harpunenwerfer +12 · Unversenkbar · nur Orca/Baphomet'},
+{group:'Kriegsrang',name:'Kriegsfregatte „Orca“',normal:'9.000 💀 Schädel',premium:null,effect:'Rang 3 · 13.750 HP · 78 Kanonen · 40 Harpunenwerfer'},
+{group:'Kriegsrang',name:'Kriegsblut',normal:'20 💀 Schädel',premium:null,effect:'Rang 4 · Max. Trefferpunkte +3.000; Sofortreparatur +3.000; Dauer 24 h; Abklingzeit 1 h'},
+{group:'Kriegsrang',name:'Galionsfigur Hades',normal:'1.000 💀 Schädel',premium:null,effect:'Rang 5 · Reparatur −20%'},
+{group:'Kriegsrang',name:'Vorderes Kriegsdeck',normal:'400 💀 Schädel',premium:null,effect:'Rang 6 · Vorderer Deckplatz · ersetzt ein vorhandenes vorderes Deck · nur für dafür vorgesehene Kriegsschiffe'},
+{group:'Kriegsrang',name:'Kriegsfregatte „Barracuda“',normal:'5.500 💀 Schädel',premium:null,effect:'Rang 8 · 13.000 HP · 66 Kanonen · 42 Harpunenwerfer'},
+{group:'Kriegsrang',name:'Kriegsfregatte „Piranha“',normal:'500 💀 Schädel',premium:null,effect:'Rang 16'},
+{group:'Kriegsrang',name:'Kleiner Krieger',normal:'30 💀 Schädel',premium:null,effect:'Rang 19'}
 ];
 
 const materials=[
@@ -323,8 +343,8 @@ const materials=[
 {name:'Bleibarren',places:['Tiefsee-Taucher','Werkstatt / fortgeschrittenes Training']},
 {name:'Kupferbarren',places:['Tiefsee-Taucher','Werkstatt / Trainings','einige Event-Bonusmaps']},
 {name:'Silberbarren',places:['Tiefsee-Taucher','fortgeschrittenes Training']},
-{name:'Feueressenz',places:['Voodoo-Bonusmap: 25','Schwarzer Rum: 10','selten über Tiefsee-Taucher-Bonusmaps']},
-{name:'Mondstahl',places:['selten über Tiefsee-Taucher-Bonusmaps','Bloody Hook: mögliche Belohnung 5']}
+{name:'Feueressenz',places:['Voodoo-Schädel: 25','Schwarzer Rum: 10',]},
+{name:'Mondstahl',places:[,'Blutiger Haken: mögliche Belohnung 5']}
 ];
 
 const guildRewards=[
@@ -336,31 +356,33 @@ const guildRewards=[
 ];
 
 const guildXP=[
-[20,21,92882000],[21,22,105313000],[22,23,118742000],[23,24,107713000],[24,25,107813000],[25,26,107913000],[26,27,108013000],[27,28,108113000],[28,29,108213000],[29,30,108313000],
+[1,2,250000],[2,3,250000],[20,21,92882000],[21,22,105313000],[22,23,118742000],[23,24,107713000],[24,25,107813000],[25,26,107913000],[26,27,108013000],[27,28,108113000],[28,29,108213000],[29,30,108313000],
 [30,31,108413000],[31,32,108513000],[32,33,108613000],[33,34,108713000],[34,35,108813000],[35,36,108913000],[36,37,109013000],[37,38,109113000],[38,39,109213000],[39,40,109313000],
 [40,41,109413000],[41,42,109513000],[42,43,109613000],[43,44,109713000],[44,45,109813000],[45,46,109913000],[46,47,110013000],[47,48,110113000],[48,49,110213000],[49,50,110313000]
 ];
 
 const cashShop=[
 ['5.000 Diamanten','€ 1,99',''],
-['15.000 Diamanten','€ 4,99','16% Ersparnis'],
-['31.500 Diamanten','€ 9,99','20% Ersparnis'],
-['87.000 Diamanten','€ 24,99','28% Ersparnis'],
-['184.000 Diamanten','€ 49,99','32% Ersparnis'],
-['415.000 Diamanten','€ 99,99','36% Ersparnis'],
+['15.000 Diamanten','€ 4,99',''],
+['31.500 Diamanten','€ 9,99',''],
+['87.000 Diamanten','€ 24,99',''],
+['184.000 Diamanten','€ 49,99',''],
+['415.000 Diamanten','€ 99,99',''],
 ['Gold-Paket · 1 Monat','€ 3,99',''],
 ['Starter-Kit „Goldrausch“','€ 9,99',''],
 ['Schwarze Drachenschuppen','€ 1,99',''],
-['Starter-Kit „Allrounder“','€ 4,99','31% Ersparnis']
+['Starter-Kit „Allrounder“','€ 4,99','']
 ];
 
 const fmt=n=>typeof n==='number'?new Intl.NumberFormat(lang==='de'?'de-DE':'en-US').format(n):n;
 const kv=(k,v)=>`<div class="kv"><span>${k}</span><b>${v ?? '—'}</b></div>`;
 const tags=status=>status==='historical'?`<div class="tags"><span class="tag hist">Historical</span></div>`:`<div class="tags"><span class="tag ver">Verified ${verified}</span></div>`;
-const card=(title,body,status='verified',desc='')=>`<article class="card searchable" data-search="${(title+' '+body+' '+desc).toLowerCase()}"><h3>${title}</h3>${tags(status)}${desc?`<div class="desc">${desc}</div>`:''}${body}</article>`;
+const stripHtml=s=>String(s??'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+const escAttr=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const card=(title,body,status='verified',desc='',searchExtra='')=>{const search=escAttr((title+' '+stripHtml(body)+' '+stripHtml(desc)+' '+searchExtra).toLowerCase());return `<article class="card searchable" data-search="${search}"><h3>${title}</h3>${tags(status)}${desc?`<div class="desc">${desc}</div>`:''}${body}</article>`;};
 function grouped(data,renderer){
   const groups=[...new Set(data.map(x=>x.group))];
-  return groups.map(g=>`<div class="group searchable" data-search="${g.toLowerCase()}">${g}</div><div class="grid">${data.filter(x=>x.group===g).map(renderer).join('')}</div>`).join('');
+  return groups.map(g=>`<div class="group searchable" data-search="${escAttr(g.toLowerCase())}">${g}</div><div class="grid">${data.filter(x=>x.group===g).map(renderer).join('')}</div>`).join('');
 }
 
 function renderShips(){
@@ -379,9 +401,9 @@ function renderShips(){
 }
 function renderDecks(){
   decksContent.innerHTML=grouped(decks,d=>card(d.name,
-    kv(lang==='de'?'Extra-Kanonen':'Extra cannons',typeof d.c==='number'?`+${d.c}`:d.c)+
-    kv(lang==='de'?'Extra-Harpunenwerfer':'Extra harpoon launchers',typeof d.h==='number'?`+${d.h}`:d.h)+
-    kv(lang==='de'?'Unversenkbar':'Indestructible',d.ind)+
+    (d.c!=null?kv(lang==='de'?'Extra-Kanonen':'Extra cannons',typeof d.c==='number'?`+${d.c}`:d.c):'')+
+    (d.h!=null?kv(lang==='de'?'Extra-Harpunenwerfer':'Extra harpoon launchers',typeof d.h==='number'?`+${d.h}`:d.h):'')+
+    (d.ind!=null?kv(lang==='de'?'Unversenkbar':'Indestructible',d.ind):'')+
     kv(lang==='de'?'Deckplatz':'Deck slot',d.slot)+
     (d.dur!==undefined?kv(lang==='de'?'Haltbarkeit':'Durability',d.dur):'')+
     kv(lang==='de'?'Normalpreis':'Normal price',d.normal)+
@@ -389,20 +411,20 @@ function renderDecks(){
 }
 function renderUpgrades(){
   upgradesContent.innerHTML=grouped(upgrades,u=>card(u.name,
-    kv(lang==='de'?'Effekt':'Effect',u.effect)+kv(lang==='de'?'Normalpreis':'Normal price',u.normal)+(u.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',u.premium):''),u.status));
+    (u.effect?kv(lang==='de'?'Effekt':'Effect',u.effect):'')+kv(lang==='de'?'Normalpreis':'Normal price',u.normal)+(u.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',u.premium):''),u.status));
 }
 function renderSets(){
-  setsContent.innerHTML=sets.map(s=>`<div class="group">${s.group} · ${s.name}</div><div class="grid"><article class="card searchable" data-search="${(s.group+' '+s.name+' '+JSON.stringify(s)).toLowerCase()}"><h3>${s.name}</h3><div class="tags"><span class="tag ver">Verified ${verified}</span></div><div class="sub">${lang==='de'?'Gegenstände':'Items'}</div>${s.pieces.map(p=>`<div class="level"><b>${p[0]}</b><br>${p[1]}<br><span style="color:var(--muted)">${lang==='de'?'Preis: wenn im Screenshot/Shop vorhanden wird er hier ergänzt.':'Price: added where available from screenshots/shop.'}</span></div>`).join('')}<div class="sub" style="margin-top:9px">${lang==='de'?'Setstufen':'Set levels'}</div>${s.levels.map(l=>`<div class="level"><b>${l[0]}</b><br>${l[1]}</div>`).join('')}</article></div>`).join('');
+  setsContent.innerHTML=sets.map(s=>`<div class="group">${s.group} · ${s.name}</div><div class="grid"><article class="card searchable" data-search="${escAttr((s.group+' '+s.name+' '+JSON.stringify(s)).toLowerCase())}"><h3>${s.name}</h3><div class="tags"><span class="tag ver">Verified ${verified}</span></div><div class="sub">${lang==='de'?'Gegenstände':'Items'}</div>${s.pieces.map(p=>`<div class="level"><b>${p[0]}</b><br>${p[1]}</div>`).join('')}<div class="sub" style="margin-top:9px">${lang==='de'?'Setstufen':'Set levels'}</div>${s.levels.map(l=>`<div class="level"><b>${l[0]}</b><br>${l[1]}</div>`).join('')}</article></div>`).join('');
 }
 function renderWeapons(){
-  cannonsContent.innerHTML=grouped(cannons,c=>card(`${c.name} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Schiffe':'Ships')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',c.destroy),c.status));
-  harpoonsContent.innerHTML=grouped(harpoonlaunchers,c=>card(`${c.name} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Monster':'Monsters')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',c.destroy),c.status));
+  cannonsContent.innerHTML=grouped(cannons,c=>card(`${c.name} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Schiffe':'Ships')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',c.destroy)+(c.source?kv(lang==='de'?'Quelle':'Source',c.source):''),c.status));
+  harpoonsContent.innerHTML=grouped(harpoonlaunchers,c=>card(`${c.name} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Monster':'Monsters')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',c.destroy)+(c.source?kv(lang==='de'?'Quelle':'Source',c.source):''),c.status));
 }
 function renderAmmo(){
   ammoContent.innerHTML=grouped(ammo,a=>card(a.name,kv(lang==='de'?'Effekt / Typ':'Effect / type',a.effect)+kv(lang==='de'?'Preis':'Price',a.price)+kv(lang==='de'?'Quelle':'Source',a.source),'verified'));
 }
 function renderItems(){
-  itemsContent.innerHTML=grouped(items,i=>card(i.name,kv(lang==='de'?'Effekt':'Effect',i.effect)+kv(lang==='de'?'Normalpreis':'Normal price',i.normal)+(i.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',i.premium):''),'verified'));
+  itemsContent.innerHTML=grouped(items,i=>card(i.name,(i.effect?kv(lang==='de'?'Effekt':'Effect',i.effect):'')+kv(lang==='de'?'Normalpreis':'Normal price',i.normal)+(i.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',i.premium):''),'verified'));
 }
 function renderPvp(){
   pvpContent.innerHTML=grouped(pvp,i=>card(i.name,kv(lang==='de'?'Effekt / Werte':'Effect / values',i.effect)+kv(lang==='de'?'Preis':'Price',i.normal)+(i.premium?kv(lang==='de'?'Mit Premium':'With premium',i.premium):''),'verified'));
@@ -415,12 +437,12 @@ function renderGuild(){
   guildContent.innerHTML=`
   <div class="grid">
     ${card(lang==='de'?'Maximales Gildengold':'Maximum guild gold',kv(lang==='de'?'Limit':'Limit','2.000.000.000 Gold'),'verified')}
-    ${card(lang==='de'?'Gesamt-Gilden-XP':'Total guild XP',kv(lang==='de'?'Gesamt bis Level 50':'Total to level 50',fmt(knownTotal))+kv(lang==='de'?'Hinweis':'Note',lang==='de'?'Offiziell gesammelter Gesamtwert; frühe Einzelstufen 2–20 sind im Datensatz noch nicht vollständig aufgeteilt.':'Official total; early per-level values 2–20 are not fully split in the current dataset.'),'verified')}
+    ${card(lang==='de'?'Gesamt-Gilden-XP':'Total guild XP',kv(lang==='de'?'Gesamt bis Level 50':'Total to level 50',fmt(knownTotal)),'verified')}
   </div>
   <div class="group">${lang==='de'?'Gildenbelohnungen':'Guild rewards'}</div>
   <div class="grid">${guildRewards.map(g=>card(`${lang==='de'?'Gilden-Level':'Guild level'} ${g[0]}`,kv(lang==='de'?'Belohnung':'Reward',g[1]),'verified')).join('')}</div>
-  <div class="group">${lang==='de'?'Gilden-XP-Tabelle':'Guild XP table'} · Level 20–50</div>
-  <div class="tablewrap"><table class="table"><thead><tr><th>${lang==='de'?'Von':'From'}</th><th>${lang==='de'?'Bis':'To'}</th><th>${lang==='de'?'Benötigte Gilden-XP':'Required guild XP'}</th></tr></thead><tbody>${guildXP.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${fmt(x[2])}</td></tr>`).join('')}</tbody></table></div>`;
+  <div class="group">${lang==='de'?'Gilden-XP-Tabelle':'Guild XP table'}</div>
+  <div class="tablewrap"><table class="table"><thead><tr><th>${lang==='de'?'Von':'From'}</th><th>${lang==='de'?'Bis':'To'}</th><th>${lang==='de'?'Benötigte Gilden-XP':'Required guild XP'}</th></tr></thead><tbody><tr><td>3</td><td>20</td><td>${lang==='de'?'Einzelwerte noch nicht vollständig bekannt – im Gesamtwert bis Level 50 enthalten':'Individual values not yet fully known – included in total to level 50'}</td></tr>${guildXP.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${fmt(x[2])}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function renderShop(){
   shopContent.innerHTML=`<div class="grid">${cashShop.map(x=>card(x[0],kv(lang==='de'?'Preis':'Price',`<span class="price-eur">${x[1]}</span>`)+(x[2]?kv(lang==='de'?'Hinweis':'Note',x[2]):''),'verified')).join('')}</div>`;
@@ -526,13 +548,28 @@ function renderAll(){
 }
 function applySearch(){
   const q=search.value.trim().toLowerCase();
-  document.querySelectorAll('.searchable').forEach(el=>el.classList.toggle('hidden',!!q&&!el.dataset.search.includes(q)));
+  const sections=[...document.querySelectorAll('main section')];
+  if(q){
+    sections.forEach(sec=>sec.classList.add('active-section'));
+    document.getElementById('overview').classList.remove('active-section');
+    document.querySelectorAll('.searchable').forEach(el=>el.classList.toggle('hidden',!el.dataset.search.includes(q)));
+    sections.filter(sec=>sec.id!=='overview').forEach(sec=>{
+      const visible=sec.querySelectorAll('.searchable:not(.hidden)').length;
+      sec.classList.toggle('hidden',visible===0);
+    });
+  }else{
+    document.querySelectorAll('.searchable').forEach(el=>el.classList.remove('hidden'));
+    sections.forEach(sec=>{sec.classList.remove('hidden','active-section')});
+    document.getElementById(currentSection||'overview').classList.add('active-section');
+  }
 }
 search.addEventListener('input',applySearch);
 nav.addEventListener('click',e=>{const b=e.target.closest('button[data-sec]');if(!b)return;document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main section').forEach(s=>s.classList.remove('active-section'));document.getElementById(b.dataset.sec).classList.add('active-section');window.scrollTo({top:0,behavior:'smooth'});});
 document.querySelectorAll('[data-jump]').forEach(b=>b.addEventListener('click',()=>document.querySelector(`nav button[data-sec="${b.dataset.jump}"]`).click()));
 langBtn.addEventListener('click',()=>{lang=lang==='de'?'en':'de';langBtn.textContent=lang==='de'?'EN':'DE';renderAll();});
 renderAll();
+async function updateOnline(){try{const r=await fetch('/api/online',{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();onlineCount.textContent=`🟢 ${j.count} ${lang==='de'?(j.count===1?'Besucher online':'Besucher online'):'online'}`;}catch(e){onlineCount.textContent=lang==='de'?'🟢 Besucher online: –':'🟢 Online: –';}}
+updateOnline(); setInterval(updateOnline,30000);
 </script>
 </body>
 </html>
