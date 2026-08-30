@@ -3,274 +3,536 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PirateStorm.info – Community Database</title>
-<meta name="description" content="Unofficial Pirate Storm community database with verified 2026 live-game data.">
+<title>PirateStorm.info</title>
+<meta name="description" content="Unofficial Pirate Storm community database">
 <style>
-:root{--bg:#061019;--panel:#0c1924;--panel2:#0f202d;--line:#274759;--text:#edf7fb;--muted:#91a8b6;--gold:#f1c45b;--blue:#78d8ed;--green:#7fe5a8;--amber:#f3d88d}
+:root{
+  --bg:#061019;--panel:#0c1924;--panel2:#0f202d;--line:#274759;
+  --text:#edf7fb;--muted:#91a8b6;--gold:#f1c45b;--blue:#78d8ed;
+  --green:#7fe5a8;--danger:#ff9e9e
+}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
 body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:radial-gradient(circle at 90% 0,rgba(44,119,150,.18),transparent 30%),linear-gradient(180deg,#07131d,#04090e)}
-button,input,select{font:inherit}header{position:sticky;top:0;z-index:30;background:rgba(6,16,25,.92);backdrop-filter:blur(13px);border-bottom:1px solid var(--line)}
-.head{max-width:1450px;margin:auto;padding:14px 20px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font-weight:900}.brand small{display:block;color:var(--muted);font-size:11px}
-.btn,.search,select,input{border:1px solid var(--line);background:#0b1822;color:var(--text);border-radius:10px}.btn{padding:9px 11px;cursor:pointer}.search{width:100%;margin-top:12px;padding:12px 14px}
-.layout{max-width:1450px;margin:auto;display:grid;grid-template-columns:245px 1fr;gap:22px;padding:22px 20px 55px}aside{position:sticky;top:121px;height:max-content;padding:10px;border:1px solid var(--line);background:rgba(12,25,36,.92);border-radius:16px}
-nav button{width:100%;text-align:left;border:0;background:transparent;color:var(--muted);padding:10px 11px;border-radius:9px;cursor:pointer}nav button:hover,nav button.active{background:#142b3a;color:var(--text)}
-section{display:none}.active-section{display:block}.hero{border:1px solid var(--line);border-radius:20px;padding:27px;background:linear-gradient(135deg,#15364a,#0d1b26)}.eyebrow{font-size:12px;font-weight:900;color:var(--blue);letter-spacing:1.15px}
-h1{margin:8px 0 12px;font-size:clamp(34px,5vw,57px);line-height:1}.hero p{max-width:900px;color:#bfd0d9;line-height:1.6}.hero-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.hero-actions button{border:1px solid #365d70;background:#102b3a;color:#e1f8fd;padding:10px 13px;border-radius:10px;cursor:pointer}
-.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:18px}.stat{padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(0,0,0,.15)}.stat b{display:block;font-size:22px;color:var(--gold)}.stat span{font-size:11px;color:var(--muted)}
-.section-head{display:flex;justify-content:space-between;gap:12px;align-items:end;margin-bottom:14px}h2{margin:0;font-size:28px}.sub{color:var(--muted);font-size:13px;margin-top:4px}.filters{display:flex;gap:8px;flex-wrap:wrap}select{padding:9px 10px}
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.card{border:1px solid var(--line);border-radius:14px;padding:15px;background:linear-gradient(180deg,#0f202c,#09151e)}.card h3{margin:0 0 7px;font-size:17px}
-.tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.tag{font-size:11px;border:1px solid #30576d;background:#102a37;color:#a6e9f5;padding:4px 7px;border-radius:999px}.ver{border-color:#285e3c;background:#102c1d;color:#9bf0b7}.hist{border-color:#66542b;background:#2c2411;color:#efd890}.community{border-color:#66577a;background:#271f31;color:#d7c5ef}
-.kv{display:grid;grid-template-columns:1fr auto;gap:10px;padding:7px 0;border-top:1px solid rgba(255,255,255,.06);font-size:13px}.kv span:first-child{color:var(--muted)}.kv b{text-align:right;max-width:65%}
-.level{padding:8px 0;border-top:1px solid rgba(255,255,255,.07);font-size:12px;line-height:1.5}.price-dia{color:#8bdcff}.price-gold{color:var(--gold)}.price-eur{color:#a9f2c5}
-.note{margin:14px 0;border:1px solid var(--line);background:#0c1a24;color:#bed0da;padding:13px 14px;border-radius:12px;font-size:13px;line-height:1.55}
-.tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.tool{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:16px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:9px}.field label{font-size:12px;color:var(--muted)}.field input,.field select{width:100%;margin-top:5px;padding:10px}.result{margin-top:11px;border:1px solid #214052;background:#07151e;padding:11px;border-radius:9px;font-weight:800}
-.hidden{display:none!important}footer{max-width:1450px;margin:auto;padding:0 20px 35px;color:#758a97;font-size:12px;line-height:1.55}
+button,input,select{font:inherit}
+header{position:sticky;top:0;z-index:50;background:rgba(6,16,25,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.head{max-width:1500px;margin:auto;padding:13px 18px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{font-weight:950;font-size:18px}.brand small{display:block;font-size:11px;color:var(--muted);font-weight:600}
+.btn,.search,select,input{border:1px solid var(--line);background:#0a1822;color:var(--text);border-radius:10px}
+.btn{padding:8px 11px;cursor:pointer}.search{width:100%;margin-top:11px;padding:11px 13px}
+.layout{max-width:1500px;margin:auto;display:grid;grid-template-columns:250px 1fr;gap:20px;padding:20px 18px 54px}
+aside{position:sticky;top:116px;height:max-content;border:1px solid var(--line);background:rgba(12,25,36,.94);border-radius:15px;padding:9px}
+nav button{width:100%;text-align:left;border:0;background:transparent;color:var(--muted);padding:9px 10px;border-radius:8px;cursor:pointer}
+nav button:hover,nav button.active{background:#142b3a;color:var(--text)}
+section{display:none}.active-section{display:block}
+.hero{border:1px solid var(--line);border-radius:19px;padding:28px;background:linear-gradient(135deg,#15364a,#0d1b26)}
+.hero h1{margin:0 0 10px;font-size:clamp(38px,6vw,66px);line-height:.95}
+.hero p{max-width:980px;color:#c1d1da;line-height:1.55;margin:0}
+.hero-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:17px}
+.hero-actions button{border:1px solid #365d70;background:#102b3a;color:#e1f8fd;padding:9px 12px;border-radius:9px;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin-top:16px}
+.stat{border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.15);padding:11px;border-radius:11px}
+.stat b{font-size:22px;color:var(--gold);display:block}.stat span{font-size:11px;color:var(--muted)}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:14px}
+h2{margin:0;font-size:28px}.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.group{margin:18px 0 8px;padding:9px 12px;border-left:3px solid var(--blue);background:#0b1a24;border-radius:8px;font-weight:900}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:14px;padding:14px;background:linear-gradient(180deg,#0f202c,#09151e)}
+.card h3{margin:0 0 7px;font-size:17px}.card .desc{font-size:12px;color:#bfd0d9;line-height:1.45;margin:5px 0 9px}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}.tag{font-size:10px;border:1px solid #30576d;background:#102a37;color:#a6e9f5;padding:3px 6px;border-radius:999px}
+.tag.ver{border-color:#285e3c;background:#102c1d;color:#9bf0b7}.tag.hist{border-color:#66542b;background:#2c2411;color:#efd890}
+.kv{display:grid;grid-template-columns:1fr auto;gap:10px;padding:6px 0;border-top:1px solid rgba(255,255,255,.06);font-size:12px}
+.kv span:first-child{color:var(--muted)}.kv b{text-align:right;max-width:68%}
+.price-dia{color:#8bdcff}.price-gold{color:var(--gold)}.price-eur{color:#a9f2c5}
+.level{padding:7px 0;border-top:1px solid rgba(255,255,255,.07);font-size:12px;line-height:1.45}
+.note{margin:12px 0;border:1px solid var(--line);background:#0c1a24;color:#bed0da;padding:12px 13px;border-radius:11px;font-size:12px;line-height:1.5}
+.tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.tool{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:15px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}.field label{font-size:11px;color:var(--muted)}.field input,.field select{width:100%;margin-top:4px;padding:9px}
+.checks{display:grid;gap:6px;margin-top:8px}.check{display:flex;align-items:flex-start;gap:7px;font-size:12px;color:#d8e7ee}.check input{width:auto;margin-top:2px}
+.result{margin-top:10px;border:1px solid #214052;background:#07151e;padding:11px;border-radius:9px;font-weight:800;line-height:1.5}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px}.table{width:100%;border-collapse:collapse;font-size:12px}.table th,.table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.07);text-align:left}.table th{background:#10212d;color:#b8d7e4;position:sticky;top:0}
+footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:11px;line-height:1.5}
+.hidden{display:none!important}
 @media(max-width:1100px){.layout{grid-template-columns:1fr}aside{position:static}nav{display:flex;overflow:auto}nav button{width:auto;white-space:nowrap}.grid{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:680px){.head,.layout{padding-left:12px;padding-right:12px}.grid,.stats,.tools,.fields{grid-template-columns:1fr}.section-head{align-items:flex-start;flex-direction:column}}
+@media(max-width:700px){.head,.layout{padding-left:11px;padding-right:11px}.grid,.stats,.tools,.fields{grid-template-columns:1fr}.section-head{align-items:flex-start;flex-direction:column}}
 </style>
 </head>
 <body>
-<header><div class="head"><div class="top"><div class="brand">⚓ PirateStorm.info<small id="brandSub"></small></div><button class="btn" id="langBtn">EN</button></div><input id="search" class="search"></div></header>
+<header>
+  <div class="head">
+    <div class="top">
+      <div class="brand">⚓ PirateStorm.info<small id="brandSub">Inoffizielles Community-Projekt</small></div>
+      <button class="btn" id="langBtn">EN</button>
+    </div>
+    <input id="search" class="search" placeholder="Schiffe, Decks, Sets, Kanonen, Items … durchsuchen">
+  </div>
+</header>
 
 <div class="layout">
 <aside><nav id="nav">
-<button class="active" data-sec="overview" data-i18n="navOverview"></button>
-<button data-sec="ships" data-i18n="navShips"></button>
-<button data-sec="decks" data-i18n="navDecks"></button>
-<button data-sec="upgrades" data-i18n="navUpgrades"></button>
-<button data-sec="sets" data-i18n="navSets"></button>
-<button data-sec="cannons" data-i18n="navCannons"></button>
-<button data-sec="harpoons" data-i18n="navHarpoons"></button>
-<button data-sec="shop" data-i18n="navShop"></button>
-<button data-sec="materials" data-i18n="navMaterials"></button>
-<button data-sec="guild" data-i18n="navGuild"></button>
-<button data-sec="tools" data-i18n="navTools"></button>
+<button class="active" data-sec="overview">⌂ <span data-t="navOverview">Start</span></button>
+<button data-sec="ships">◈ <span data-t="navShips">Schiffe</span></button>
+<button data-sec="decks">▤ <span data-t="navDecks">Decks</span></button>
+<button data-sec="upgrades">⚙ <span data-t="navUpgrades">Verbesserungen</span></button>
+<button data-sec="sets">✦ <span data-t="navSets">Sets</span></button>
+<button data-sec="cannons">● <span data-t="navCannons">Kanonen</span></button>
+<button data-sec="harpoonlaunchers">⌁ <span data-t="navHarpoons">Harpunenwerfer</span></button>
+<button data-sec="ammo">◎ <span data-t="navAmmo">Munition</span></button>
+<button data-sec="items">✚ <span data-t="navItems">Items</span></button>
+<button data-sec="pvp">⚔ <span data-t="navPvp">PvP</span></button>
+<button data-sec="materials">◆ <span data-t="navMaterials">Materialien</span></button>
+<button data-sec="guild">♜ <span data-t="navGuild">Gilden</span></button>
+<button data-sec="tools">∑ <span data-t="navTools">Rechner</span></button>
+<button data-sec="shop">€ <span data-t="navShop">Shop</span></button>
 </nav></aside>
 
 <main>
 <section id="overview" class="active-section">
-<div class="hero"><div class="eyebrow" id="eyebrow"></div><h1 id="heroTitle"></h1><p id="heroText"></p><div class="hero-actions"><button data-jump="cannons" id="jumpCannons"></button><button data-jump="sets" id="jumpSets"></button><button data-jump="tools" id="jumpTools"></button></div>
-<div class="stats"><div class="stat"><b id="countCannons"></b><span id="statCannons"></span></div><div class="stat"><b id="countHarpoons"></b><span id="statHarpoons"></span></div><div class="stat"><b id="countDecks"></b><span id="statDecks"></span></div><div class="stat"><b id="countSets"></b><span id="statSets"></span></div><div class="stat"><b id="countShop"></b><span id="statShop"></span></div><div class="stat"><b id="countGuild"></b><span id="statGuild"></span></div></div></div>
-<div class="grid" id="overviewGrid" style="margin-top:15px"></div>
+  <div class="hero">
+    <h1>PirateStorm</h1>
+    <p id="heroText">Aktuelle Live-Spielwerte, Sets, Decks, Verbesserungen, Shoppreise, Materialien und Community-Wissen an einem Ort.</p>
+    <div class="hero-actions">
+      <button data-jump="ships" data-t="jumpShips">Schiffe ansehen</button>
+      <button data-jump="sets" data-t="jumpSets">Sets vergleichen</button>
+      <button data-jump="tools" data-t="jumpTools">Rechner öffnen</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="statShips">0</b><span data-t="statShips">Schiffe</span></div>
+      <div class="stat"><b id="statDecks">0</b><span data-t="statDecks">Decks</span></div>
+      <div class="stat"><b id="statCannons">0</b><span data-t="statCannons">Kanonen</span></div>
+      <div class="stat"><b id="statHarpoons">0</b><span data-t="statHarpoons">Harpunenwerfer</span></div>
+      <div class="stat"><b id="statSets">0</b><span data-t="statSets">Sets</span></div>
+      <div class="stat"><b id="statItems">0</b><span data-t="statItems">Items</span></div>
+    </div>
+  </div>
 </section>
 
-<section id="ships"><div class="section-head"><div><h2 id="shipsTitle"></h2><div class="sub" id="shipsSub"></div></div></div><div class="grid" id="shipsGrid"></div></section>
-<section id="decks"><div class="section-head"><div><h2 id="decksTitle"></h2><div class="sub" id="decksSub"></div></div></div><div class="grid" id="decksGrid"></div></section>
-<section id="upgrades"><div class="section-head"><div><h2 id="upgradesTitle"></h2><div class="sub" id="upgradesSub"></div></div></div><div class="grid" id="upgradesGrid"></div></section>
-<section id="sets"><div class="section-head"><div><h2 id="setsTitle"></h2><div class="sub" id="setsSub"></div></div></div><div class="grid" id="setsGrid"></div></section>
-<section id="cannons"><div class="section-head"><div><h2 id="cannonsTitle"></h2><div class="sub" id="cannonsSub"></div></div><div class="filters"><select id="cannonDestroy"></select><select id="cannonSort"></select></div></div><div class="grid" id="cannonsGrid"></div></section>
-<section id="harpoons"><div class="section-head"><div><h2 id="harpoonsTitle"></h2><div class="sub" id="harpoonsSub"></div></div></div><div class="grid" id="harpoonsGrid"></div></section>
-<section id="shop"><div class="section-head"><div><h2 id="shopTitle"></h2><div class="sub" id="shopSub"></div></div></div><div class="note" id="shopNote"></div><div class="grid" id="shopGrid"></div></section>
-<section id="materials"><div class="section-head"><div><h2 id="materialsTitle"></h2><div class="sub" id="materialsSub"></div></div></div><div class="grid" id="materialsGrid"></div></section>
-<section id="guild"><div class="section-head"><div><h2 id="guildTitle"></h2><div class="sub" id="guildSub"></div></div></div><div class="grid" id="guildGrid"></div></section>
-
-<section id="tools"><div class="section-head"><div><h2 id="toolsTitle"></h2><div class="sub" id="toolsSub"></div></div></div><div class="tools">
-<div class="tool"><h3 id="damageCalcTitle"></h3><div class="fields"><div class="field"><label id="damageCannonLabel"></label><select id="damageCannon"></select></div><div class="field"><label id="damageCountLabel"></label><input id="damageCount" type="number" value="180" min="1"></div><div class="field"><label id="ammoMultiplierLabel"></label><input id="ammoMultiplier" type="number" value="1" step="0.1"></div><div class="field"><label id="bonusDamageLabel"></label><input id="bonusDamage" type="number" value="0"></div></div><div class="result" id="damageResult"></div></div>
-<div class="tool"><h3 id="maxCannonsTitle"></h3><div class="fields"><div class="field"><label id="shipLabel"></label><select id="shipSelect"></select></div><div class="field"><label id="deckBonusLabel"></label><input id="deckBonus" type="number" value="0"></div><div class="field"><label id="setBonusLabel"></label><input id="setBonus" type="number" value="0"></div><div class="field"><label id="otherBonusLabel"></label><input id="otherBonus" type="number" value="0"></div></div><div class="result" id="maxCannonsResult"></div></div>
-</div></section>
+<section id="ships"><div class="section-head"><div><h2 data-t="shipsTitle">Schiffe</h2><div class="sub" data-t="shipsSub">Nach Event/Herkunft sortiert. Alle lesbaren Werte werden direkt angezeigt.</div></div></div><div id="shipsContent"></div></section>
+<section id="decks"><div class="section-head"><div><h2 data-t="decksTitle">Decks</h2><div class="sub" data-t="decksSub">Nach Event/Herkunft sortiert – ohne doppelte Darstellung.</div></div></div><div id="decksContent"></div></section>
+<section id="upgrades"><div class="section-head"><div><h2 data-t="upgradesTitle">Verbesserungen</h2><div class="sub" data-t="upgradesSub">Schiffsverbesserungen nach Event/Herkunft.</div></div></div><div id="upgradesContent"></div></section>
+<section id="sets"><div class="section-head"><div><h2 data-t="setsTitle">Sets</h2><div class="sub" data-t="setsSub">Set-Gegenstände, Effekte, Preise soweit bekannt und Setstufen.</div></div></div><div id="setsContent"></div></section>
+<section id="cannons"><div class="section-head"><div><h2 data-t="cannonsTitle">Kanonen</h2><div class="sub" data-t="cannonsSub">Nach Event/Herkunft sortiert.</div></div></div><div id="cannonsContent"></div></section>
+<section id="harpoonlaunchers"><div class="section-head"><div><h2 data-t="harpoonsTitle">Harpunenwerfer</h2><div class="sub" data-t="harpoonsSub">Nach Event/Herkunft sortiert.</div></div></div><div id="harpoonsContent"></div></section>
+<section id="ammo"><div class="section-head"><div><h2 data-t="ammoTitle">Munition</h2><div class="sub" data-t="ammoSub">Kanonenkugeln und Harpunen, getrennt nach Standard- und Eventmunition.</div></div></div><div id="ammoContent"></div></section>
+<section id="items"><div class="section-head"><div><h2 data-t="itemsTitle">Items</h2><div class="sub" data-t="itemsSub">Ingame-Items mit Effekten und Ingame-Preisen.</div></div></div><div id="itemsContent"></div></section>
+<section id="pvp"><div class="section-head"><div><h2 data-t="pvpTitle">PvP</h2><div class="sub" data-t="pvpSub">Kriegsrang-Belohnungen, PvP-Schutz und PvP-relevante Ausrüstung.</div></div></div><div id="pvpContent"></div></section>
+<section id="materials"><div class="section-head"><div><h2 data-t="materialsTitle">Materialien</h2><div class="sub" data-t="materialsSub">Fundorte und bekannte Bezugsquellen.</div></div></div><div id="materialsContent"></div></section>
+<section id="guild"><div class="section-head"><div><h2 data-t="guildTitle">Gilden</h2><div class="sub" data-t="guildSub">Gildenbelohnungen, Gilden-XP und Gildengold.</div></div></div><div id="guildContent"></div></section>
+<section id="tools"><div class="section-head"><div><h2 data-t="toolsTitle">Rechner</h2><div class="sub" data-t="toolsSub">Schadensrechner, Schiffs-Konfigurator und Gilden-XP-Rechner.</div></div></div><div id="toolsContent"></div></section>
+<section id="shop"><div class="section-head"><div><h2 data-t="shopTitle">Shop</h2><div class="sub" data-t="shopSub">Nur Echtgeld-Angebote und Diamantenpakete.</div></div></div><div id="shopContent"></div></section>
 </main>
 </div>
-<footer id="footerText"></footer>
+
+<footer id="footerText">Unofficial community project. Pirate Storm and related trademarks/assets belong to Bigpoint. Live values are based on in-game screenshots from August 2026; historical references are marked separately.</footer>
 
 <script>
-const VERIFIED='2026-08'; let lang='de';
-
-const T={
-de:{brandSub:'Inoffizielle Community-Datenbank',search:'Suche nach Schiffen, Decks, Sets, Kanonen, Items, Materialien …',navOverview:'⌂ Übersicht',navShips:'◈ Schiffe',navDecks:'▤ Decks',navUpgrades:'⚙ Verbesserungen',navSets:'✦ Sets',navCannons:'● Kanonen',navHarpoons:'⌁ Harpunenwerfer',navShop:'✚ Shop & Items',navMaterials:'◆ Materialien',navGuild:'♜ Gilden',navTools:'∑ Rechner',eyebrow:'VERIFIZIERT IM SPIEL · AUGUST 2026',heroTitle:'Pirate Storm, endlich wieder übersichtlich.',heroText:'Aktuelle Live-Spielwerte, Sets, Decks, Verbesserungen, Shoppreise, Materialien und Community-Wissen an einem Ort.',jumpCannons:'Kanonen ansehen',jumpSets:'Sets vergleichen',jumpTools:'Rechner öffnen',statCannons:'Kanonen',statHarpoons:'Harpunenwerfer',statDecks:'Decks',statSets:'Set-Systeme',statShop:'Shop-Einträge',statGuild:'Gildenbelohnungen',shipsTitle:'Schiffe',shipsSub:'Verifizierte Werte und klar markierte historische Referenzen.',decksTitle:'Decks',decksSub:'Normale, Event- und Spezialdecks.',upgradesTitle:'Verbesserungen',upgradesSub:'Schiffsverbesserungen und Spezialausrüstung.',setsTitle:'Sets & Setboni',setsSub:'Alle bisher gesammelten Setteile und Setstufen.',cannonsTitle:'Kanonen',cannonsSub:'Basisschaden, Streuung und Zerstörbarkeit.',harpoonsTitle:'Harpunenwerfer',harpoonsSub:'Gesammelte Monster-Waffen.',shopTitle:'Shop & Items',shopSub:'Diamanten, Gold, Echtgeldpakete und Verbrauchsitems.',shopNote:'💎 Diamanten · 🟡 Gold · € Echtgeld. Rabattierte Preise werden getrennt vom Normalpreis dargestellt.',materialsTitle:'Materialien',materialsSub:'Fundorte und bestätigte Quellen.',guildTitle:'Gildenbelohnungen',guildSub:'Nach Level sortierte Gildenboni.',toolsTitle:'Rechner',toolsSub:'Schadensrechner und Max.-Kanonen-Rechner.',all:'Alle',undestroyable:'Unzerstörbar',destroyable:'Zerstörbar',sortName:'Name',sortDamage:'Schaden ↓',sortSpread:'Streuung ↑',damageCalcTitle:'⚔️ Schadensrechner',damageCannonLabel:'Kanone',damageCountLabel:'Anzahl Kanonen',ammoMultiplierLabel:'Munitions-Multiplikator',bonusDamageLabel:'Zusätzlicher Schaden %',maxCannonsTitle:'💣 Max.-Kanonen-Rechner',shipLabel:'Schiff',deckBonusLabel:'Deck-Bonus',setBonusLabel:'Set-Bonus',otherBonusLabel:'Weitere Boni',footer:'Inoffizielles Community-Projekt. Pirate Storm, Bigpoint und zugehörige Marken/Inhalte gehören den jeweiligen Rechteinhabern. Als „Verified“ markierte Werte wurden im Live-Spiel im August 2026 überprüft.'},
-en:{brandSub:'Unofficial Community Database',search:'Search ships, decks, sets, cannons, items, materials …',navOverview:'⌂ Overview',navShips:'◈ Ships',navDecks:'▤ Decks',navUpgrades:'⚙ Upgrades',navSets:'✦ Sets',navCannons:'● Cannons',navHarpoons:'⌁ Harpoon Launchers',navShop:'✚ Shop & Items',navMaterials:'◆ Materials',navGuild:'♜ Guilds',navTools:'∑ Calculators',eyebrow:'VERIFIED IN-GAME · AUGUST 2026',heroTitle:'Pirate Storm, finally organized.',heroText:'Current live-game values, sets, decks, upgrades, shop prices, materials and community knowledge in one place.',jumpCannons:'View cannons',jumpSets:'Compare sets',jumpTools:'Open calculators',statCannons:'Cannons',statHarpoons:'Harpoon launchers',statDecks:'Decks',statSets:'Set systems',statShop:'Shop entries',statGuild:'Guild rewards',shipsTitle:'Ships',shipsSub:'Verified values and clearly marked historical references.',decksTitle:'Decks',decksSub:'Normal, event and special decks.',upgradesTitle:'Upgrades',upgradesSub:'Ship upgrades and special equipment.',setsTitle:'Sets & Bonuses',setsSub:'All set pieces and set levels collected so far.',cannonsTitle:'Cannons',cannonsSub:'Base damage, spread and destructibility.',harpoonsTitle:'Harpoon Launchers',harpoonsSub:'Collected monster weapons.',shopTitle:'Shop & Items',shopSub:'Diamonds, gold, cash packages and consumables.',shopNote:'💎 Diamonds · 🟡 Gold · € cash. Discounted prices are shown separately from normal prices.',materialsTitle:'Materials',materialsSub:'Locations and confirmed sources.',guildTitle:'Guild Rewards',guildSub:'Guild bonuses sorted by level.',toolsTitle:'Calculators',toolsSub:'Damage calculator and max-cannon calculator.',all:'All',undestroyable:'Indestructible',destroyable:'Destructible',sortName:'Name',sortDamage:'Damage ↓',sortSpread:'Spread ↑',damageCalcTitle:'⚔️ Damage Calculator',damageCannonLabel:'Cannon',damageCountLabel:'Number of cannons',ammoMultiplierLabel:'Ammo multiplier',bonusDamageLabel:'Additional damage %',maxCannonsTitle:'💣 Max Cannon Calculator',shipLabel:'Ship',deckBonusLabel:'Deck bonus',setBonusLabel:'Set bonus',otherBonusLabel:'Other bonuses',footer:'Unofficial community project. Pirate Storm, Bigpoint and related trademarks/content belong to their respective owners. Values marked “Verified” were checked in the live game in August 2026.'}
-};
+const t={
+de:{
+navOverview:'Start',navShips:'Schiffe',navDecks:'Decks',navUpgrades:'Verbesserungen',navSets:'Sets',navCannons:'Kanonen',navHarpoons:'Harpunenwerfer',navAmmo:'Munition',navItems:'Items',navPvp:'PvP',navMaterials:'Materialien',navGuild:'Gilden',navTools:'Rechner',navShop:'Shop',
+heroText:'Aktuelle Live-Spielwerte, Sets, Decks, Verbesserungen, Shoppreise, Materialien und Community-Wissen an einem Ort.',jumpShips:'Schiffe ansehen',jumpSets:'Sets vergleichen',jumpTools:'Rechner öffnen',
+statShips:'Schiffe',statDecks:'Decks',statCannons:'Kanonen',statHarpoons:'Harpunenwerfer',statSets:'Sets',statItems:'Items',
+shipsTitle:'Schiffe',shipsSub:'Nach Event/Herkunft sortiert. Alle lesbaren Werte werden direkt angezeigt.',
+decksTitle:'Decks',decksSub:'Nach Event/Herkunft sortiert – ohne doppelte Darstellung.',
+upgradesTitle:'Verbesserungen',upgradesSub:'Schiffsverbesserungen nach Event/Herkunft.',
+setsTitle:'Sets',setsSub:'Set-Gegenstände, Effekte, Preise soweit bekannt und Setstufen.',
+cannonsTitle:'Kanonen',cannonsSub:'Nach Event/Herkunft sortiert.',
+harpoonsTitle:'Harpunenwerfer',harpoonsSub:'Nach Event/Herkunft sortiert.',
+ammoTitle:'Munition',ammoSub:'Kanonenkugeln und Harpunen, getrennt nach Standard- und Eventmunition.',
+itemsTitle:'Items',itemsSub:'Ingame-Items mit Effekten und Ingame-Preisen.',
+pvpTitle:'PvP',pvpSub:'Kriegsrang-Belohnungen, PvP-Schutz und PvP-relevante Ausrüstung.',
+materialsTitle:'Materialien',materialsSub:'Fundorte und bekannte Bezugsquellen.',
+guildTitle:'Gilden',guildSub:'Gildenbelohnungen, Gilden-XP und Gildengold.',
+toolsTitle:'Rechner',toolsSub:'Schadensrechner, Schiffs-Konfigurator und Gilden-XP-Rechner.',
+shopTitle:'Shop',shopSub:'Nur Echtgeld-Angebote und Diamantenpakete.'
+},
+en:{
+navOverview:'Home',navShips:'Ships',navDecks:'Decks',navUpgrades:'Upgrades',navSets:'Sets',navCannons:'Cannons',navHarpoons:'Harpoon Launchers',navAmmo:'Ammo',navItems:'Items',navPvp:'PvP',navMaterials:'Materials',navGuild:'Guilds',navTools:'Calculators',navShop:'Shop',
+heroText:'Current live-game values, sets, decks, upgrades, shop prices, materials and community knowledge in one place.',jumpShips:'View ships',jumpSets:'Compare sets',jumpTools:'Open calculators',
+statShips:'Ships',statDecks:'Decks',statCannons:'Cannons',statHarpoons:'Harpoon launchers',statSets:'Sets',statItems:'Items',
+shipsTitle:'Ships',shipsSub:'Sorted by event/source. All readable values are shown directly.',
+decksTitle:'Decks',decksSub:'Sorted by event/source – no duplicate blocks.',
+upgradesTitle:'Upgrades',upgradesSub:'Ship upgrades sorted by event/source.',
+setsTitle:'Sets',setsSub:'Set items, effects, prices where known and set levels.',
+cannonsTitle:'Cannons',cannonsSub:'Sorted by event/source.',
+harpoonsTitle:'Harpoon Launchers',harpoonsSub:'Sorted by event/source.',
+ammoTitle:'Ammo',ammoSub:'Cannonballs and harpoons, split into standard and event ammunition.',
+itemsTitle:'Items',itemsSub:'In-game items with effects and in-game prices.',
+pvpTitle:'PvP',pvpSub:'War-rank rewards, PvP protection and PvP equipment.',
+materialsTitle:'Materials',materialsSub:'Locations and known sources.',
+guildTitle:'Guilds',guildSub:'Guild rewards, guild XP and guild gold.',
+toolsTitle:'Calculators',toolsSub:'Damage calculator, ship configurator and guild XP calculator.',
+shopTitle:'Shop',shopSub:'Cash offers and diamond packages only.'
+}};
+let lang='de';
+const verified='2026-08';
 
 const ships=[
-{name:'Kriegsfregatte „Baphomet“',hp:13500,speed:'5,5 → 14 Knoten',c:85,h:40,crit:'4% / 4%',range:235,sight:350,price:'15.000 Kriegswährung',status:'verified'},
-{name:'Kriegsfregatte „Orca“',hp:13750,speed:'5,5 → 14 Knoten',c:78,h:40,crit:'6% / 6%',range:200,sight:350,price:'9.000 Kriegswährung',status:'verified'},
-{name:'Kriegsfregatte „Barracuda“',hp:13000,speed:'5,5 → 14 Knoten',c:66,h:42,crit:'4% / 4%',range:200,sight:350,price:'5.500 Kriegswährung',status:'verified'},
-{name:'Weltenzerstörer',hp:14500,speed:'Max. 14 Knoten',c:90,h:50,crit:'10% / 10%',range:220,sight:'—',price:'Arena-Saisonbelohnung',status:'historical'},
-{name:'Gladiator',hp:'—',speed:'—',c:170,h:'—',crit:'—',range:'—',sight:'—',price:'—',status:'community'},
-{name:'Piranha',hp:'—',speed:'—',c:'—',h:'—',crit:'—',range:'—',sight:'—',price:'Basiswerte noch offen',status:'community'}
+{group:'Adler-Event',name:'Kriegsfregatte „Piranha“',hp:9750,baseSpeed:5.5,maxSpeed:14,c:55,h:45,dodge:4,res:4,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'500 Adler-Orden',status:'verified'},
+{group:'PvP / Kriegsrang',name:'Kriegsfregatte „Baphomet“',hp:13500,baseSpeed:5.5,maxSpeed:14,c:85,h:40,dodge:4,res:4,range:235,sight:350,decks:'Unteres · Mittleres · Oberes',price:'15.000 Kriegswährung · Rang 1',status:'verified'},
+{group:'PvP / Kriegsrang',name:'Kriegsfregatte „Orca“',hp:13750,baseSpeed:5.5,maxSpeed:14,c:78,h:40,dodge:6,res:6,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'9.000 Kriegswährung · Rang 3',status:'verified'},
+{group:'PvP / Kriegsrang',name:'Kriegsfregatte „Barracuda“',hp:13000,baseSpeed:5.5,maxSpeed:14,c:66,h:42,dodge:4,res:4,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'5.500 Kriegswährung · Rang 8',status:'verified'},
+{group:'Arena',name:'Weltenzerstörer',hp:14500,baseSpeed:null,maxSpeed:14,c:90,h:50,dodge:10,res:10,range:220,sight:'—',decks:'Event-/Spezialdecks möglich',price:'Arena-Saisonbelohnung',status:'historical'},
+{group:'Arena',name:'Gladiator',hp:'siehe Screenshot-Datensatz',baseSpeed:null,maxSpeed:null,c:170,h:'siehe Screenshot-Datensatz',dodge:'—',res:'—',range:'—',sight:'—',decks:'Sturmdeck-Konfiguration bekannt',price:'Arena',status:'historical'},
+{group:'Standard / Händler',name:'Cordone',hp:13750,baseSpeed:5.5,maxSpeed:14,c:77,h:42,dodge:10,res:10,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'97.000 💎',status:'verified'},
+{group:'Standard / Händler',name:'Große Fregatte',hp:12000,baseSpeed:5.5,maxSpeed:14,c:60,h:30,dodge:4,res:4,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'77.600 💎',status:'verified'},
+{group:'Standard / Händler',name:'Fregatte',hp:8000,baseSpeed:5.5,maxSpeed:13.3,c:50,h:40,dodge:2,res:2,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'24.250 💎',status:'verified'},
+{group:'Standard / Händler',name:'Verwüster',hp:6750,baseSpeed:5.5,maxSpeed:13.3,c:50,h:40,dodge:2,res:2,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'7.500.000 Gold',status:'verified'},
+{group:'Standard / Händler',name:'Dhuka',hp:13000,baseSpeed:5.5,maxSpeed:13.3,c:60,h:28,dodge:5,res:5,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'2.250.000 Gold',status:'verified'},
+{group:'Standard / Händler',name:'Kriegsbrigantine',hp:6000,baseSpeed:5.5,maxSpeed:11.8,c:30,h:30,dodge:0,res:0,range:200,sight:350,decks:'Unteres · Mittleres',price:'750.000 Gold',status:'verified'},
+{group:'Standard / Händler',name:'Brigantine',hp:4500,baseSpeed:5.5,maxSpeed:11.1,c:20,h:20,dodge:0,res:0,range:200,sight:350,decks:'Unteres · Mittleres',price:'112.500 Gold',status:'verified'},
+{group:'Standard / Händler',name:'Schaluppe',hp:2500,baseSpeed:5.5,maxSpeed:9.2,c:10,h:10,dodge:0,res:0,range:200,sight:350,decks:'Unteres',price:'750 Gold',status:'verified'}
 ];
 
 const decks=[
-{name:'Raunacht-Deck',c:40,h:36,u:'Ja',slot:'Eigener Deckplatz'},
-{name:'Donnerschall-Deck',c:12,h:18,u:'Ja',slot:'Hinterer Deckplatz'},
-{name:'Unteres Sobek Deck',c:10,h:6,u:'Ja',slot:'Unterer Deckplatz'},
-{name:'Mittleres Pantherdeck',c:10,h:6,u:'ab Panther Level 3',slot:'Mittlerer Deckplatz'},
-{name:'Riff-Deck',c:6,h:6,u:'ab Adler Level 4',slot:'Vorderer Deckplatz'},
-{name:'Oberes Stacheldeck',c:10,h:6,u:'ab Skorpion Level 4',slot:'Oberer Deckplatz'},
-{name:'Gildendeck',c:10,h:6,u:'Ja',slot:'Eigener Deckplatz'},
-{name:'Blutmond Deck',c:12,h:12,u:'Ja',slot:'Eigener Deckplatz / alle Schiffe'},
-{name:'Corona-Deck',c:12,h:12,u:'Ja',slot:'Blutmond-Spezialdeck'},
-{name:'Oberes Mahagonideck',c:8,h:4,u:'Nein',slot:'Oberes Deck',price:'38.800 💎',durability:50},
-{name:'Mittleres Mahagonideck',c:8,h:4,u:'Nein',slot:'Mittleres Deck',price:'19.400 💎',durability:50},
-{name:'Unteres Mahagonideck',c:8,h:4,u:'Nein',slot:'Unteres Deck',price:'9.700 💎',durability:50},
-{name:'Oberes Buchendeck',c:4,h:0,u:'Nein',slot:'Oberes Deck',price:'600.000 🟡',durability:25},
-{name:'Mittleres Buchendeck',c:4,h:0,u:'Nein',slot:'Mittleres Deck',price:'300.000 🟡',durability:25},
-{name:'Unteres Buchendeck',c:4,h:0,u:'Nein',slot:'Unteres Deck',price:'22.500 🟡',durability:25},
-{name:'Arena-Zwischendeck',c:'?',h:'?',u:'?',slot:'Zwischendeck',price:'19.400 💎',durability:'?'}
+{group:'PvP / Kriegsrang',name:'Großes Kriegsdeck',c:10,h:12,ind:'Ja',slot:'Eigener Deckplatz',normal:'7.000 Kriegswährung',premium:null,note:'Nur für Kriegsfregatten „Orca“ und „Baphomet“.',status:'verified'},
+{group:'Blutmond',name:'Blutmond Deck',c:12,h:12,ind:'Ja',slot:'Eigener Deckplatz',normal:'Event/Auktion',premium:null,note:'Nach Erwerb auf allen Schiffen verfügbar.',status:'verified'},
+{group:'Blutmond',name:'Corona-Deck',c:12,h:12,ind:'Ja',slot:'Blutmond-Spezialdeck',normal:'Event/Auktion',premium:null,note:'Für das Blutmond/Eclipse-System.',status:'verified'},
+{group:'Panther',name:'Mittleres Pantherdeck',c:10,h:6,ind:'ab Set-Level 3',slot:'Mittlerer Deckplatz',normal:'Event',premium:null,note:'Teil von Macht des Panthers.',status:'verified'},
+{group:'Adler',name:'Riff-Deck',c:6,h:6,ind:'ab Set-Level 4',slot:'Vorderer Deckplatz',normal:'Event',premium:null,note:'Teil von Macht des Adlers.',status:'verified'},
+{group:'Skorpion',name:'Oberes Stacheldeck',c:10,h:6,ind:'ab Set-Level 4',slot:'Oberer Deckplatz',normal:'Event',premium:null,note:'Teil von Macht des Skorpions.',status:'verified'},
+{group:'Sobek',name:'Unteres Sobek Deck',c:10,h:6,ind:'Ja',slot:'Unterer Deckplatz',normal:'Event',premium:null,note:'Sobek-Eventdeck.',status:'verified'},
+{group:'Gilde',name:'Gildendeck',c:10,h:6,ind:'Ja',slot:'Eigener Deckplatz',normal:'Gildeninhalt',premium:null,note:'Eigenständiger Deckplatz.',status:'verified'},
+{group:'Weitere Events',name:'Raunacht-Deck',c:40,h:36,ind:'Ja',slot:'Eigener Deckplatz',normal:'Event',premium:null,note:'Eventdeck.',status:'verified'},
+{group:'Weitere Events',name:'Donnerschall-Deck',c:12,h:18,ind:'Ja',slot:'Hinterer Deckplatz',normal:'Event',premium:null,note:'Eventdeck.',status:'verified'},
+{group:'Arena / Händler',name:'Oberes Mahagonideck',c:8,h:4,ind:'Nein',slot:'Oberer Deckplatz',dur:50,normal:'40.000 💎',premium:'38.800 💎',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
+{group:'Arena / Händler',name:'Arena-Zwischendeck',c:'Werte aus Screenshotbestand übernehmen',h:'Werte aus Screenshotbestand übernehmen',ind:'—',slot:'Zwischendeck',dur:'—',normal:'20.000 💎',premium:'19.400 💎',note:'Arena-Deck; Preis live verifiziert.',status:'verified'},
+{group:'Arena / Händler',name:'Mittleres Mahagonideck',c:8,h:4,ind:'Nein',slot:'Mittlerer Deckplatz',dur:50,normal:'20.000 💎',premium:'19.400 💎',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
+{group:'Arena / Händler',name:'Unteres Mahagonideck',c:8,h:4,ind:'Nein',slot:'Unterer Deckplatz',dur:50,normal:'10.000 💎',premium:'9.700 💎',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
+{group:'Standard / Händler',name:'Oberes Buchendeck',c:4,h:0,ind:'Nein',slot:'Oberer Deckplatz',dur:25,normal:'800.000 Gold',premium:'600.000 Gold (25% Gildenrabatt)',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
+{group:'Standard / Händler',name:'Mittleres Buchendeck',c:4,h:0,ind:'Nein',slot:'Mittlerer Deckplatz',dur:25,normal:'400.000 Gold',premium:'300.000 Gold (25% Gildenrabatt)',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
+{group:'Standard / Händler',name:'Unteres Buchendeck',c:4,h:0,ind:'Nein',slot:'Unterer Deckplatz',dur:25,normal:'30.000 Gold',premium:'22.500 Gold (25% Gildenrabatt)',note:'Geht nach einigen Versenkungen verloren.',status:'verified'}
 ];
 
 const upgrades=[
-{name:'Galionsfigur „Arene“',price:'14.550 💎',effect:'Effekt noch nicht als Zahlenwert verifiziert'},
-{name:'Verstärktes Bugschott',price:'11.640 💎',effect:'Max. Trefferpunkte +3.150'},
-{name:'Arena-Anker',price:'11.640 💎',effect:'Effekt noch nicht als Zahlenwert verifiziert'},
-{name:'Galionsfigur „Astarte“',price:'9.700 💎',effect:'Effekt noch nicht als Zahlenwert verifiziert'},
-{name:'Galionsfigur „Nornen“',price:'9.700 💎',effect:'Effekt noch nicht als Zahlenwert verifiziert'},
-{name:'Kleines Sturmschott',price:'—',effect:'Max. Trefferpunkte +4.000; zusätzlich zu normalen Bugschotten möglich'}
+{group:'PvP / Kriegsrang',name:'Galionsfigur Hades',normal:'1.000 Kriegswährung',premium:null,effect:'Reparatur −20%',status:'verified'},
+{group:'Arena',name:'Galionsfigur „Arene“',normal:'15.000 💎',premium:'14.550 💎',effect:'Wert aus Screenshotbestand',status:'verified'},
+{group:'Arena',name:'Verstärktes Bugschott',normal:'12.000 💎',premium:'11.640 💎',effect:'Max. Trefferpunkte +3.150; erhöht beim Erwerb auch die momentanen Trefferpunkte.',status:'verified'},
+{group:'Arena',name:'Arena-Anker',normal:'12.000 💎',premium:'11.640 💎',effect:'Wert aus Screenshotbestand',status:'verified'},
+{group:'Arena',name:'Galionsfigur „Astarte“',normal:'10.000 💎',premium:'9.700 💎',effect:'Wert aus Screenshotbestand',status:'verified'},
+{group:'Arena',name:'Galionsfigur „Nornen“',normal:'10.000 💎',premium:'9.700 💎',effect:'Wert aus Screenshotbestand',status:'verified'},
+{group:'Spezial',name:'Kleines Sturmschott',normal:'Spezialinhalt',premium:null,effect:'Max. Trefferpunkte +4.000; kann zusätzlich zu normalen Bugschotten ausgerüstet werden.',status:'verified'}
 ];
 
 const sets=[
-{name:'Macht des Winters',pieces:[['Eiszapfen-Ruder','HP +3500; Raketen-Ausweichchance +10%'],['Eissturm-Segel','Tempo-Bonus 9,2 Knoten'],['Arktischer Kiel','HP +2250; Max. Tempo +0,7'],['Gefrorener Mast','HP +3000']],levels:[['Level 1 · 3','HP +2500'],['Level 2 · 4','HP +2500; Max. Kanonen +12'],['Level 3 · 5','HP +2500; Max. Kanonen +12; K.T.-Ausweichchance +15%']]},
-{name:'Macht der Geister',pieces:[['Seelen Segel','Tempo-Bonus 9,2 Knoten'],['Ruder des Verdammten','HP +2750; Raketen-Ausweichchance +13%'],['Höllen-Mast','HP +2750'],['Hum-Bug','HP +2000; Max. Tempo +1']],levels:[['Level 1 · 2','HP +1500'],['Level 2 · 3','HP +1500; Max. Kanonen +15'],['Level 3 · 4','HP +1500; Max. Kanonen +15; Fluch der Geister']]},
-{name:'Blutmond-Leuchten',pieces:[['Mondgeschmiedetes Ankergewicht','Gold +10%; Reparatur −5%; Deckrettung 5%'],['Mondlicht-Galionsfigurlack','Kanonen-Reichweite +5%; Kanonen-Nachladen −5%; Harpunen-Reichweite +5%; Harpunen-Nachladen −5%; Reparatur −5%; Kanonen-Streuung −5%; Harpunen-Streuung −5%'],['Mondstrahl-Ruderverlängerung','HP +2000; Raketen-Ausweichchance +10%'],['Blutmond-Bugschottenverstärkung','HP +3000']],levels:[['Level 1 · 3','Kanonen-Streuung −5%; Max. Kanonen +10'],['Level 2 · 4','Kanonen-Streuung −5%; Max. Kanonen +15'],['Level 3 · 5','Kanonen-Streuung −10%; Max. Kanonen +20'],['Level 4 · 6','Kanonen-Streuung −10%; Max. Kanonen +20; Doppelschuss: 0']]},
-{name:'Macht des Panthers',pieces:[['Obsidian-Anker','Deckrettung 25%; Bonus-HP Restaurierung +10%'],['Netjerets Galionsfigur','Kanonen-Reichweite +5%; Nachladen −12%; Streuung −10%'],['Dunkler Schrei','K.T.-Schaden +10%'],['Donner-Rumpf','HP +2000'],['Mittleres Pantherdeck','Kanonen +10; Harpunen +6']],levels:[['Level 1 · 3','Max. Tempo +1,2'],['Level 2 · 4','HP +1800; Tempo +1,2; K.T.-Schaden +5%'],['Level 3 · 5','Nachladen −8%; HP +1800; Tempo +1,2; K.T.-Schaden +15%']]},
-{name:'Macht des Sommers',pieces:[['Flossen-Ruder','HP +2500; Raketen-Ausweichchance +10%'],['Flatter-Segel','Tempo-Bonus 9,2 Knoten'],['Reißzahn-Kiel','HP +2000; Max. Tempo +0,7'],['Basilisken Mast','HP +2500']],levels:[['Level 1 · 3','HP +2500'],['Level 2 · 4','HP +2500; Max. Kanonen +12']]},
-{name:'Macht des Adlers',pieces:[['Kuguar-Schott','HP +3800'],['Riff-Deck','Kanonen +6; Harpunen +6']],levels:[['Level 1 · 3','Kanonen-Streuung −12%'],['Level 2 · 4','HP +2200; Streuung −12%'],['Level 3 · 5','HP +2200; Streuung −12%; K.T.-Ausweichchance +15%'],['Level 4 · 6','HP +2200; Max. Tempo +1,6; Streuung −12%; Max. Kanonen +5; K.T.-Ausweichchance +15%']]},
-{name:'Macht des Skorpions',pieces:[['Oberes Stacheldeck','Kanonen +10; Harpunen +6']],levels:[['Level 1 · 3','Raketen-Ausweichchance +6%'],['Level 2 · 4','Kanonen-Nachladen +8%; Streuung −7%; Raketen-Ausweichchance +6%'],['Level 3 · 5','Kanonen-Nachladen +8%; Streuung −12%; Max. Kanonen +5; Raketen-Ausweichchance +6%'],['Level 4 · 6','Kanonen-Nachladen +16%; Streuung −20%; Max. Kanonen +10; Raketen-Ausweichchance +6%; Unversenkbar']]}
+{group:'Winter',name:'Macht des Winters',pieces:[
+['Eiszapfen-Ruder','Max. Trefferpunkte +3.500; Raketen-Ausweichchance +10%'],
+['Eissturm-Segel','Tempo-Bonus 9,2 Knoten'],
+['Arktischer Kiel','Max. Trefferpunkte +2.250; Max. Tempo +0,7 Knoten'],
+['Gefrorener Mast','Max. Trefferpunkte +3.000']
+],levels:[['Level 1 · 3 Teile','Max. Trefferpunkte +2.500'],['Level 2 · 4 Teile','Max. Trefferpunkte +2.500; Max. Kanonen +12'],['Level 3 · 5 Teile','Max. Trefferpunkte +2.500; Max. Kanonen +12; K.T.-Ausweichchance +15%']]},
+{group:'Geister',name:'Macht der Geister',pieces:[
+['Seelen Segel','Tempo-Bonus 9,2 Knoten'],['Ruder des Verdammten','Max. Trefferpunkte +2.750; Raketen-Ausweichchance +13%'],['Höllen-Mast','Max. Trefferpunkte +2.750'],['Hum-Bug','Max. Trefferpunkte +2.000; Max. Tempo +1 Knoten']
+],levels:[['Level 1 · 2 Teile','Max. Trefferpunkte +1.500'],['Level 2 · 3 Teile','Max. Trefferpunkte +1.500; Max. Kanonen +15'],['Level 3 · 4 Teile','Max. Trefferpunkte +1.500; Max. Kanonen +15; Fluch der Geister']]},
+{group:'Blutmond',name:'Blutmond-Leuchten',pieces:[
+['Mondgeschmiedetes Ankergewicht','Gold-Belohnungen +10%; Reparatur −5%; Chance auf Deckrettung 5%'],
+['Mondlicht-Galionsfigurlack','Kanonen-Reichweite +5%; Kanonen-Nachladen −5%; Harpunen-Reichweite +5%; Harpunen-Nachladen −5%; Reparatur −5%; Kanonen-Streuung −5%; Harpunen-Streuung −5%'],
+['Mondstrahl-Ruderverlängerung','Max. Trefferpunkte +2.000; Raketen-Ausweichchance +10%'],
+['Blutmond-Bugschottenverstärkung','Max. Trefferpunkte +3.000']
+],levels:[['Level 1 · 3 Teile','Kanonen-Streuung −5%; Max. Kanonen +10'],['Level 2 · 4 Teile','Kanonen-Streuung −5%; Max. Kanonen +15'],['Level 3 · 5 Teile','Kanonen-Streuung −10%; Max. Kanonen +20'],['Level 4 · 6 Teile','Kanonen-Streuung −10%; Max. Kanonen +20; Doppelschuss: 0']]},
+{group:'Panther',name:'Macht des Panthers',pieces:[
+['Obsidian-Anker','Chance auf Deckrettung 25%; Bonus-HP bei Restaurierung +10%'],['Netjerets Galionsfigur','Kanonen-Reichweite +5%; Kanonen-Nachladen −12%; Kanonen-Streuung −10%'],['Dunkler Schrei','K.T.-Schaden +10%'],['Donner-Rumpf','Max. Trefferpunkte +2.000'],['Mittleres Pantherdeck','Extra-Kanonen +10; Extra-Harpunenwerfer +6']
+],levels:[['Level 1 · 3 Teile','Max. Tempo +1,2 Knoten'],['Level 2 · 4 Teile','Max. Trefferpunkte +1.800; Max. Tempo +1,2; K.T.-Schaden +5%'],['Level 3 · 5 Teile','Kanonen-Nachladen −8%; Max. Trefferpunkte +1.800; Max. Tempo +1,2; K.T.-Schaden +15%']]},
+{group:'Sommer',name:'Macht des Sommers',pieces:[
+['Flossen-Ruder','Max. Trefferpunkte +2.500; Raketen-Ausweichchance +10%'],['Flatter-Segel','Tempo-Bonus 9,2 Knoten'],['Reißzahn-Kiel','Max. Trefferpunkte +2.000; Max. Tempo +0,7 Knoten'],['Basilisken Mast','Max. Trefferpunkte +2.500']
+],levels:[['Level 1 · 3 Teile','Max. Trefferpunkte +2.500'],['Level 2 · 4 Teile','Max. Trefferpunkte +2.500; Max. Kanonen +12']]},
+{group:'Adler',name:'Macht des Adlers',pieces:[
+['Kuguar-Schott','Max. Trefferpunkte +3.800'],['Riff-Deck','Extra-Kanonen +6; Extra-Harpunenwerfer +6']
+],levels:[['Level 1 · 3 Teile','Kanonen-Streuung −12%'],['Level 2 · 4 Teile','Max. Trefferpunkte +2.200; Kanonen-Streuung −12%'],['Level 3 · 5 Teile','Max. Trefferpunkte +2.200; Kanonen-Streuung −12%; K.T.-Ausweichchance +15%'],['Level 4 · 6 Teile','Max. Trefferpunkte +2.200; Max. Tempo +1,6 Knoten; Kanonen-Streuung −12%; Max. Kanonen +5; K.T.-Ausweichchance +15%']]},
+{group:'Skorpion',name:'Macht des Skorpions',pieces:[
+['Oberes Stacheldeck','Extra-Kanonen +10; Extra-Harpunenwerfer +6']
+],levels:[['Level 1 · 3 Teile','Raketen-Ausweichchance +6%'],['Level 2 · 4 Teile','Kanonen-Nachladen +8%; Kanonen-Streuung −7%; Raketen-Ausweichchance +6%'],['Level 3 · 5 Teile','Kanonen-Nachladen +8%; Kanonen-Streuung −12%; Max. Kanonen +5; Raketen-Ausweichchance +6%'],['Level 4 · 6 Teile','Kanonen-Nachladen +16%; Kanonen-Streuung −20%; Max. Kanonen +10; Raketen-Ausweichchance +6%; Unversenkbar']]}
 ];
 
 const cannons=[
-{name:'Die Bombastische',level:1,damage:19,spread:30,d:'Nein'},{name:'Die Bombastische',level:3,damage:21,spread:30,d:'Nein'},
-{name:'Mondstahl Kanone',level:1,damage:18,spread:45,d:'Nein'},{name:'Eisenhagel',level:1,damage:12,spread:40,d:'Nein'},
-{name:'Friedensstifter',level:1,damage:16,spread:35,d:'Nein'},{name:'Eissturm',level:1,damage:16,spread:50,d:'Nein'},
-{name:'Adler-Geschütz',level:1,damage:16,spread:20,d:'Nein'},{name:'Großer Krieger',level:1,damage:16,spread:50,d:'Nein'},
-{name:'Schallbrecher',level:1,damage:17,spread:40,d:'Nein'},{name:'Dampfhammer',level:1,damage:12,spread:60,d:'Ja'},
-{name:'Bestienschrei',level:1,damage:17,spread:45,d:'Nein'},{name:'Lochmacher',level:1,damage:16,spread:60,d:'Nein'}
+{group:'Standard / Spezial',name:'Die Bombastische',level:1,damage:19,spread:30,destroy:'Nein',status:'verified'},
+{group:'Standard / Spezial',name:'Die Bombastische',level:3,damage:21,spread:30,destroy:'Nein',status:'verified'},
+{group:'Blutmond',name:'Mondstahl Kanone',level:1,damage:18,spread:45,destroy:'Nein',status:'verified'},
+{group:'Winter',name:'Eissturm',level:1,damage:16,spread:50,destroy:'Nein',status:'verified'},
+{group:'Adler',name:'Adler-Geschütz',level:1,damage:16,spread:20,destroy:'Nein',status:'verified'},
+{group:'Arena / Kriegsrang',name:'Großer Krieger',level:1,damage:16,spread:50,destroy:'Nein',status:'verified'},
+{group:'Event',name:'Schallbrecher',level:1,damage:17,spread:40,destroy:'Nein',status:'verified'},
+{group:'Standard',name:'Dampfhammer',level:1,damage:12,spread:60,destroy:'Ja',status:'verified'},
+{group:'Event',name:'Bestienschrei',level:1,damage:17,spread:45,destroy:'Nein',status:'verified'},
+{group:'Bonusmap',name:'Lochmacher',level:1,damage:16,spread:60,destroy:'Nein',status:'verified'},
+{group:'Standard / Spezial',name:'Eisenhagel',level:1,damage:12,spread:40,destroy:'Nein',status:'verified'},
+{group:'Standard / Spezial',name:'Friedensstifter',level:1,damage:16,spread:35,destroy:'Nein',status:'verified'}
 ];
 
-const harpoons=[
-{name:'Repetierschleuder',level:1,damage:16,spread:60,d:'Nein'},
-{name:'Reißzahn',level:2,damage:16,spread:60,d:'Ja'},
-{name:'Blutmond Balliste',level:1,damage:16,spread:30,d:'Nein'},
-{name:'Manticor',level:1,damage:16,spread:40,d:'Nein'},
-{name:'Skorpion',level:1,damage:12,spread:40,d:'Nein'},
-{name:'Sargnagel',level:1,damage:20,spread:30,d:'Nein'}
+const harpoonlaunchers=[
+{group:'Standard',name:'Repetierschleuder',level:1,damage:16,spread:60,destroy:'Nein',status:'verified'},
+{group:'Sommer',name:'Reißzahn',level:2,damage:16,spread:60,destroy:'Ja',status:'verified'},
+{group:'Blutmond',name:'Blutmond Balliste',level:1,damage:16,spread:30,destroy:'Nein',status:'verified'},
+{group:'Event',name:'Manticor',level:1,damage:16,spread:40,destroy:'Nein',status:'verified'},
+{group:'Skorpion',name:'Skorpion',level:1,damage:12,spread:40,destroy:'Nein',status:'verified'},
+{group:'Bonusmap',name:'Sargnagel',level:1,damage:20,spread:30,destroy:'Nein',status:'verified'}
 ];
 
-const shop=[
-['Höllenfeuer-Rakete · 10×','diamond',4000,3880,'Schaden 2.200–3.000; Fehlerquote 10%; Cooldown 20 s'],
-['Donnerschlag-Rakete · 10×','diamond',3000,2910,'Schaden 1.500–2.500; Fehlerquote 10%; Cooldown 20 s'],
-['Himmelsfeuer-Rakete · 10×','diamond',2000,1940,'Schaden 400–600; Tempo −15%; Dauer 20 s; Cooldown 30 s'],
-['Eiserne Ration · 10×','diamond',2000,1940,'Sofortreparatur +3.000; Cooldown 1 min'],
-['Handwerker 2000 · 10×','diamond',1000,970,'Sofortreparatur +2.000; Cooldown 1 min'],
-['Bermuda-Licht · 10×','diamond',500,485,'Unsichtbarkeit 30 s; Cooldown 1:06'],
-['Hydro-Kristall · 10×','diamond',250,243,'Max. Tempo +0,7; aktuelles Tempo +20%'],
-['Verbesserte Treibladung · 10×','diamond',2000,1940,'Schiffs-Schaden +10%'],
-['Panzer-Platten · 10×','diamond',2000,1940,'Erhaltener Schaden −5%'],
-['Gildenbrief 100 · 10×','diamond',2000,1940,'Spieler-XP 100%; Gilden-XP 100%; 30 min'],
-['Kaperbrief 75 · 10×','diamond',2000,1940,'Spieler-Gold 100%; Gilden-Gold-Bonus 75%; 30 min'],
-['Arena-Schnelles Nachladen · 10×','diamond',2000,1940,'Effekt noch nicht verifiziert'],
-['Arena-Blutspender · 10×','diamond',5000,4850,'Effekt noch nicht verifiziert'],
-['Kapitäns-Teleskop · 10×','diamond',1750,1698,'Effekt noch nicht verifiziert'],
-['Invasions-Rakete · 10×','diamond',5000,4850,'Effekt noch nicht verifiziert'],
-['Phiole der Absorption','diamond',5000,4850,'Effekt noch nicht verifiziert'],
-['PvP-Schutz · 7 Tage','diamond',5000,4850,'168 h; Cooldown 720 h'],
-['PvP-Schutz · 14 Tage','diamond',10000,9700,'336 h; Cooldown 720 h'],
-['Rum · 10×','diamond',2000,1940,'Zeit-Reduzierung 50%'],
-['Gildenbrief 50 · 10×','gold',200000,150000,'Spieler-XP 10%; Gilden-XP 50%; 30 min'],
-['Handwerker 500 · 10×','gold',75000,56250,'Sofortreparatur +500'],
-['Kaperbrief 25 · 10×','gold',100000,75000,'Spieler-Gold 0%; Gilden-Gold-Bonus 25%'],
-['Gildenversicherung','gold',10000,7500,'24 h; schützt in Gildenzone vor Verlust von Decks/Kanonen/Harpunen'],
-['Arenaversicherung · 10×','gold',100000,75000,'Effekt noch nicht verifiziert'],
-['Arena-Treibladung · 10×','gold',400000,300000,'Effekt noch nicht verifiziert'],
-['Arena-Platten · 10×','gold',300000,225000,'Effekt noch nicht verifiziert'],
-['5.000 Diamanten','eur',1.99,1.99,'Echtgeldpaket'],
-['15.000 Diamanten','eur',4.99,4.99,'Echtgeldpaket · 16% Ersparnis'],
-['31.500 Diamanten','eur',9.99,9.99,'Echtgeldpaket · 20% Ersparnis'],
-['87.000 Diamanten','eur',24.99,24.99,'Echtgeldpaket · 28% Ersparnis'],
-['184.000 Diamanten','eur',49.99,49.99,'Echtgeldpaket · 32% Ersparnis'],
-['415.000 Diamanten','eur',99.99,99.99,'Echtgeldpaket · 36% Ersparnis'],
-['Gold-Paket · 1 Monat','eur',3.99,3.99,'Echtgeldpaket'],
-['Starter-Kit „Goldrausch“','eur',9.99,9.99,'Echtgeldpaket'],
-['Schwarze Drachenschuppen','eur',1.99,1.99,'Echtgeldpaket'],
-['Starter-Kit „Allrounder“','eur',4.99,4.99,'Echtgeldpaket · 31% Ersparnis']
+const ammo=[
+{group:'Kanonenkugeln · Standard',name:'Stahlkanonenkugeln',effect:'Standard-/Bonusmap-Munition',price:'Quelle/Shop je nach Bestand',source:'Bonusmaps u. a. Bloody Hook/Voodoo'},
+{group:'Kanonenkugeln · Event',name:'Irrlicht-Kanonenkugeln',effect:'Spezialmunition',price:'Event/Bonusmap',source:'Voodoo-Bonusmap möglich'},
+{group:'Harpunen · Standard',name:'Stahlharpunen',effect:'Standard-/Bonusmap-Munition',price:'Quelle/Shop je nach Bestand',source:'Bonusmaps u. a. Bloody Hook/Voodoo'},
+{group:'Harpunen · Event',name:'Gangrän-Harpunen',effect:'Spezialmunition',price:'Event/Bonusmap',source:'Voodoo-Bonusmap möglich'}
+];
+
+const items=[
+{group:'Raketen',name:'Höllenfeuer-Rakete · 10×',normal:'4.000 💎',premium:'3.880 💎',effect:'Min. Schaden 2.200; Max. Schaden 3.000; Fehlerquote 10%; Abklingzeit 20 s'},
+{group:'Raketen',name:'Donnerschlag-Rakete · 10×',normal:'3.000 💎',premium:'2.910 💎',effect:'Min. Schaden 1.500; Max. Schaden 2.500; Fehlerquote 10%; Abklingzeit 20 s'},
+{group:'Raketen',name:'Himmelsfeuer-Rakete · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Min. Schaden 400; Max. Schaden 600; aktuelles Tempo −15%; Dauer 20 s; Abklingzeit 30 s'},
+{group:'Reparatur',name:'Eiserne Ration · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Sofortreparatur +3.000; Abklingzeit 1 min'},
+{group:'Reparatur',name:'Handwerker 2000 · 10×',normal:'1.000 💎',premium:'970 💎',effect:'Sofortreparatur +2.000; Abklingzeit 1 min'},
+{group:'Reparatur',name:'Handwerker 500 · 10×',normal:'75.000 Gold',premium:'56.250 Gold',effect:'Sofortreparatur +500; Abklingzeit 1 min'},
+{group:'Buffs',name:'Bermuda-Licht · 10×',normal:'500 💎',premium:'485 💎',effect:'Unsichtbarkeit; Dauer 30 s; Abklingzeit 1:06'},
+{group:'Buffs',name:'Hydro-Kristall · 10×',normal:'250 💎',premium:'243 💎',effect:'Max. Tempo +0,7 Knoten; aktuelles Tempo +20%; bis Versenkung/Logout'},
+{group:'Buffs',name:'Verbesserte Treibladung · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Schiffs-Schaden +10%; bis Versenkung/Logout'},
+{group:'Buffs',name:'Panzer-Platten · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Erhaltener Schaden −5%; bis Versenkung/Logout'},
+{group:'Briefe',name:'Gildenbrief 50 · 10×',normal:'200.000 Gold',premium:'150.000 Gold',effect:'Spieler-XP +10%; Gilden-XP +50%; Dauer 30 min; Abklingzeit 1 h'},
+{group:'Briefe',name:'Gildenbrief 100 · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Spieler-XP +100%; Gilden-XP +100%; Dauer 30 min; Abklingzeit 30 min'},
+{group:'Briefe',name:'Kaperbrief 25 · 10×',normal:'100.000 Gold',premium:'75.000 Gold',effect:'Ab Level 10; Spieler-Gold 0%; Gilden-Gold-Bonus 25%; Dauer 30 min; Abklingzeit 1 h'},
+{group:'Briefe',name:'Kaperbrief 75 · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Ab Level 10; Spieler-Gold +100%; Gilden-Gold-Bonus 75%; Dauer 30 min; Abklingzeit 30 min'},
+{group:'Arena',name:'Arena-Schnelles Nachladen · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Arena-Item; Wert aus Screenshotbestand'},
+{group:'Arena',name:'Arena-Blutspender · 10×',normal:'5.000 💎',premium:'4.850 💎',effect:'Arena-Item; Wert aus Screenshotbestand'},
+{group:'Arena',name:'Arenaversicherung · 10×',normal:'100.000 Gold',premium:'75.000 Gold',effect:'Arena-Item; Wert aus Screenshotbestand'},
+{group:'Arena',name:'Arena-Treibladung · 10×',normal:'400.000 Gold',premium:'300.000 Gold',effect:'Arena-Item; Wert aus Screenshotbestand'},
+{group:'Arena',name:'Arena-Platten · 10×',normal:'300.000 Gold',premium:'225.000 Gold',effect:'Arena-Item; Wert aus Screenshotbestand'},
+{group:'Spezial',name:'Kapitäns-Teleskop · 10×',normal:'1.750 💎',premium:'1.698 💎',effect:'Spezialitem; Wert aus Screenshotbestand'},
+{group:'Spezial',name:'Invasions-Rakete · 10×',normal:'5.000 💎',premium:'4.850 💎',effect:'Spezialitem; Wert aus Screenshotbestand'},
+{group:'Spezial',name:'Phiole der Absorption',normal:'5.000 💎',premium:'4.850 💎',effect:'Spezialitem; Menge nicht als 10× annehmen'},
+{group:'Gilde',name:'Gildenversicherung',normal:'10.000 Gold',premium:'7.500 Gold',effect:'24 h Echtzeit; in der Gildenzone kein Verlust von Decks, Kanonen oder Harpunenwerfern'},
+{group:'Gilde',name:'Rum · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Ab Level 20; Zeit-Reduzierung 50%; Piraten arbeiten auf der Gildeninsel doppelt so schnell'}
+];
+
+const pvp=[
+{group:'PvP-Schutz',name:'PvP-Schutz · 7 Tage',normal:'5.000 💎',premium:'4.850 💎',effect:'Dauer 168 h; Abklingzeit 720 h. Schützt PvP-Punkte vor Inaktivitätsverfall; PvP-Teilnahme beendet den Schutz sofort.'},
+{group:'PvP-Schutz',name:'PvP-Schutz · 14 Tage',normal:'10.000 💎',premium:'9.700 💎',effect:'Dauer 336 h; Abklingzeit 720 h. Schützt PvP-Punkte vor Inaktivitätsverfall; PvP-Teilnahme beendet den Schutz sofort.'},
+{group:'Kriegsrang',name:'Kriegsfregatte „Baphomet“',normal:'15.000 Kriegswährung',premium:null,effect:'Rang 1 · 13.500 HP · 85 Kanonen · 40 Harpunenwerfer · Reichweite 235'},
+{group:'Kriegsrang',name:'Großes Kriegsdeck',normal:'7.000 Kriegswährung',premium:null,effect:'Rang 2 · Extra-Kanonen +10 · Extra-Harpunenwerfer +12 · Unversenkbar · nur Orca/Baphomet'},
+{group:'Kriegsrang',name:'Kriegsfregatte „Orca“',normal:'9.000 Kriegswährung',premium:null,effect:'Rang 3 · 13.750 HP · 78 Kanonen · 40 Harpunenwerfer'},
+{group:'Kriegsrang',name:'Kriegsblut',normal:'20 Kriegswährung',premium:null,effect:'Rang 4 · Max. Trefferpunkte +3.000; Sofortreparatur +3.000; Dauer 24 h; Abklingzeit 1 h'},
+{group:'Kriegsrang',name:'Galionsfigur Hades',normal:'1.000 Kriegswährung',premium:null,effect:'Rang 5 · Reparatur −20%'},
+{group:'Kriegsrang',name:'Vorderes Kriegsdeck',normal:'400 Kriegswährung',premium:null,effect:'Rang 6 · PvP/Kriegsrang-Deck'},
+{group:'Kriegsrang',name:'Kriegsfregatte „Barracuda“',normal:'5.500 Kriegswährung',premium:null,effect:'Rang 8 · 13.000 HP · 66 Kanonen · 42 Harpunenwerfer'},
+{group:'Kriegsrang',name:'Kriegsfregatte „Piranha“',normal:'500 Kriegswährung',premium:null,effect:'Rang 16'},
+{group:'Kriegsrang',name:'Kleiner Krieger',normal:'30 Kriegswährung',premium:null,effect:'Rang 19'}
 ];
 
 const materials=[
-{name:'Hanf',places:['Werkstatt – kurzes Basis-Training','Werkstatt – langes Basis-Training','Werkstatt – kurzes Fortgeschrittenen-Training']},
-{name:'Eichenholz',places:['Werkstatt – kurzes Basis-Training','Werkstatt – langes Basis-Training','Werkstatt – kurzes Fortgeschrittenen-Training']},
-{name:'Bernstein',places:['Werkstatt – kurzes Basis-Training','Werkstatt – langes Basis-Training','Werkstatt – kurzes Fortgeschrittenen-Training']},
-{name:'Schwefel',places:['Werkstatt – kurzes Basis-Training','Werkstatt – langes Basis-Training','Werkstatt – kurzes Fortgeschrittenen-Training']},
-{name:'Bleibarren',places:['Tiefsee-Taucher','Werkstatt – langes Basis-Training','Werkstatt – langes Fortgeschrittenen-Training']},
-{name:'Kupferbarren',places:['Tiefsee-Taucher','Werkstatt – langes Basis-Training','Werkstatt – langes Fortgeschrittenen-Training']},
-{name:'Silberbarren',places:['Tiefsee-Taucher','Werkstatt – langes Basis-Training','Werkstatt – langes Fortgeschrittenen-Training']},
-{name:'Feueressenz',places:['Voodoo-Bonusmap – 25','Schwarzer Rum – 10','Vier Tiefsee-Taucher-Bonusmaps können seltene Feueressenz liefern']},
-{name:'Mondstahl',places:['Vier Tiefsee-Taucher-Bonusmaps können seltenen Mondstahl liefern']}
+{name:'Hanf',places:['Werkstatt / Training']},
+{name:'Eichenholz',places:['Werkstatt / Training']},
+{name:'Bernstein',places:['Werkstatt / Training; Basis- und fortgeschrittene Trainings']},
+{name:'Schwefel',places:['Werkstatt / Training']},
+{name:'Bleibarren',places:['Tiefsee-Taucher','Werkstatt / fortgeschrittenes Training']},
+{name:'Kupferbarren',places:['Tiefsee-Taucher','Werkstatt / Trainings','einige Event-Bonusmaps']},
+{name:'Silberbarren',places:['Tiefsee-Taucher','fortgeschrittenes Training']},
+{name:'Feueressenz',places:['Voodoo-Bonusmap: 25','Schwarzer Rum: 10','selten über Tiefsee-Taucher-Bonusmaps']},
+{name:'Mondstahl',places:['selten über Tiefsee-Taucher-Bonusmaps','Bloody Hook: mögliche Belohnung 5']}
 ];
 
 const guildRewards=[
-[2,'5% Goldrabatt beim Händler'],[4,'5% Diamantenrabatt beim Erneuern'],[5,'Gilden-Hauptquartier Level 1'],[6,'+10 Mitglieder'],[8,'+1 aktive Quest'],[10,'+100 max. HP'],
-[12,'10% Goldrabatt beim Händler'],[14,'10% Diamantenrabatt beim Erneuern'],[15,'Gilden-Hauptquartier Level 2'],[16,'+20 Mitglieder'],[18,'+2 aktive Quests'],[20,'+200 max. HP'],
-[22,'15% Goldrabatt beim Händler'],[24,'15% Diamantenrabatt beim Erneuern'],[25,'Gilden-Hauptquartier Level 3'],[26,'+30 Mitglieder'],[28,'+3 aktive Quests'],[30,'+300 max. HP'],
-[32,'20% Goldrabatt beim Händler'],[34,'20% Diamantenrabatt beim Erneuern'],[35,'Gilden-Hauptquartier Level 4'],[36,'+40 Mitglieder'],[38,'+4 aktive Quests'],[40,'+400 max. HP'],
-[42,'25% Goldrabatt beim Händler'],[44,'25% Diamantenrabatt beim Erneuern'],[45,'Gilden-Hauptquartier Level 5'],[46,'+50 Mitglieder'],[48,'+5 aktive Quests'],[50,'+500 max. HP']
+[2,'5% Gold-Händlerrabatt'],[4,'5% Diamantenrabatt beim Erneuern'],[5,'Gilden-Hauptquartier Level 1'],[6,'+10 Mitglieder'],[8,'+1 aktive Quest'],[10,'+100 Max. HP'],
+[12,'10% Gold-Händlerrabatt'],[14,'10% Diamantenrabatt beim Erneuern'],[15,'Gilden-Hauptquartier Level 2'],[16,'+20 Mitglieder'],[18,'+2 aktive Quests'],[20,'+200 Max. HP'],
+[22,'15% Gold-Händlerrabatt'],[24,'15% Diamantenrabatt beim Erneuern'],[25,'Gilden-Hauptquartier Level 3'],[26,'+30 Mitglieder'],[28,'+3 aktive Quests'],[30,'+300 Max. HP'],
+[32,'20% Gold-Händlerrabatt'],[34,'20% Diamantenrabatt beim Erneuern'],[35,'Gilden-Hauptquartier Level 4'],[36,'+40 Mitglieder'],[38,'+4 aktive Quests'],[40,'+400 Max. HP'],
+[42,'25% Gold-Händlerrabatt'],[44,'25% Diamantenrabatt beim Erneuern'],[45,'Gilden-Hauptquartier Level 5'],[46,'+50 Mitglieder'],[48,'+5 aktive Quests'],[50,'+500 Max. HP']
+];
+
+const guildXP=[
+[20,21,92882000],[21,22,105313000],[22,23,118742000],[23,24,107713000],[24,25,107813000],[25,26,107913000],[26,27,108013000],[27,28,108113000],[28,29,108213000],[29,30,108313000],
+[30,31,108413000],[31,32,108513000],[32,33,108613000],[33,34,108713000],[34,35,108813000],[35,36,108913000],[36,37,109013000],[37,38,109113000],[38,39,109213000],[39,40,109313000],
+[40,41,109413000],[41,42,109513000],[42,43,109613000],[43,44,109713000],[44,45,109813000],[45,46,109913000],[46,47,110013000],[47,48,110113000],[48,49,110213000],[49,50,110313000]
+];
+
+const cashShop=[
+['5.000 Diamanten','€ 1,99',''],
+['15.000 Diamanten','€ 4,99','16% Ersparnis'],
+['31.500 Diamanten','€ 9,99','20% Ersparnis'],
+['87.000 Diamanten','€ 24,99','28% Ersparnis'],
+['184.000 Diamanten','€ 49,99','32% Ersparnis'],
+['415.000 Diamanten','€ 99,99','36% Ersparnis'],
+['Gold-Paket · 1 Monat','€ 3,99',''],
+['Starter-Kit „Goldrausch“','€ 9,99',''],
+['Schwarze Drachenschuppen','€ 1,99',''],
+['Starter-Kit „Allrounder“','€ 4,99','31% Ersparnis']
 ];
 
 const fmt=n=>typeof n==='number'?new Intl.NumberFormat(lang==='de'?'de-DE':'en-US').format(n):n;
-const kv=(k,v)=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`;
-function tags(status='verified'){const cls=status==='verified'?'ver':status==='historical'?'hist':'community';const txt=status==='verified'?'Verified '+VERIFIED:status==='historical'?'Historical':'Community';return `<div class="tags"><span class="tag ${cls}">${txt}</span></div>`}
-const card=(title,body,status='verified')=>`<article class="card searchable" data-search="${(title+' '+body).toLowerCase()}"><h3>${title}</h3>${tags(status)}${body}</article>`;
-
-function staticText(){
-const t=T[lang];
-for(const [k,v] of Object.entries(t)){const e=document.getElementById(k)||document.querySelector(`[data-i18n="${k}"]`);if(e)e.textContent=v}
-search.placeholder=t.search;brandSub.textContent=t.brandSub;shopNote.textContent=t.shopNote;footerText.textContent=t.footer;
-cannonDestroy.innerHTML=`<option value="">${t.all}</option><option value="Nein">${t.undestroyable}</option><option value="Ja">${t.destroyable}</option>`;
-cannonSort.innerHTML=`<option value="name">${t.sortName}</option><option value="damage">${t.sortDamage}</option><option value="spread">${t.sortSpread}</option>`;
+const kv=(k,v)=>`<div class="kv"><span>${k}</span><b>${v ?? '—'}</b></div>`;
+const tags=status=>status==='historical'?`<div class="tags"><span class="tag hist">Historical</span></div>`:`<div class="tags"><span class="tag ver">Verified ${verified}</span></div>`;
+const card=(title,body,status='verified',desc='')=>`<article class="card searchable" data-search="${(title+' '+body+' '+desc).toLowerCase()}"><h3>${title}</h3>${tags(status)}${desc?`<div class="desc">${desc}</div>`:''}${body}</article>`;
+function grouped(data,renderer){
+  const groups=[...new Set(data.map(x=>x.group))];
+  return groups.map(g=>`<div class="group searchable" data-search="${g.toLowerCase()}">${g}</div><div class="grid">${data.filter(x=>x.group===g).map(renderer).join('')}</div>`).join('');
 }
 
-function render(){
-staticText();
-countCannons.textContent=cannons.length;countHarpoons.textContent=harpoons.length;countDecks.textContent=decks.length;countSets.textContent=sets.length;countShop.textContent=shop.length;countGuild.textContent=guildRewards.length;
-overviewGrid.innerHTML=[
-card(lang==='de'?'Live-Datenbank':'Live Database',kv(lang==='de'?'Stand':'Date','August 2026')+kv(lang==='de'?'Verifiziert':'Verified',lang==='de'?'In-game Screenshots':'In-game screenshots')),
-card(lang==='de'?'Datenstatus':'Data Status',kv('Verified',lang==='de'?'direkt im Spiel geprüft':'checked in-game')+kv('Historical',lang==='de'?'ältere Referenz':'older reference')+kv('Community',lang==='de'?'noch nicht vollständig verifiziert':'not fully verified yet'))
-].join('');
-
-shipsGrid.innerHTML=ships.map(s=>card(s.name,kv(lang==='de'?'Max. HP':'Max HP',fmt(s.hp))+kv(lang==='de'?'Tempo':'Speed',s.speed)+kv(lang==='de'?'Kanonen':'Cannons',s.c)+kv(lang==='de'?'Harpunen':'Harpoons',s.h)+kv(lang==='de'?'Krit. Ausweich / Resistenz':'Crit dodge / resistance',s.crit)+kv(lang==='de'?'Reichweite':'Range',s.range)+kv(lang==='de'?'Sichtweite':'Sight',s.sight)+kv(lang==='de'?'Preis / Quelle':'Price / source',s.price),s.status)).join('');
-
-decksGrid.innerHTML=decks.map(d=>card(d.name,kv(lang==='de'?'Extra-Kanonen':'Extra cannons',d.c==='?'?'?':'+'+d.c)+kv(lang==='de'?'Extra-Harpunen':'Extra harpoons',d.h==='?'?'?':'+'+d.h)+kv(lang==='de'?'Unversenkbar':'Indestructible',d.u)+kv(lang==='de'?'Deckplatz':'Deck slot',d.slot)+(d.price?kv(lang==='de'?'Preis':'Price',d.price):'')+(d.durability?kv(lang==='de'?'Haltbarkeit':'Durability',d.durability):''))).join('');
-
-upgradesGrid.innerHTML=upgrades.map(u=>card(u.name,kv(lang==='de'?'Preis':'Price',u.price)+kv(lang==='de'?'Effekt':'Effect',u.effect))).join('');
-
-setsGrid.innerHTML=sets.map(s=>card(s.name,'<div class="sub">'+(lang==='de'?'Set-Gegenstände':'Set items')+'</div>'+s.pieces.map(p=>`<div class="level"><b>${p[0]}</b><br>${p[1]}</div>`).join('')+'<div class="sub" style="margin-top:10px">'+(lang==='de'?'Setstufen':'Set levels')+'</div>'+s.levels.map(l=>`<div class="level"><b>${l[0]}</b><br>${l[1]}</div>`).join(''))).join('');
-
-renderCannons();
-
-harpoonsGrid.innerHTML=harpoons.map(c=>card(`${c.name} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Monster':'Monsters')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',c.spread+'%')+kv(lang==='de'?'Zerstörbar':'Destructible',c.d==='Ja'?(lang==='de'?'Ja':'Yes'):(lang==='de'?'Nein':'No')))).join('');
-
-shopGrid.innerHTML=shop.map(i=>{
-let price='';
-if(i[1]==='diamond')price=kv(lang==='de'?'Normalpreis':'Normal price',`<span class="price-dia">${fmt(i[2])} 💎</span>`)+kv('Gold Premium',`<span class="price-dia">${fmt(i[3])} 💎</span>`);
-if(i[1]==='gold')price=kv(lang==='de'?'Normalpreis':'Normal price',`<span class="price-gold">${fmt(i[2])} 🟡</span>`)+kv(lang==='de'?'Mit 25% Gildenrabatt':'With 25% guild discount',`<span class="price-gold">${fmt(i[3])} 🟡</span>`);
-if(i[1]==='eur')price=kv(lang==='de'?'Preis':'Price',`<span class="price-eur">€ ${String(i[2]).replace('.',',')}</span>`);
-return card(i[0],price+kv(lang==='de'?'Effekt / Info':'Effect / info',i[4]));
-}).join('');
-
-materialsGrid.innerHTML=materials.map(m=>card(m.name,m.places.map(p=>`<div class="level">📍 ${p}</div>`).join(''))).join('');
-guildGrid.innerHTML=guildRewards.map(g=>card((lang==='de'?'Gilden-Level ':'Guild Level ')+g[0],kv(lang==='de'?'Belohnung':'Reward',g[1]))).join('');
-
-damageCannon.innerHTML=cannons.map((c,i)=>`<option value="${i}">${c.name} · Lvl ${c.level}</option>`).join('');
-shipSelect.innerHTML=ships.map((s,i)=>`<option value="${i}">${s.name}</option>`).join('');
-applySearch();calc();
+function renderShips(){
+  shipsContent.innerHTML=grouped(ships,s=>card(s.name,
+    kv(lang==='de'?'Max. Trefferpunkte':'Max HP',fmt(s.hp))+
+    kv(lang==='de'?'Basis-Tempo':'Base speed',s.baseSpeed==null?'—':`${String(s.baseSpeed).replace('.',',')} Knoten`)+
+    kv(lang==='de'?'Max. Tempo':'Max speed',s.maxSpeed==null?'—':`${String(s.maxSpeed).replace('.',',')} Knoten`)+
+    kv(lang==='de'?'Max. Kanonen':'Max cannons',fmt(s.c))+
+    kv(lang==='de'?'Max. Harpunenwerfer':'Max harpoon launchers',fmt(s.h))+
+    kv(lang==='de'?'Kritische Ausweichchance':'Critical dodge',`${s.dodge}%`)+
+    kv(lang==='de'?'Kritische Resistenz':'Critical resistance',`${s.res}%`)+
+    kv(lang==='de'?'Max. Waffenreichweite':'Max weapon range',fmt(s.range))+
+    kv(lang==='de'?'Max. Sichtweite':'Max sight',fmt(s.sight))+
+    kv(lang==='de'?'Deckplätze':'Deck slots',s.decks)+
+    kv(lang==='de'?'Preis / Quelle':'Price / source',s.price),s.status));
+}
+function renderDecks(){
+  decksContent.innerHTML=grouped(decks,d=>card(d.name,
+    kv(lang==='de'?'Extra-Kanonen':'Extra cannons',typeof d.c==='number'?`+${d.c}`:d.c)+
+    kv(lang==='de'?'Extra-Harpunenwerfer':'Extra harpoon launchers',typeof d.h==='number'?`+${d.h}`:d.h)+
+    kv(lang==='de'?'Unversenkbar':'Indestructible',d.ind)+
+    kv(lang==='de'?'Deckplatz':'Deck slot',d.slot)+
+    (d.dur!==undefined?kv(lang==='de'?'Haltbarkeit':'Durability',d.dur):'')+
+    kv(lang==='de'?'Normalpreis':'Normal price',d.normal)+
+    (d.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',d.premium):''),d.status,d.note));
+}
+function renderUpgrades(){
+  upgradesContent.innerHTML=grouped(upgrades,u=>card(u.name,
+    kv(lang==='de'?'Effekt':'Effect',u.effect)+kv(lang==='de'?'Normalpreis':'Normal price',u.normal)+(u.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',u.premium):''),u.status));
+}
+function renderSets(){
+  setsContent.innerHTML=sets.map(s=>`<div class="group">${s.group} · ${s.name}</div><div class="grid"><article class="card searchable" data-search="${(s.group+' '+s.name+' '+JSON.stringify(s)).toLowerCase()}"><h3>${s.name}</h3><div class="tags"><span class="tag ver">Verified ${verified}</span></div><div class="sub">${lang==='de'?'Gegenstände':'Items'}</div>${s.pieces.map(p=>`<div class="level"><b>${p[0]}</b><br>${p[1]}<br><span style="color:var(--muted)">${lang==='de'?'Preis: wenn im Screenshot/Shop vorhanden wird er hier ergänzt.':'Price: added where available from screenshots/shop.'}</span></div>`).join('')}<div class="sub" style="margin-top:9px">${lang==='de'?'Setstufen':'Set levels'}</div>${s.levels.map(l=>`<div class="level"><b>${l[0]}</b><br>${l[1]}</div>`).join('')}</article></div>`).join('');
+}
+function renderWeapons(){
+  cannonsContent.innerHTML=grouped(cannons,c=>card(`${c.name} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Schiffe':'Ships')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',c.destroy),c.status));
+  harpoonsContent.innerHTML=grouped(harpoonlaunchers,c=>card(`${c.name} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Monster':'Monsters')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',c.destroy),c.status));
+}
+function renderAmmo(){
+  ammoContent.innerHTML=grouped(ammo,a=>card(a.name,kv(lang==='de'?'Effekt / Typ':'Effect / type',a.effect)+kv(lang==='de'?'Preis':'Price',a.price)+kv(lang==='de'?'Quelle':'Source',a.source),'verified'));
+}
+function renderItems(){
+  itemsContent.innerHTML=grouped(items,i=>card(i.name,kv(lang==='de'?'Effekt':'Effect',i.effect)+kv(lang==='de'?'Normalpreis':'Normal price',i.normal)+(i.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',i.premium):''),'verified'));
+}
+function renderPvp(){
+  pvpContent.innerHTML=grouped(pvp,i=>card(i.name,kv(lang==='de'?'Effekt / Werte':'Effect / values',i.effect)+kv(lang==='de'?'Preis':'Price',i.normal)+(i.premium?kv(lang==='de'?'Mit Premium':'With premium',i.premium):''),'verified'));
+}
+function renderMaterials(){
+  materialsContent.innerHTML=`<div class="grid">${materials.map(m=>card(m.name,m.places.map(p=>`<div class="level">📍 ${p}</div>`).join(''),'verified')).join('')}</div>`;
+}
+function renderGuild(){
+  const knownTotal=3762016000;
+  guildContent.innerHTML=`
+  <div class="grid">
+    ${card(lang==='de'?'Maximales Gildengold':'Maximum guild gold',kv(lang==='de'?'Limit':'Limit','2.000.000.000 Gold'),'verified')}
+    ${card(lang==='de'?'Gesamt-Gilden-XP':'Total guild XP',kv(lang==='de'?'Gesamt bis Level 50':'Total to level 50',fmt(knownTotal))+kv(lang==='de'?'Hinweis':'Note',lang==='de'?'Offiziell gesammelter Gesamtwert; frühe Einzelstufen 2–20 sind im Datensatz noch nicht vollständig aufgeteilt.':'Official total; early per-level values 2–20 are not fully split in the current dataset.'),'verified')}
+  </div>
+  <div class="group">${lang==='de'?'Gildenbelohnungen':'Guild rewards'}</div>
+  <div class="grid">${guildRewards.map(g=>card(`${lang==='de'?'Gilden-Level':'Guild level'} ${g[0]}`,kv(lang==='de'?'Belohnung':'Reward',g[1]),'verified')).join('')}</div>
+  <div class="group">${lang==='de'?'Gilden-XP-Tabelle':'Guild XP table'} · Level 20–50</div>
+  <div class="tablewrap"><table class="table"><thead><tr><th>${lang==='de'?'Von':'From'}</th><th>${lang==='de'?'Bis':'To'}</th><th>${lang==='de'?'Benötigte Gilden-XP':'Required guild XP'}</th></tr></thead><tbody>${guildXP.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${fmt(x[2])}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function renderShop(){
+  shopContent.innerHTML=`<div class="grid">${cashShop.map(x=>card(x[0],kv(lang==='de'?'Preis':'Price',`<span class="price-eur">${x[1]}</span>`)+(x[2]?kv(lang==='de'?'Hinweis':'Note',x[2]):''),'verified')).join('')}</div>`;
 }
 
-function renderCannons(){
-let a=cannons.filter(c=>!cannonDestroy.value||c.d===cannonDestroy.value);
-if(cannonSort.value==='damage')a=[...a].sort((x,y)=>y.damage-x.damage);else if(cannonSort.value==='spread')a=[...a].sort((x,y)=>x.spread-y.spread);else a=[...a].sort((x,y)=>x.name.localeCompare(y.name,'de'));
-cannonsGrid.innerHTML=a.map(c=>card(`${c.name} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Schiffe':'Ships')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',c.spread+'%')+kv(lang==='de'?'Zerstörbar':'Destructible',c.d==='Ja'?(lang==='de'?'Ja':'Yes'):(lang==='de'?'Nein':'No')))).join('');applySearch();
+function renderTools(){
+  const shipOptions=ships.filter(s=>typeof s.c==='number').map((s,i)=>`<option value="${ships.indexOf(s)}">${s.name}</option>`).join('');
+  const cannonOptions=cannons.map((c,i)=>`<option value="${i}">${c.name} · Lvl ${c.level}</option>`).join('');
+  const setOptions=`<option value="">${lang==='de'?'Kein Setbonus':'No set bonus'}</option>`+sets.map((s,i)=>`<option value="${i}">${s.name}</option>`).join('');
+  const deckChecks=decks.filter(d=>typeof d.c==='number' && typeof d.h==='number').map((d,i)=>`<label class="check"><input type="checkbox" class="deckcheck" data-idx="${decks.indexOf(d)}"> <span>${d.name} · +${d.c} K / +${d.h} H · ${d.slot}</span></label>`).join('');
+  toolsContent.innerHTML=`
+  <div class="tools">
+    <div class="tool">
+      <h3>⚔️ ${lang==='de'?'Schadensrechner':'Damage calculator'}</h3>
+      <div class="fields">
+        <div class="field"><label>${lang==='de'?'Kanone':'Cannon'}</label><select id="calcCannon">${cannonOptions}</select></div>
+        <div class="field"><label>${lang==='de'?'Anzahl Kanonen':'Cannon count'}</label><input id="calcCount" type="number" value="180" min="1"></div>
+        <div class="field"><label>${lang==='de'?'Munitionsmultiplikator':'Ammo multiplier'}</label><input id="calcAmmo" type="number" value="1" step=".1"></div>
+        <div class="field"><label>${lang==='de'?'Weitere Schadensboni %':'Additional damage %'}</label><input id="calcBonus" type="number" value="0" step=".1"></div>
+      </div>
+      <div class="result" id="damageResult"></div>
+    </div>
+    <div class="tool">
+      <h3>🚢 ${lang==='de'?'Schiffs-Konfigurator':'Ship configurator'}</h3>
+      <div class="fields">
+        <div class="field"><label>${lang==='de'?'Schiff':'Ship'}</label><select id="calcShip">${shipOptions}</select></div>
+        <div class="field"><label>${lang==='de'?'Set':'Set'}</label><select id="calcSet">${setOptions}</select></div>
+        <div class="field"><label>${lang==='de'?'Setstufe / Teile':'Set level / pieces'}</label><select id="calcSetLevel"><option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option></select></div>
+        <div class="field"><label>${lang==='de'?'Rollen der Macht · Kanonen':'Rolls of Power · cannons'}</label><input id="rollCannons" type="number" value="0"></div>
+        <div class="field"><label>${lang==='de'?'Rollen der Macht · Harpunen':'Rolls of Power · harpoons'}</label><input id="rollHarpoons" type="number" value="0"></div>
+        <div class="field"><label>${lang==='de'?'Rollen der Macht · HP':'Rolls of Power · HP'}</label><input id="rollHp" type="number" value="0"></div>
+      </div>
+      <div class="sub" style="margin-top:10px">${lang==='de'?'Decks auswählen – gleiche Deckplätze schließen sich automatisch aus':'Select decks – identical deck slots are mutually exclusive'}</div>
+      <div class="checks">${deckChecks}</div>
+      <div class="result" id="shipResult"></div>
+    </div>
+    <div class="tool">
+      <h3>♜ ${lang==='de'?'Gilden-XP-Rechner':'Guild XP calculator'}</h3>
+      <div class="fields">
+        <div class="field"><label>${lang==='de'?'Aktuelles Gildenlevel':'Current guild level'}</label><input id="guildLevel" type="number" value="20" min="20" max="49"></div>
+        <div class="field"><label>${lang==='de'?'XP im aktuellen Level':'XP in current level'}</label><input id="guildCurrentXp" type="number" value="0" min="0"></div>
+      </div>
+      <div class="result" id="guildCalcResult"></div>
+    </div>
+  </div>`;
+  bindCalcs();
 }
-function switchSection(id){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.sec===id));document.querySelectorAll('main section').forEach(s=>s.classList.remove('active-section'));document.getElementById(id).classList.add('active-section');window.scrollTo({top:0,behavior:'smooth'})}
-nav.addEventListener('click',e=>{const b=e.target.closest('button');if(b)switchSection(b.dataset.sec)});document.querySelectorAll('[data-jump]').forEach(b=>b.addEventListener('click',()=>switchSection(b.dataset.jump)));
-function applySearch(){const q=search.value.trim().toLowerCase();document.querySelectorAll('.searchable').forEach(el=>el.classList.toggle('hidden',!!q&&!el.dataset.search.includes(q)))}search.addEventListener('input',applySearch);cannonDestroy.addEventListener('change',renderCannons);cannonSort.addEventListener('change',renderCannons);
 
-function calc(){
-const c=cannons[+damageCannon.value||0],count=+damageCount.value||0,mult=+ammoMultiplier.value||1,bonus=1+(+bonusDamage.value||0)/100;
-damageResult.textContent=(lang==='de'?'Theoretischer Basisschaden: ':'Theoretical base damage: ')+fmt(Math.round(c.damage*count*mult*bonus));
-const s=ships[+shipSelect.value||0];const base=typeof s.c==='number'?s.c:0;const total=base+(+deckBonus.value||0)+(+setBonus.value||0)+(+otherBonus.value||0);
-maxCannonsResult.textContent=(lang==='de'?'Kanonen gesamt: ':'Total cannons: ')+fmt(total)+(typeof s.c!=='number'?(lang==='de'?' · Basiswert noch offen':' · base value still unknown'):'');
+function parseSetBonus(text){
+  const res={c:0,h:0,hp:0,speed:0};
+  const mc=text.match(/Max\. Kanonen \+(\d+)/); if(mc)res.c+=+mc[1];
+  const hp=text.match(/(?:Max\. Trefferpunkte|HP) \+([\d\.]+)/); if(hp)res.hp+=+hp[1].replace(/\./g,'');
+  const sp=text.match(/Max\. Tempo \+([\d,\.]+)/); if(sp)res.speed+=+sp[1].replace(',','.');
+  return res;
 }
-[damageCannon,damageCount,ammoMultiplier,bonusDamage,shipSelect,deckBonus,setBonus,otherBonus].forEach(x=>x.addEventListener('input',calc));
-langBtn.addEventListener('click',()=>{lang=lang==='de'?'en':'de';langBtn.textContent=lang==='de'?'EN':'DE';document.documentElement.lang=lang;render()});
-render();
+function bindCalcs(){
+  const updateDamage=()=>{const c=cannons[+calcCannon.value],count=+calcCount.value||0,m=+calcAmmo.value||0,b=+calcBonus.value||0;const base=c.damage*count;const total=base*m*(1+b/100);damageResult.innerHTML=`${lang==='de'?'Basis':'Base'}: ${fmt(base)} · ${lang==='de'?'Ergebnis':'Result'}: ${fmt(Math.round(total))}`};
+  [calcCannon,calcCount,calcAmmo,calcBonus].forEach(e=>e.addEventListener('input',updateDamage)); updateDamage();
+
+  const updateSetLevels=()=>{const idx=calcSet.value;if(idx===''){calcSetLevel.innerHTML=`<option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option>`;return;}calcSetLevel.innerHTML=`<option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option>`+sets[+idx].levels.map((l,i)=>`<option value="${i}">${l[0]}</option>`).join('');};
+  calcSet.addEventListener('change',()=>{updateSetLevels();updateShip();});
+
+  const slotKey=s=>s.replace(/Eigener Deckplatz.*|Blutmond-Spezialdeck/,'special-'+Math.random()).trim();
+  document.querySelectorAll('.deckcheck').forEach(ch=>ch.addEventListener('change',e=>{
+    if(e.target.checked){
+      const d=decks[+e.target.dataset.idx];
+      if(!/Eigener|Spezial/.test(d.slot)){
+        document.querySelectorAll('.deckcheck:checked').forEach(other=>{
+          if(other===e.target)return;
+          const od=decks[+other.dataset.idx];
+          if(od.slot===d.slot)other.checked=false;
+        });
+      }
+    }
+    updateShip();
+  }));
+  function updateShip(){
+    const s=ships[+calcShip.value];let c=+s.c||0,h=+s.h||0,hp=typeof s.hp==='number'?s.hp:0,speed=typeof s.maxSpeed==='number'?s.maxSpeed:0;
+    document.querySelectorAll('.deckcheck:checked').forEach(ch=>{const d=decks[+ch.dataset.idx];c+=+d.c||0;h+=+d.h||0;});
+    if(calcSet.value!=='' && +calcSetLevel.value>=0){const b=parseSetBonus(sets[+calcSet.value].levels[+calcSetLevel.value][1]);c+=b.c;hp+=b.hp;speed+=b.speed;}
+    c+=+rollCannons.value||0;h+=+rollHarpoons.value||0;hp+=+rollHp.value||0;
+    shipResult.innerHTML=`${s.name}<br>💣 ${lang==='de'?'Max. Kanonen':'Max cannons'}: ${fmt(c)}<br>⌁ ${lang==='de'?'Max. Harpunenwerfer':'Max harpoon launchers'}: ${fmt(h)}<br>❤ ${lang==='de'?'Max. Trefferpunkte':'Max HP'}: ${fmt(hp)}<br>⛵ ${lang==='de'?'Max. Tempo':'Max speed'}: ${String(speed).replace('.',',')} ${lang==='de'?'Knoten':'knots'}`;
+  }
+  [calcShip,calcSetLevel,rollCannons,rollHarpoons,rollHp].forEach(e=>e.addEventListener('input',updateShip)); updateSetLevels(); updateShip();
+
+  const updateGuild=()=>{const lvl=Math.max(20,Math.min(49,+guildLevel.value||20));const current=+guildCurrentXp.value||0;const row=guildXP.find(x=>x[0]===lvl);if(!row){guildCalcResult.textContent='—';return;}const next=Math.max(0,row[2]-current);let remaining=next;for(const x of guildXP){if(x[0]>lvl)remaining+=x[2];}guildCalcResult.innerHTML=`${lang==='de'?'Bis zum nächsten Level':'To next level'}: ${fmt(next)} XP<br>${lang==='de'?'Bis Level 50':'To level 50'}: ${fmt(remaining)} XP`;};
+  [guildLevel,guildCurrentXp].forEach(e=>e.addEventListener('input',updateGuild)); updateGuild();
+}
+
+function translate(){
+  document.documentElement.lang=lang;
+  document.querySelectorAll('[data-t]').forEach(el=>{const k=el.dataset.t;if(t[lang][k])el.textContent=t[lang][k]});
+  heroText.textContent=t[lang].heroText;
+  brandSub.textContent=lang==='de'?'Inoffizielles Community-Projekt':'Unofficial community project';
+  search.placeholder=lang==='de'?'Schiffe, Decks, Sets, Kanonen, Items … durchsuchen':'Search ships, decks, sets, cannons, items …';
+  footerText.textContent=lang==='de'?'Inoffizielles Community-Projekt. Pirate Storm sowie zugehörige Marken und Inhalte gehören Bigpoint. Live-Werte basieren auf Ingame-Screenshots vom August 2026; historische Referenzen sind separat markiert.':'Unofficial community project. Pirate Storm and related trademarks/content belong to Bigpoint. Live values are based on in-game screenshots from August 2026; historical references are marked separately.';
+}
+
+function renderAll(){
+  translate();renderShips();renderDecks();renderUpgrades();renderSets();renderWeapons();renderAmmo();renderItems();renderPvp();renderMaterials();renderGuild();renderTools();renderShop();
+  statShips.textContent=ships.length;statDecks.textContent=decks.length;statCannons.textContent=cannons.length;statHarpoons.textContent=harpoonlaunchers.length;statSets.textContent=sets.length;statItems.textContent=items.length;
+  applySearch();
+}
+function applySearch(){
+  const q=search.value.trim().toLowerCase();
+  document.querySelectorAll('.searchable').forEach(el=>el.classList.toggle('hidden',!!q&&!el.dataset.search.includes(q)));
+}
+search.addEventListener('input',applySearch);
+nav.addEventListener('click',e=>{const b=e.target.closest('button[data-sec]');if(!b)return;document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main section').forEach(s=>s.classList.remove('active-section'));document.getElementById(b.dataset.sec).classList.add('active-section');window.scrollTo({top:0,behavior:'smooth'});});
+document.querySelectorAll('[data-jump]').forEach(b=>b.addEventListener('click',()=>document.querySelector(`nav button[data-sec="${b.dataset.jump}"]`).click()));
+langBtn.addEventListener('click',()=>{lang=lang==='de'?'en':'de';langBtn.textContent=lang==='de'?'EN':'DE';renderAll();});
+renderAll();
 </script>
 </body>
 </html>
