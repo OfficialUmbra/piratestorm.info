@@ -33,7 +33,7 @@ async function hashPassword(password, salt) {
     {
       name: "PBKDF2",
       salt,
-      iterations: 210000,
+      iterations: 100000,
       hash: "SHA-256"
     },
     keyMaterial,
@@ -48,7 +48,6 @@ async function hashPassword(password, salt) {
 export async function onRequestPost(context) {
   try {
     const { request, env } = context;
-
     const body = await request.json();
 
     const username =
@@ -105,7 +104,6 @@ export async function onRequestPost(context) {
     }
 
     const salt = crypto.getRandomValues(new Uint8Array(16));
-
     const hash = await hashPassword(password, salt);
 
     const saltBase64 = btoa(
@@ -113,7 +111,7 @@ export async function onRequestPost(context) {
     );
 
     const passwordHash =
-      `pbkdf2$210000$${saltBase64}$${hash}`;
+      `pbkdf2$100000$${saltBase64}$${hash}`;
 
     const result = await env.DB
       .prepare(`
