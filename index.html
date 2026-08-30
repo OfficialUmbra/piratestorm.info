@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PirateStorm.info · V6</title>
+<title>PirateStorm.info · V8</title>
 <meta name="description" content="Unofficial Pirate Storm community database">
 <style>
 :root{
@@ -55,6 +55,38 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 .hidden{display:none!important}
 @media(max-width:1100px){.layout{grid-template-columns:1fr}aside{position:static}nav{display:flex;overflow:auto}nav button{width:auto;white-space:nowrap}.grid{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:700px){.head,.layout{padding-left:11px;padding-right:11px}.grid,.stats,.tools,.fields{grid-template-columns:1fr}.section-head{align-items:flex-start;flex-direction:column}}
+
+.event-calendar{margin-top:18px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#0d1d28,#08141d);overflow:hidden}
+.calendar-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px;border-bottom:1px solid var(--line)}
+.calendar-head h3{margin:0;font-size:18px}.calendar-nav{display:flex;align-items:center;gap:8px}.calendar-nav button{border:1px solid var(--line);background:#0b1a24;color:var(--text);border-radius:8px;padding:7px 10px;cursor:pointer}
+.calendar-month{min-width:155px;text-align:center;font-weight:900}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.calendar-weekday{padding:9px 7px;text-align:center;color:var(--muted);font-size:11px;font-weight:800;border-bottom:1px solid rgba(255,255,255,.06);background:#0b1822}
+.calendar-day{min-height:105px;padding:8px;border-right:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);position:relative}
+.calendar-day:nth-child(7n){border-right:0}.calendar-day.outside{opacity:.28}.calendar-day.today{outline:2px solid var(--gold);outline-offset:-2px;background:rgba(241,196,91,.08)}
+.day-number{font-size:12px;font-weight:900;color:#d9e8ef;margin-bottom:6px}.calendar-day.today .day-number{color:var(--gold)}
+.event-pill{display:block;margin-top:5px;padding:5px 6px;border-radius:7px;background:#123044;border:1px solid #315b70;color:#ccebf5;font-size:10px;line-height:1.25;font-weight:800}
+.event-pill.today-event{background:#3a2d0c;border-color:#8d6c1d;color:#ffe59a;box-shadow:0 0 0 1px rgba(241,196,91,.16)}
+.calendar-legend{padding:10px 14px;color:var(--muted);font-size:11px;border-top:1px solid rgba(255,255,255,.06)}
+@media(max-width:700px){.calendar-day{min-height:82px;padding:5px}.event-pill{font-size:9px;padding:4px}.calendar-weekday{padding:7px 3px;font-size:10px}}
+
+
+.forum-shell{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:16px}
+.forum-panel,.forum-side{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.forum-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.forum-toolbar button,.forum-action{border:1px solid var(--line);background:#0b1a24;color:var(--text);border-radius:9px;padding:9px 11px;cursor:pointer}
+.forum-action.primary{background:#17364a;border-color:#315b70;font-weight:900}
+.forum-login{display:grid;gap:9px}.forum-login input,.forum-login select,.forum-compose input,.forum-compose select,.forum-compose textarea{width:100%;box-sizing:border-box;background:#07131b;border:1px solid var(--line);color:var(--text);padding:10px;border-radius:9px}
+.forum-compose{display:none;margin:12px 0;padding:13px;border:1px solid var(--line);border-radius:12px;background:#08151e}.forum-compose.open{display:grid;gap:9px}
+.forum-post{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;background:#091720}
+.forum-user{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:12px}.forum-avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#183245;border:1px solid #315b70;font-weight:900;color:#d8edf5;overflow:hidden}.forum-avatar img{width:100%;height:100%;object-fit:cover}
+.forum-post h3{margin:9px 0 6px}.forum-meta{font-size:11px;color:var(--muted)}.forum-post p{white-space:pre-wrap}
+.forum-reactions{display:flex;gap:8px;align-items:center;margin-top:10px}.like-btn{border:1px solid var(--line);background:#0c202c;color:var(--text);border-radius:8px;padding:6px 9px;cursor:pointer}.like-btn.liked{border-color:#5c8aa0;background:#17384a}
+.forum-comments{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)}.forum-comment{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}.comment-row{display:flex;gap:7px;margin-top:9px}.comment-row input{flex:1;background:#07131b;border:1px solid var(--line);color:var(--text);padding:9px;border-radius:8px}
+.profile-box{text-align:center}.profile-avatar{width:84px;height:84px;border-radius:50%;margin:0 auto 10px;display:grid;place-items:center;background:#183245;border:2px solid #315b70;font-size:27px;font-weight:900;overflow:hidden}.profile-avatar img{width:100%;height:100%;object-fit:cover}.avatar-maker{display:grid;gap:8px;margin-top:12px}.avatar-preview{width:72px;height:72px;border-radius:50%;margin:auto;display:grid;place-items:center;font-size:25px;font-weight:900;border:2px solid rgba(255,255,255,.18)}
+.forum-note{font-size:11px;color:var(--muted);line-height:1.5;margin-top:10px}
+@media(max-width:900px){.forum-shell{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -70,6 +102,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 
 <div class="layout">
 <aside><nav id="nav">
+<button data-sec="forum">💬 <span data-t="navForum">Forum</span></button>
 <button class="active" data-sec="overview">⌂ <span data-t="navOverview">Start</span></button>
 <button data-sec="ships">◈ <span data-t="navShips">Schiffe</span></button>
 <button data-sec="decks">▤ <span data-t="navDecks">Decks</span></button>
@@ -87,6 +120,55 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 </nav></aside>
 
 <main>
+
+<section id="forum">
+  <div class="section-head"><div><h2 id="forumHeading">💬 Forum</h2><div class="sub" id="forumSub">PirateStorm Community – Beiträge, Bilder, Kommentare und Likes.</div></div></div>
+  <div class="forum-shell">
+    <div class="forum-panel">
+      <div class="forum-toolbar">
+        <button id="forumNewest">Neueste</button><button id="forumTop">Meiste 👍</button><button id="forumCommentsSort">Meiste Kommentare</button>
+        <button class="forum-action primary" id="newPostBtn">+ Beitrag erstellen</button>
+      </div>
+      <div class="forum-compose" id="forumCompose">
+        <select id="postCategory"><option>Allgemein</option><option>Fragen & Hilfe</option><option>Guides</option><option>Arena</option><option>PvP</option><option>Schiffe & Builds</option><option>Gilden</option><option>Screenshots</option></select>
+        <input id="postTitle" maxlength="90" placeholder="Titel">
+        <textarea id="postText" rows="5" maxlength="4000" placeholder="Was möchtest du teilen?"></textarea>
+        <input id="postImage" type="file" accept="image/png,image/jpeg,image/webp">
+        <button class="forum-action primary" id="publishPost">Veröffentlichen</button>
+      </div>
+      <div id="forumFeed"></div>
+    </div>
+    <aside class="forum-side">
+      <div id="loggedOutBox">
+        <h3 id="loginTitle">Anmelden / Registrieren</h3>
+        <div class="forum-login">
+          <input id="forumName" maxlength="24" placeholder="Spielername">
+          <input id="forumPassword" type="password" minlength="6" placeholder="Individuelles Passwort">
+          <select id="forumServer">
+            <option>Arabien 1</option><option>Deutschland 1</option><option>Europa 1</option><option>Europa 2</option><option>Europa 3</option><option>Europa 4</option><option>Lateinamerika 1</option><option>USA 1</option>
+          </select>
+          <button class="forum-action primary" id="forumRegister">Registrieren</button>
+          <button class="forum-action" id="forumLogin">Anmelden</button>
+        </div>
+      </div>
+      <div id="loggedInBox" style="display:none" class="profile-box">
+        <div class="profile-avatar" id="profileAvatar">PS</div>
+        <h3 id="profileName">Spieler</h3><div class="sub" id="profileServer"></div>
+        <div class="avatar-maker">
+          <b id="avatarMakerTitle">Profilbild erstellen</b>
+          <div class="avatar-preview" id="avatarPreview">⚓</div>
+          <select id="avatarSymbol"><option>⚓</option><option>☠</option><option>⚔</option><option>🛡</option><option>🌊</option><option>💀</option></select>
+          <input id="avatarColor" type="color" value="#183245">
+          <button class="forum-action" id="saveAvatar">Profilbild speichern</button>
+          <label class="forum-action" style="display:block">Eigenes Bild hochladen<input id="avatarUpload" type="file" accept="image/png,image/jpeg,image/webp" style="display:none"></label>
+          <button class="forum-action" id="forumLogout">Abmelden</button>
+        </div>
+      </div>
+      <div class="forum-note" id="forumBackendNote">Forum-Vorschau: Konten, Beiträge, Kommentare und Likes werden in dieser HTML-Version lokal im Browser gespeichert. Für die öffentliche Website wird die gleiche Oberfläche an die Cloudflare-Datenbank angebunden, damit alle Spieler dieselben Inhalte sehen.</div>
+    </aside>
+  </div>
+</section>
+
 <section id="overview" class="active-section">
   <div class="hero">
     <h1>PirateStorm</h1>
@@ -105,6 +187,23 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
       <div class="stat"><b id="statItems">0</b><span data-t="statItems">Items</span></div>
     </div>
   </div>
+
+  <div class="event-calendar" id="eventCalendar">
+    <div class="calendar-head">
+      <div>
+        <h3 id="calendarTitle">📅 Eventkalender</h3>
+        <div class="sub" id="calendarSub">Aktuelle und wiederkehrende Pirate-Storm-Events</div>
+      </div>
+      <div class="calendar-nav">
+        <button id="calendarPrev" type="button" aria-label="Vorheriger Monat">‹</button>
+        <div id="calendarMonth" class="calendar-month"></div>
+        <button id="calendarNext" type="button" aria-label="Nächster Monat">›</button>
+      </div>
+    </div>
+    <div id="calendarGrid" class="calendar-grid"></div>
+    <div class="calendar-legend" id="calendarLegend">Der heutige Tag und heutige Events werden automatisch hervorgehoben.</div>
+  </div>
+
 </section>
 
 <section id="ships"><div class="section-head"><div><h2 data-t="shipsTitle">Schiffe</h2><div class="sub" data-t="shipsSub">Nach Event/Herkunft sortiert. Alle lesbaren Werte werden direkt angezeigt.</div></div></div><div id="shipsContent"></div></section>
@@ -128,7 +227,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 <script>
 const t={
 de:{
-navOverview:'Start',navShips:'Schiffe',navDecks:'Decks',navUpgrades:'Verbesserungen',navSets:'Sets',navCannons:'Kanonen',navHarpoons:'Harpunenwerfer',navAmmo:'Munition',navItems:'Items',navPvp:'PvP',navMaterials:'Materialien',navGuild:'Gilden',navTools:'Rechner',navShop:'Shop',
+navForum:'Forum',navOverview:'Start',navShips:'Schiffe',navDecks:'Decks',navUpgrades:'Verbesserungen',navSets:'Sets',navCannons:'Kanonen',navHarpoons:'Harpunenwerfer',navAmmo:'Munition',navItems:'Items',navPvp:'PvP',navMaterials:'Materialien',navGuild:'Gilden',navTools:'Rechner',navShop:'Shop',
 heroText:'Aktuelle Live-Spielwerte, Sets, Decks, Verbesserungen, Shoppreise, Materialien und Community-Wissen an einem Ort.',jumpShips:'Schiffe ansehen',jumpSets:'Sets vergleichen',jumpTools:'Rechner öffnen',
 statShips:'Schiffe',statDecks:'Decks',statCannons:'Kanonen',statHarpoons:'Harpunenwerfer',statSets:'Sets',statItems:'Items',
 shipsTitle:'Schiffe',shipsSub:'Nach Event/Herkunft sortiert. Alle lesbaren Werte werden direkt angezeigt.',
@@ -146,7 +245,7 @@ toolsTitle:'Rechner',toolsSub:'Schadensrechner, Schiffs-Konfigurator und Gilden-
 shopTitle:'Shop',shopSub:'Nur Echtgeld-Angebote und Diamantenpakete.'
 },
 en:{
-navOverview:'Home',navShips:'Ships',navDecks:'Decks',navUpgrades:'Upgrades',navSets:'Sets',navCannons:'Cannons',navHarpoons:'Harpoon Launchers',navAmmo:'Ammo',navItems:'Items',navPvp:'PvP',navMaterials:'Materials',navGuild:'Guilds',navTools:'Calculators',navShop:'Shop',
+navForum:'Forum',navOverview:'Home',navShips:'Ships',navDecks:'Decks',navUpgrades:'Upgrades',navSets:'Sets',navCannons:'Cannons',navHarpoons:'Harpoon Launchers',navAmmo:'Ammo',navItems:'Items',navPvp:'PvP',navMaterials:'Materials',navGuild:'Guilds',navTools:'Calculators',navShop:'Shop',
 heroText:'Current live-game values, sets, decks, upgrades, shop prices, materials and community knowledge in one place.',jumpShips:'View ships',jumpSets:'Compare sets',jumpTools:'Open calculators',
 statShips:'Ships',statDecks:'Decks',statCannons:'Cannons',statHarpoons:'Harpoon launchers',statSets:'Sets',statItems:'Items',
 shipsTitle:'Ships',shipsSub:'Sorted by event/source. All readable values are shown directly.',
@@ -171,16 +270,16 @@ const ships=[
 {group:'PvP / Kriegsrang',name:'Kriegsfregatte „Baphomet“',hp:13500,baseSpeed:5.5,maxSpeed:14,c:85,h:40,dodge:4,res:4,range:235,sight:350,decks:'Unteres · Mittleres · Oberes',price:'15.000 💀 Schädel · Rang 1',status:'verified'},
 {group:'PvP / Kriegsrang',name:'Kriegsfregatte „Orca“',hp:13750,baseSpeed:5.5,maxSpeed:14,c:78,h:40,dodge:6,res:6,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'9.000 💀 Schädel · Rang 3',status:'verified'},
 {group:'PvP / Kriegsrang',name:'Kriegsfregatte „Barracuda“',hp:13000,baseSpeed:5.5,maxSpeed:14,c:66,h:42,dodge:4,res:4,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'5.500 💀 Schädel · Rang 8',status:'verified'},
-{group:'Arena',name:'Weltenzerstörer',hp:14500,baseSpeed:null,maxSpeed:14,c:90,h:50,dodge:10,res:10,range:220,sight:'—',decks:'Event-/Spezialdecks möglich',price:'Arena-Saisongewinner',status:'historical'},
-{group:'Arena',name:'Gladiator',hp:'siehe Screenshot-Datensatz',baseSpeed:null,maxSpeed:null,c:170,h:'siehe Screenshot-Datensatz',dodge:'—',res:'—',range:'—',sight:'—',decks:'Sturmdeck-Konfiguration bekannt',price:'Arena',status:'historical'},
-{group:'Standard / Händler',name:'Cordone',hp:13750,baseSpeed:5.5,maxSpeed:14,c:77,h:42,dodge:10,res:10,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'97.000 💎',status:'verified'},
-{group:'Standard / Händler',name:'Große Fregatte',hp:12000,baseSpeed:5.5,maxSpeed:14,c:60,h:30,dodge:4,res:4,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'77.600 💎',status:'verified'},
-{group:'Standard / Händler',name:'Fregatte',hp:8000,baseSpeed:5.5,maxSpeed:13.3,c:50,h:40,dodge:2,res:2,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'24.250 💎',status:'verified'},
-{group:'Arena',name:'Verwüster',hp:6750,baseSpeed:5.5,maxSpeed:13.3,c:50,h:40,dodge:2,res:2,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'7.500.000 Gold',status:'verified'},
-{group:'Standard / Händler',name:'Dhuka',hp:13000,baseSpeed:5.5,maxSpeed:13.3,c:60,h:28,dodge:5,res:5,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'2.250.000 Gold',status:'verified'},
-{group:'Standard / Händler',name:'Kriegsbrigantine',hp:6000,baseSpeed:5.5,maxSpeed:11.8,c:30,h:30,dodge:0,res:0,range:200,sight:350,decks:'Unteres · Mittleres',price:'750.000 Gold',status:'verified'},
-{group:'Standard / Händler',name:'Brigantine',hp:4500,baseSpeed:5.5,maxSpeed:11.1,c:20,h:20,dodge:0,res:0,range:200,sight:350,decks:'Unteres · Mittleres',price:'112.500 Gold',status:'verified'},
-{group:'Standard / Händler',name:'Schaluppe',hp:2500,baseSpeed:5.5,maxSpeed:9.2,c:10,h:10,dodge:0,res:0,range:200,sight:350,decks:'Unteres',price:'750 Gold',status:'verified'}
+{group:'Arena',name:'Weltenzerstörer',hp:14500,baseSpeed:5.5,maxSpeed:14,c:90,h:50,dodge:10,res:10,range:220,sight:350,decks:'Unteres · Mittleres · Oberes',price:'Arena-Saisongewinner',unlock:'Arena-Saisongewinner',status:'verified'},
+{group:'Arena',name:'Gladiator',hp:14000,baseSpeed:5.5,maxSpeed:14,c:80,h:40,dodge:8,res:8,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'40.000 💎 normal · 38.800 💎 mit Premium',unlock:'3.000 Arena-Punkte',status:'verified'},
+{group:'Standard / Händler',name:'Cordone',hp:13750,baseSpeed:5.5,maxSpeed:14,c:77,h:42,dodge:10,res:10,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'100.000 💎 normal · 97.000 💎 mit Premium',status:'verified'},
+{group:'Standard / Händler',name:'Große Fregatte',hp:12000,baseSpeed:5.5,maxSpeed:14,c:60,h:30,dodge:4,res:4,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'80.000 💎 normal · 77.600 💎 mit Premium',status:'verified'},
+{group:'Standard / Händler',name:'Fregatte',hp:8000,baseSpeed:5.5,maxSpeed:13.3,c:50,h:40,dodge:2,res:2,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'25.000 💎 normal · 24.250 💎 mit Premium',status:'verified'},
+{group:'Arena',name:'Verwüster',hp:6750,baseSpeed:5.5,maxSpeed:13.3,c:50,h:40,dodge:2,res:2,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'10.000.000 Gold normal · 7.500.000 Gold mit 25% Gildenrabatt',unlock:'10 Arena-Punkte',status:'verified'},
+{group:'Standard / Händler',name:'Dhuka',hp:13000,baseSpeed:5.5,maxSpeed:13.3,c:60,h:28,dodge:5,res:5,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'3.000.000 Gold normal · 2.250.000 Gold mit 25% Gildenrabatt',status:'verified'},
+{group:'Standard / Händler',name:'Kriegsbrigantine',hp:6000,baseSpeed:5.5,maxSpeed:11.8,c:30,h:30,dodge:0,res:0,range:200,sight:350,decks:'Unteres · Mittleres',price:'1.000.000 Gold normal · 750.000 Gold mit 25% Gildenrabatt',status:'verified'},
+{group:'Standard / Händler',name:'Brigantine',hp:4500,baseSpeed:5.5,maxSpeed:11.1,c:20,h:20,dodge:0,res:0,range:200,sight:350,decks:'Unteres · Mittleres',price:'150.000 Gold normal · 112.500 Gold mit 25% Gildenrabatt',status:'verified'},
+{group:'Standard / Händler',name:'Schaluppe',hp:2500,baseSpeed:5.5,maxSpeed:9.2,c:10,h:10,dodge:0,res:0,range:200,sight:350,decks:'Unteres',price:'1.000 Gold normal · 750 Gold mit 25% Gildenrabatt',status:'verified'}
 ];
 
 const decks=[
@@ -191,11 +290,11 @@ const decks=[
 {group:'Adler',name:'Riff-Deck',c:6,h:6,ind:'ab Set-Level 4',slot:'Vorderer Deckplatz',normal:'Event',premium:null,note:'Teil von Macht des Adlers.',status:'verified'},
 {group:'Skorpion',name:'Oberes Stacheldeck',c:10,h:6,ind:'ab Set-Level 4',slot:'Oberer Deckplatz',normal:'Event',premium:null,note:'Teil von Macht des Skorpions.',status:'verified'},
 {group:'Sobek',name:'Unteres Sobek Deck',c:10,h:6,ind:'Ja',slot:'Unterer Deckplatz',normal:'Event',premium:null,note:'Sobek-Eventdeck.',status:'verified'},
-{group:'Gilde',name:'Gildendeck',c:10,h:6,ind:'Ja',slot:'Eigener Deckplatz',normal:'Gildeninhalt',premium:null,note:'Eigenständiger Deckplatz. Voraussetzung: Die Gilde muss im vorherigen Monat unter den Top 10 beim Plündern gewesen sein.',status:'verified'},
+{group:'Gilde',name:'Gildendeck',c:10,h:6,ind:'Ja',slot:'Eigener Deckplatz',normal:'Preis historisch nicht sicher verifiziert',premium:null,note:'Voraussetzung: Die Gilde muss im Vormonat Top 10 beim Plündern gewesen sein.',status:'verified'},
 {group:'Winterevent',name:'Raunacht-Deck',c:40,h:36,ind:'Ja',slot:'Eigener Deckplatz',normal:'Event',premium:null,note:'Eventdeck.',status:'verified'},
-{group:'Weitere Events',name:'Donnerschall-Deck',c:12,h:18,ind:'Ja',slot:'Hinterer Deckplatz',normal:'Event',premium:null,note:'Eventdeck.',status:'verified'},
+{group:'Spezial',name:'Donnerschall-Deck',c:2,h:18,ind:'Ja',slot:'Hinterer Deckplatz',normal:'Eventpreis nicht sicher verifiziert',premium:null,note:'Eventdeck.',status:'verified'},
 {group:'Standard / Händler',name:'Oberes Mahagonideck',c:8,h:4,ind:'Nein',slot:'Oberer Deckplatz',dur:50,normal:'40.000 💎',premium:'38.800 💎',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
-{group:'Arena / Händler',name:'Arena-Zwischendeck',c:null,h:null,ind:null,slot:'Zwischendeck',dur:'—',normal:'20.000 💎',premium:'19.400 💎',note:'Arena-Deck; Preis live verifiziert.',status:'verified'},
+{group:'Arena',name:'Arena-Zwischendeck',c:14,h:2,ind:'Ja',slot:'Zwischendeck',dur:'Unversenkbar',normal:'20.000 💎',premium:'19.400 💎',unlock:'4.800 Arena-Punkte',note:'Einziges Arena-Deck.',status:'verified'},
 {group:'Standard / Händler',name:'Mittleres Mahagonideck',c:8,h:4,ind:'Nein',slot:'Mittlerer Deckplatz',dur:50,normal:'20.000 💎',premium:'19.400 💎',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
 {group:'Standard / Händler',name:'Unteres Mahagonideck',c:8,h:4,ind:'Nein',slot:'Unterer Deckplatz',dur:50,normal:'10.000 💎',premium:'9.700 💎',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
 {group:'Standard / Händler',name:'Oberes Buchendeck',c:4,h:0,ind:'Nein',slot:'Oberer Deckplatz',dur:25,normal:'800.000 Gold',premium:'600.000 Gold (25% Gildenrabatt)',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
@@ -205,7 +304,7 @@ const decks=[
 
 const upgrades=[
 {group:'PvP / Kriegsrang',name:'Galionsfigur Hades',normal:'1.000 💀 Schädel',premium:null,effect:'Reparatur −20%',status:'verified'},
-{group:'Arena',name:'Galionsfigur „Arene“',normal:'15.000 💎',premium:'14.550 💎',effect:null,status:'verified'},
+{group:'Arena',name:'Galionsfigur „Arene“',normal:'15.000 💎',premium:'14.550 💎',effect:null,unlock:'1.600 Arena-Punkte',status:'verified'},
 {group:'Arena',name:'Verstärktes Bugschott',normal:'12.000 💎',premium:'11.640 💎',effect:'Max. Trefferpunkte +3.150; erhöht beim Erwerb auch die momentanen Trefferpunkte.',status:'verified'},
 {group:'Arena',name:'Arena-Anker',normal:'12.000 💎',premium:'11.640 💎',effect:null,status:'verified'},
 {group:'Arena',name:'Galionsfigur „Astarte“',normal:'10.000 💎',premium:'9.700 💎',effect:null,status:'verified'},
@@ -250,27 +349,27 @@ const cannons=[
 {group:'Blutmond',name:'Mondstahl Kanone',level:1,damage:18,spread:45,destroy:'Nein',status:'verified'},
 {group:'Winter',name:'Eissturm',level:1,damage:16,spread:50,destroy:'Nein',status:'verified'},
 {group:'Adler',name:'Adler-Geschütz',level:1,damage:16,spread:20,destroy:'Nein',status:'verified'},
-{group:'Arena / Kriegsrang',name:'Großer Krieger',level:1,damage:16,spread:50,destroy:'Nein',status:'verified'},
+{group:'PvP / Kriegsrang',name:'Großer Krieger',level:1,damage:16,spread:50,destroy:'Nein',source:'Rang 10 · 90 💀 Schädel',price:'90 💀 Schädel',status:'verified'},
 {group:'Event',name:'Schallbrecher',level:1,damage:17,spread:40,destroy:'Nein',status:'verified'},
-{group:'Standard',name:'Dampfhammer',level:1,damage:12,spread:60,destroy:'Ja',status:'verified'},
-{group:'Event',name:'Bestienschrei',level:1,damage:17,spread:45,destroy:'Nein',status:'verified'},
+{group:'Arena',name:'Dampfhammer',level:1,damage:12,spread:60,destroy:'Ja',source:'Arena 2vs2 · 300 Arena-Punkte',price:'850.000 Gold (historischer Forumspreis)',status:'verified'},
+{group:'Arena',name:'Bestienschrei',level:1,damage:17,spread:45,destroy:'Nein',source:'Arena 1vs1 · 900 Arena-Punkte',price:'9.000 💎 (historischer Forumspreis)',status:'verified'},
 {group:'Bonusmap',name:'Lochmacher',source:'Schwarzer Rum',level:1,damage:16,spread:60,destroy:'Nein',status:'verified'},
 {group:'Standard / Spezial',name:'Eisenhagel',source:'Blutiger Haken',level:1,damage:12,spread:40,destroy:'Nein',status:'verified'},
 {group:'Standard / Spezial',name:'Friedensstifter',source:'Schützenfest',level:1,damage:16,spread:35,destroy:'Nein',status:'verified'},
 
-{group:'Standard',name:'6-Pfünder',level:1,damage:6,spread:50,destroy:'Ja',source:'Händler / Standardausrüstung',status:'verified'},
-{group:'Standard',name:'9-Pfünder',level:1,damage:9,spread:50,destroy:'Ja',source:'Händler / Standardausrüstung',status:'verified'},
-{group:'Standard',name:'10-Pfünder',level:1,damage:10,spread:50,destroy:'Ja',source:'Händler / Standardausrüstung',status:'verified'},
-{group:'Standard',name:'12-Pfünder',level:1,damage:12,spread:50,destroy:'Ja',source:'Händler / Standardausrüstung / Bonusmaps',status:'verified'},
-{group:'Standard',name:'18-Pfünder',level:1,damage:18,spread:50,destroy:'Ja',source:'Händler / Standardausrüstung',status:'verified'}
+{group:'Standard',name:'6-Pfünder',level:1,damage:6,spread:80,destroy:'Ja',source:'Händler / Standardausrüstung',price:'425 Gold (historischer Forumspreis)',status:'historical'},
+{group:'Standard',name:'9-Pfünder',level:1,damage:9,spread:70,destroy:'Ja',source:'Händler / Standardausrüstung',price:'1.700 Gold (historischer Forumspreis)',status:'historical'},
+{group:'Standard',name:'10-Pfünder',level:1,damage:9,spread:70,destroy:'Nein',source:'Händler / Standardausrüstung / Tauchgänge',price:'150 💎 (historischer Forumspreis)',status:'historical'},
+{group:'Standard',name:'12-Pfünder',level:1,damage:12,spread:60,destroy:'Nein',source:'Händler / Standardausrüstung / Bonusmaps',price:'4.000 💎 (historischer Forumspreis)',status:'historical'},
+{group:'Standard',name:'18-Pfünder',level:1,damage:15,spread:50,destroy:'Nein',source:'Händler / Standardausrüstung',price:'6.000 💎 (historischer Forumspreis)',status:'historical'}
 ];
 
 const harpoonlaunchers=[
-{group:'Standard',name:'Repetierschleuder',source:'Schwarzer Rum',level:1,damage:16,spread:60,destroy:'Nein',status:'verified'},
+{group:'Bonusmap',name:'Repetierschleuder',source:'Schwarzer Rum',level:1,damage:16,spread:60,destroy:'Nein',status:'verified'},
 {group:'Sommer',name:'Reißzahn',level:2,damage:16,spread:60,destroy:'Ja',status:'verified'},
 {group:'Blutmond',name:'Blutmond Balliste',level:1,damage:16,spread:30,destroy:'Nein',status:'verified'},
-{group:'Event',name:'Manticor',source:'Schützenfest',level:1,damage:16,spread:40,destroy:'Nein',status:'verified'},
-{group:'Skorpion',name:'Skorpion',source:'Blutiger Haken',level:1,damage:12,spread:40,destroy:'Nein',status:'verified'},
+{group:'Bonusmap',name:'Manticor',source:'Schützenfest',level:1,damage:16,spread:40,destroy:'Nein',status:'verified'},
+{group:'Bonusmap',name:'Skorpion',source:'Blutiger Haken',level:1,damage:12,spread:40,destroy:'Nein',status:'verified'},
 {group:'Bonusmap',name:'Sargnagel',source:'Voodoo-Schädel',level:1,damage:20,spread:30,destroy:'Nein',status:'verified'},
 
 {group:'Standard',name:'Harpunenwerfer Klasse I',level:1,damage:6,spread:50,destroy:'Ja',source:'Händler / Standardausrüstung',status:'verified'},
@@ -310,13 +409,13 @@ const items=[
 {group:'Briefe',name:'Kaperbrief 25 · 10×',normal:'100.000 Gold',premium:'75.000 Gold',effect:'Ab Level 10; Spieler-Gold 0%; Gilden-Gold-Bonus 25%; Dauer 30 min; Abklingzeit 1 h'},
 {group:'Briefe',name:'Kaperbrief 75 · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Ab Level 10; Spieler-Gold +100%; Gilden-Gold-Bonus 75%; Dauer 30 min; Abklingzeit 30 min'},
 {group:'Arena',name:'Arena-Schnelles Nachladen · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:null},
-{group:'Arena',name:'Arena-Blutspender · 10×',normal:'5.000 💎',premium:'4.850 💎',effect:null},
+{group:'Arena',name:'Arena-Blutspender · 10×',normal:'5.000 💎',premium:'4.850 💎',effect:null,unlock:'1.500 Arena-Punkte'},
 {group:'Arena',name:'Arenaversicherung · 10×',normal:'100.000 Gold',premium:'75.000 Gold',effect:null},
 {group:'Arena',name:'Arena-Treibladung · 10×',normal:'400.000 Gold',premium:'300.000 Gold',effect:null},
-{group:'Arena',name:'Arena-Platten · 10×',normal:'300.000 Gold',premium:'225.000 Gold',effect:null},
-{group:'Arena',name:'Kapitäns-Teleskop · 10×',normal:'1.750 💎',premium:'1.698 💎',effect:null},
+{group:'Arena',name:'Arena-Platten · 10×',normal:'300.000 Gold',premium:'225.000 Gold',effect:null,unlock:'3.000 Arena-Punkte'},
+{group:'Arena',name:'Kapitäns-Teleskop · 10×',normal:'1.750 💎',premium:'1.698 💎',effect:null,unlock:'200 Arena-Punkte'},
 {group:'Arena',name:'Invasions-Rakete · 10×',normal:'5.000 💎',premium:'4.850 💎',effect:null},
-{group:'Arena',name:'Phiole der Absorption',normal:'5.000 💎',premium:'4.850 💎',effect:null},
+{group:'Arena',name:'Phiole der Absorption',normal:'5.000 💎',premium:'4.850 💎',effect:null,unlock:'2.000 Arena-Punkte'},
 {group:'Gilde',name:'Gildenversicherung',normal:'10.000 Gold',premium:'7.500 Gold',effect:'24 h Echtzeit; in der Gildenzone kein Verlust von Decks, Kanonen oder Harpunenwerfern'},
 {group:'Gilde',name:'Rum · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Ab Level 20; Zeit-Reduzierung 50%; Piraten arbeiten auf der Gildeninsel doppelt so schnell'}
 ];
@@ -331,20 +430,23 @@ const pvp=[
 {group:'Kriegsrang',name:'Galionsfigur Hades',normal:'1.000 💀 Schädel',premium:null,effect:'Rang 5 · Reparatur −20%'},
 {group:'Kriegsrang',name:'Vorderes Kriegsdeck',normal:'400 💀 Schädel',premium:null,effect:'Rang 6 · Vorderer Deckplatz · ersetzt ein vorhandenes vorderes Deck · nur für dafür vorgesehene Kriegsschiffe'},
 {group:'Kriegsrang',name:'Kriegsfregatte „Barracuda“',normal:'5.500 💀 Schädel',premium:null,effect:'Rang 8 · 13.000 HP · 66 Kanonen · 42 Harpunenwerfer'},
+{group:'Kriegsrang',name:'Großer Krieger',normal:'90 💀 Schädel',premium:null,effect:'Rang 10 · Basis-Schaden 16 · Streuung 50% · Zerstörbar: Nein'},
+{group:'Kriegsrang',name:'Kriegsschott',normal:'400 💀 Schädel',premium:null,effect:'Rang 12 · Max. Trefferpunkte +3.500'},
+{group:'Kriegsrang',name:'Kriegerkiel',normal:'150 💀 Schädel',premium:null,effect:'Rang 14 · Max. Trefferpunkte +1.300 · Max. Tempo +0,7 Knoten'},
 {group:'Kriegsrang',name:'Kriegsfregatte „Piranha“',normal:'500 💀 Schädel',premium:null,effect:'Rang 16'},
 {group:'Kriegsrang',name:'Kleiner Krieger',normal:'30 💀 Schädel',premium:null,effect:'Rang 19'}
 ];
 
 const materials=[
-{name:'Hanf',places:['Werkstatt / Training']},
-{name:'Eichenholz',places:['Werkstatt / Training']},
-{name:'Bernstein',places:['Werkstatt / Training; Basis- und fortgeschrittene Trainings']},
-{name:'Schwefel',places:['Werkstatt / Training']},
-{name:'Bleibarren',places:['Tiefsee-Taucher','Werkstatt / fortgeschrittenes Training']},
-{name:'Kupferbarren',places:['Tiefsee-Taucher','Werkstatt / Trainings','einige Event-Bonusmaps']},
-{name:'Silberbarren',places:['Tiefsee-Taucher','fortgeschrittenes Training']},
-{name:'Feueressenz',places:['Voodoo-Schädel: 25','Schwarzer Rum: 10',]},
-{name:'Mondstahl',places:[,'Blutiger Haken: mögliche Belohnung 5']}
+{name:'Hanf',places:['Grundausbildung – kurz','Grundausbildung – lang']},
+{name:'Eichenholz',places:['Grundausbildung – kurz','Grundausbildung – lang']},
+{name:'Bernstein',places:['Grundausbildung – kurz','Grundausbildung – lang','Fortgeschrittene Ausbildung – kurz']},
+{name:'Schwefel',places:['Grundausbildung – kurz','Grundausbildung – lang']},
+{name:'Bleibarren',places:['Tiefsee-Taucher','Fortgeschrittene Ausbildung – lang']},
+{name:'Kupferbarren',places:['Tiefsee-Taucher','Fortgeschrittene Ausbildung – kurz','Fortgeschrittene Ausbildung – lang','einige Event-Bonusmaps']},
+{name:'Silberbarren',places:['Tiefsee-Taucher','Fortgeschrittene Ausbildung – lang']},
+{name:'Feueressenz',places:['Voodoo-Schädel: 25','Schwarzer Rum: 10']},
+{name:'Mondstahl',places:['Blutiger Haken: mögliche Belohnung 5','Schützenfest: mögliche Belohnung 15']}
 ];
 
 const guildRewards=[
@@ -397,6 +499,7 @@ function renderShips(){
     kv(lang==='de'?'Max. Waffenreichweite':'Max weapon range',fmt(s.range))+
     kv(lang==='de'?'Max. Sichtweite':'Max sight',fmt(s.sight))+
     kv(lang==='de'?'Deckplätze':'Deck slots',s.decks)+
+    (s.unlock?kv(lang==='de'?'Freischaltung':'Unlock',s.unlock):'')+
     kv(lang==='de'?'Preis / Quelle':'Price / source',s.price),s.status));
 }
 function renderDecks(){
@@ -406,25 +509,26 @@ function renderDecks(){
     (d.ind!=null?kv(lang==='de'?'Unversenkbar':'Indestructible',d.ind):'')+
     kv(lang==='de'?'Deckplatz':'Deck slot',d.slot)+
     (d.dur!==undefined?kv(lang==='de'?'Haltbarkeit':'Durability',d.dur):'')+
+    (d.unlock?kv(lang==='de'?'Freischaltung':'Unlock',d.unlock):'')+
     kv(lang==='de'?'Normalpreis':'Normal price',d.normal)+
     (d.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',d.premium):''),d.status,d.note));
 }
 function renderUpgrades(){
   upgradesContent.innerHTML=grouped(upgrades,u=>card(u.name,
-    (u.effect?kv(lang==='de'?'Effekt':'Effect',u.effect):'')+kv(lang==='de'?'Normalpreis':'Normal price',u.normal)+(u.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',u.premium):''),u.status));
+    (u.effect?kv(lang==='de'?'Effekt':'Effect',u.effect):'')+(u.unlock?kv(lang==='de'?'Freischaltung':'Unlock',u.unlock):'')+kv(lang==='de'?'Normalpreis':'Normal price',u.normal)+(u.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',u.premium):''),u.status));
 }
 function renderSets(){
-  setsContent.innerHTML=sets.map(s=>`<div class="group">${s.group} · ${s.name}</div><div class="grid"><article class="card searchable" data-search="${escAttr((s.group+' '+s.name+' '+JSON.stringify(s)).toLowerCase())}"><h3>${s.name}</h3><div class="tags"><span class="tag ver">Verified ${verified}</span></div><div class="sub">${lang==='de'?'Gegenstände':'Items'}</div>${s.pieces.map(p=>`<div class="level"><b>${p[0]}</b><br>${p[1]}</div>`).join('')}<div class="sub" style="margin-top:9px">${lang==='de'?'Setstufen':'Set levels'}</div>${s.levels.map(l=>`<div class="level"><b>${l[0]}</b><br>${l[1]}</div>`).join('')}</article></div>`).join('');
+  setsContent.innerHTML=sets.map(s=>`<div class="group">${s.group} · ${s.name}</div><div class="grid"><article class="card searchable" data-search="${escAttr((s.group+' '+s.name+' '+JSON.stringify(s)).toLowerCase())}"><h3>${s.name}</h3><div class="tags"><span class="tag ver">Verified ${verified}</span></div><div class="sub">${lang==='de'?'Gegenstände':'Items'}</div>${s.pieces.map(p=>`<div class="level"><b>${p[0]}</b><br>${p[1]}${p[2]?`<br><span class="muted">${lang==='de'?'Preis':'Price'}: ${p[2]}</span>`:''}</div>`).join('')}<div class="sub" style="margin-top:9px">${lang==='de'?'Setstufen':'Set levels'}</div>${s.levels.map(l=>`<div class="level"><b>${l[0]}</b><br>${l[1]}</div>`).join('')}</article></div>`).join('');
 }
 function renderWeapons(){
-  cannonsContent.innerHTML=grouped(cannons,c=>card(`${c.name} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Schiffe':'Ships')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',c.destroy)+(c.source?kv(lang==='de'?'Quelle':'Source',c.source):''),c.status));
-  harpoonsContent.innerHTML=grouped(harpoonlaunchers,c=>card(`${c.name} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Monster':'Monsters')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',c.destroy)+(c.source?kv(lang==='de'?'Quelle':'Source',c.source):''),c.status));
+  cannonsContent.innerHTML=grouped(cannons,c=>card(`${c.name} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Schiffe':'Ships')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',c.destroy)+(c.source?kv(lang==='de'?'Quelle':'Source',c.source):'')+(c.price?kv(lang==='de'?'Preis':'Price',c.price):''),c.status));
+  harpoonsContent.innerHTML=grouped(harpoonlaunchers,c=>card(`${c.name} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Monster':'Monsters')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',c.destroy)+(c.source?kv(lang==='de'?'Quelle':'Source',c.source):'')+(c.price?kv(lang==='de'?'Preis':'Price',c.price):''),c.status));
 }
 function renderAmmo(){
   ammoContent.innerHTML=grouped(ammo,a=>card(a.name,kv(lang==='de'?'Effekt / Typ':'Effect / type',a.effect)+kv(lang==='de'?'Preis':'Price',a.price)+kv(lang==='de'?'Quelle':'Source',a.source),'verified'));
 }
 function renderItems(){
-  itemsContent.innerHTML=grouped(items,i=>card(i.name,(i.effect?kv(lang==='de'?'Effekt':'Effect',i.effect):'')+kv(lang==='de'?'Normalpreis':'Normal price',i.normal)+(i.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',i.premium):''),'verified'));
+  itemsContent.innerHTML=grouped(items,i=>card(i.name,(i.effect?kv(lang==='de'?'Effekt':'Effect',i.effect):'')+(i.unlock?kv(lang==='de'?'Freischaltung':'Unlock',i.unlock):'')+kv(lang==='de'?'Normalpreis':'Normal price',i.normal)+(i.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',i.premium):''),'verified'));
 }
 function renderPvp(){
   pvpContent.innerHTML=grouped(pvp,i=>card(i.name,kv(lang==='de'?'Effekt / Werte':'Effect / values',i.effect)+kv(lang==='de'?'Preis':'Price',i.normal)+(i.premium?kv(lang==='de'?'Mit Premium':'With premium',i.premium):''),'verified'));
@@ -442,7 +546,7 @@ function renderGuild(){
   <div class="group">${lang==='de'?'Gildenbelohnungen':'Guild rewards'}</div>
   <div class="grid">${guildRewards.map(g=>card(`${lang==='de'?'Gilden-Level':'Guild level'} ${g[0]}`,kv(lang==='de'?'Belohnung':'Reward',g[1]),'verified')).join('')}</div>
   <div class="group">${lang==='de'?'Gilden-XP-Tabelle':'Guild XP table'}</div>
-  <div class="tablewrap"><table class="table"><thead><tr><th>${lang==='de'?'Von':'From'}</th><th>${lang==='de'?'Bis':'To'}</th><th>${lang==='de'?'Benötigte Gilden-XP':'Required guild XP'}</th></tr></thead><tbody><tr><td>3</td><td>20</td><td>${lang==='de'?'Einzelwerte noch nicht vollständig bekannt – im Gesamtwert bis Level 50 enthalten':'Individual values not yet fully known – included in total to level 50'}</td></tr>${guildXP.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${fmt(x[2])}</td></tr>`).join('')}</tbody></table></div>`;
+  <div class="tablewrap"><table class="table"><thead><tr><th>${lang==='de'?'Von':'From'}</th><th>${lang==='de'?'Bis':'To'}</th><th>${lang==='de'?'Benötigte Gilden-XP':'Required guild XP'}</th></tr></thead><tbody>${[...guildXP.filter(x=>x[0]<3),...Array.from({length:17},(_,i)=>[i+3,i+4,'?']),...guildXP.filter(x=>x[0]>=20)].map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${typeof x[2]==='number'?fmt(x[2]):x[2]}</td></tr>`).join('')}<tr><td colspan="2"><b>${lang==='de'?'Gesamt bis Level 50':'Total to level 50'}</b></td><td><b>ca. 3.762.016.000</b></td></tr></tbody></table></div>`;
 }
 function renderShop(){
   shopContent.innerHTML=`<div class="grid">${cashShop.map(x=>card(x[0],kv(lang==='de'?'Preis':'Price',`<span class="price-eur">${x[1]}</span>`)+(x[2]?kv(lang==='de'?'Hinweis':'Note',x[2]):''),'verified')).join('')}</div>`;
@@ -451,7 +555,9 @@ function renderShop(){
 function renderTools(){
   const shipOptions=ships.filter(s=>typeof s.c==='number').map((s,i)=>`<option value="${ships.indexOf(s)}">${s.name}</option>`).join('');
   const cannonOptions=cannons.map((c,i)=>`<option value="${i}">${c.name} · Lvl ${c.level}</option>`).join('');
-  const setOptions=`<option value="">${lang==='de'?'Kein Setbonus':'No set bonus'}</option>`+sets.map((s,i)=>`<option value="${i}">${s.name}</option>`).join('');
+  const normalSetOptions=`<option value="">${lang==='de'?'Kein Set':'No set'}</option>`+sets.map((s,i)=>({s,i})).filter(x=>x.s.group!=='Blutmond').map(x=>`<option value="${x.i}">${x.s.name}</option>`).join('');
+  const bloodIdx=sets.findIndex(s=>s.group==='Blutmond');
+  const bloodSetOptions=`<option value="">${lang==='de'?'Kein Blutmond-Set':'No Blood Moon set'}</option>`+(bloodIdx>=0?`<option value="${bloodIdx}">${sets[bloodIdx].name}</option>`:'');
   const deckChecks=decks.filter(d=>typeof d.c==='number' && typeof d.h==='number').map((d,i)=>`<label class="check"><input type="checkbox" class="deckcheck" data-idx="${decks.indexOf(d)}"> <span>${d.name} · +${d.c} K / +${d.h} H · ${d.slot}</span></label>`).join('');
   toolsContent.innerHTML=`
   <div class="tools">
@@ -469,8 +575,12 @@ function renderTools(){
       <h3>🚢 ${lang==='de'?'Schiffs-Konfigurator':'Ship configurator'}</h3>
       <div class="fields">
         <div class="field"><label>${lang==='de'?'Schiff':'Ship'}</label><select id="calcShip">${shipOptions}</select></div>
-        <div class="field"><label>${lang==='de'?'Set':'Set'}</label><select id="calcSet">${setOptions}</select></div>
-        <div class="field"><label>${lang==='de'?'Setstufe / Teile':'Set level / pieces'}</label><select id="calcSetLevel"><option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option></select></div>
+        <div class="field"><label>${lang==='de'?'Set 1':'Set 1'}</label><select id="calcSet1">${normalSetOptions}</select></div>
+        <div class="field"><label>${lang==='de'?'Set 1 · Stufe':'Set 1 · level'}</label><select id="calcSetLevel1"><option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option></select></div>
+        <div class="field"><label>${lang==='de'?'Set 2':'Set 2'}</label><select id="calcSet2">${normalSetOptions}</select></div>
+        <div class="field"><label>${lang==='de'?'Set 2 · Stufe':'Set 2 · level'}</label><select id="calcSetLevel2"><option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option></select></div>
+        <div class="field"><label>${lang==='de'?'Blutmond-Set':'Blood Moon set'}</label><select id="calcBloodSet">${bloodSetOptions}</select></div>
+        <div class="field"><label>${lang==='de'?'Blutmond-Set · Stufe':'Blood Moon set · level'}</label><select id="calcBloodLevel"><option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option></select></div>
         <div class="field"><label>${lang==='de'?'Rollen der Macht · Kanonen':'Rolls of Power · cannons'}</label><input id="rollCannons" type="number" value="0"></div>
         <div class="field"><label>${lang==='de'?'Rollen der Macht · Harpunen':'Rolls of Power · harpoons'}</label><input id="rollHarpoons" type="number" value="0"></div>
         <div class="field"><label>${lang==='de'?'Rollen der Macht · HP':'Rolls of Power · HP'}</label><input id="rollHp" type="number" value="0"></div>
@@ -482,7 +592,7 @@ function renderTools(){
     <div class="tool">
       <h3>♜ ${lang==='de'?'Gilden-XP-Rechner':'Guild XP calculator'}</h3>
       <div class="fields">
-        <div class="field"><label>${lang==='de'?'Aktuelles Gildenlevel':'Current guild level'}</label><input id="guildLevel" type="number" value="20" min="20" max="49"></div>
+        <div class="field"><label>${lang==='de'?'Aktuelles Gildenlevel':'Current guild level'}</label><input id="guildLevel" type="number" value="1" min="1" max="49"></div>
         <div class="field"><label>${lang==='de'?'XP im aktuellen Level':'XP in current level'}</label><input id="guildCurrentXp" type="number" value="0" min="0"></div>
       </div>
       <div class="result" id="guildCalcResult"></div>
@@ -499,11 +609,11 @@ function parseSetBonus(text){
   return res;
 }
 function bindCalcs(){
-  const updateDamage=()=>{const c=cannons[+calcCannon.value],count=+calcCount.value||0,m=+calcAmmo.value||0,b=+calcBonus.value||0;const base=c.damage*count;const total=base*m*(1+b/100);damageResult.innerHTML=`${lang==='de'?'Basis':'Base'}: ${fmt(base)} · ${lang==='de'?'Ergebnis':'Result'}: ${fmt(Math.round(total))}`};
+  const updateDamage=()=>{const c=cannons[+calcCannon.value],count=+calcCount.value||0,m=+calcAmmo.value||0,b=+calcBonus.value||0;const base=c.damage*count;const total=base*m*(1+b/100);damageResult.innerHTML=`${lang==='de'?'Ergebnis':'Result'}: ${fmt(Math.round(total))}`};
   [calcCannon,calcCount,calcAmmo,calcBonus].forEach(e=>e.addEventListener('input',updateDamage)); updateDamage();
 
-  const updateSetLevels=()=>{const idx=calcSet.value;if(idx===''){calcSetLevel.innerHTML=`<option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option>`;return;}calcSetLevel.innerHTML=`<option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option>`+sets[+idx].levels.map((l,i)=>`<option value="${i}">${l[0]}</option>`).join('');};
-  calcSet.addEventListener('change',()=>{updateSetLevels();updateShip();});
+  const fillSetLevels=(setEl,levelEl)=>{const idx=setEl.value;if(idx===''){levelEl.innerHTML=`<option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option>`;return;}levelEl.innerHTML=`<option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option>`+sets[+idx].levels.map((l,i)=>`<option value="${i}">${l[0]}</option>`).join('');};
+  [calcSet1,calcSet2,calcBloodSet].forEach((el,idx)=>el.addEventListener('change',()=>{const level=[calcSetLevel1,calcSetLevel2,calcBloodLevel][idx];fillSetLevels(el,level);updateShip();}));
 
   const slotKey=s=>s.replace(/Eigener Deckplatz.*|Blutmond-Spezialdeck/,'special-'+Math.random()).trim();
   document.querySelectorAll('.deckcheck').forEach(ch=>ch.addEventListener('change',e=>{
@@ -522,15 +632,208 @@ function bindCalcs(){
   function updateShip(){
     const s=ships[+calcShip.value];let c=+s.c||0,h=+s.h||0,hp=typeof s.hp==='number'?s.hp:0,speed=typeof s.maxSpeed==='number'?s.maxSpeed:0;
     document.querySelectorAll('.deckcheck:checked').forEach(ch=>{const d=decks[+ch.dataset.idx];c+=+d.c||0;h+=+d.h||0;});
-    if(calcSet.value!=='' && +calcSetLevel.value>=0){const b=parseSetBonus(sets[+calcSet.value].levels[+calcSetLevel.value][1]);c+=b.c;hp+=b.hp;speed+=b.speed;}
+    [[calcSet1,calcSetLevel1],[calcSet2,calcSetLevel2],[calcBloodSet,calcBloodLevel]].forEach(([se,le])=>{if(se.value!=='' && +le.value>=0){const b=parseSetBonus(sets[+se.value].levels[+le.value][1]);c+=b.c;h+=b.h;hp+=b.hp;speed+=b.speed;}});
     c+=+rollCannons.value||0;h+=+rollHarpoons.value||0;hp+=+rollHp.value||0;
     shipResult.innerHTML=`${s.name}<br>💣 ${lang==='de'?'Max. Kanonen':'Max cannons'}: ${fmt(c)}<br>⌁ ${lang==='de'?'Max. Harpunenwerfer':'Max harpoon launchers'}: ${fmt(h)}<br>❤ ${lang==='de'?'Max. Trefferpunkte':'Max HP'}: ${fmt(hp)}<br>⛵ ${lang==='de'?'Max. Tempo':'Max speed'}: ${String(speed).replace('.',',')} ${lang==='de'?'Knoten':'knots'}`;
   }
-  [calcShip,calcSetLevel,rollCannons,rollHarpoons,rollHp].forEach(e=>e.addEventListener('input',updateShip)); updateSetLevels(); updateShip();
+  [calcShip,calcSetLevel1,calcSetLevel2,calcBloodLevel,rollCannons,rollHarpoons,rollHp].forEach(e=>e.addEventListener('input',updateShip)); fillSetLevels(calcSet1,calcSetLevel1); fillSetLevels(calcSet2,calcSetLevel2); fillSetLevels(calcBloodSet,calcBloodLevel); updateShip();
 
-  const updateGuild=()=>{const lvl=Math.max(20,Math.min(49,+guildLevel.value||20));const current=+guildCurrentXp.value||0;const row=guildXP.find(x=>x[0]===lvl);if(!row){guildCalcResult.textContent='—';return;}const next=Math.max(0,row[2]-current);let remaining=next;for(const x of guildXP){if(x[0]>lvl)remaining+=x[2];}guildCalcResult.innerHTML=`${lang==='de'?'Bis zum nächsten Level':'To next level'}: ${fmt(next)} XP<br>${lang==='de'?'Bis Level 50':'To level 50'}: ${fmt(remaining)} XP`;};
+  const updateGuild=()=>{const lvl=Math.max(1,Math.min(49,+guildLevel.value||1));const current=+guildCurrentXp.value||0;const row=guildXP.find(x=>x[0]===lvl);if(!row){guildCalcResult.innerHTML=`${lang==='de'?'Für dieses Level ist der Einzelwert noch unbekannt (?)':'The individual value for this level is still unknown (?)'}`;return;}const next=Math.max(0,row[2]-current);let remaining=next;let complete=true;for(let l=lvl+1;l<50;l++){const x=guildXP.find(r=>r[0]===l);if(x)remaining+=x[2];else complete=false;}guildCalcResult.innerHTML=`${lang==='de'?'Bis zum nächsten Level':'To next level'}: ${fmt(next)} XP<br>${lang==='de'?'Bis Level 50':'To level 50'}: ${complete?fmt(remaining)+' XP':'? (fehlende Einzelwerte zwischen Level 3–20)'}`;};
   [guildLevel,guildCurrentXp].forEach(e=>e.addEventListener('input',updateGuild)); updateGuild();
 }
+
+
+
+// Forum prototype. Local browser storage is used until the public Cloudflare backend is connected.
+const forumServers=['Arabien 1','Deutschland 1','Europa 1','Europa 2','Europa 3','Europa 4','Lateinamerika 1','USA 1'];
+const forumKey='piratestorm_forum_v1', forumUserKey='piratestorm_forum_user_v1';
+let forumSort='newest';
+const forumData=()=>JSON.parse(localStorage.getItem(forumKey)||'{"users":[],"posts":[]}');
+const saveForum=d=>localStorage.setItem(forumKey,JSON.stringify(d));
+const currentForumUser=()=>JSON.parse(localStorage.getItem(forumUserKey)||'null');
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function avatarHtml(u,small=true){
+  if(u?.avatar?.image)return `<div class="forum-avatar"><img src="${u.avatar.image}" alt=""></div>`;
+  return `<div class="forum-avatar" style="background:${esc(u?.avatar?.color||'#183245')}">${esc(u?.avatar?.symbol||'⚓')}</div>`;
+}
+function forumUserByName(name){return forumData().users.find(u=>u.name===name)}
+function renderForumProfile(){
+  const u=currentForumUser(), out=document.getElementById('loggedOutBox'), inn=document.getElementById('loggedInBox');
+  if(!out||!inn)return;
+  out.style.display=u?'none':'block';inn.style.display=u?'block':'none';
+  if(u){
+    profileName.textContent=u.name;profileServer.textContent=u.server;
+    profileAvatar.innerHTML=u.avatar?.image?`<img src="${u.avatar.image}" alt="">`:esc(u.avatar?.symbol||'⚓');
+    profileAvatar.style.background=u.avatar?.color||'#183245';
+    avatarPreview.textContent=u.avatar?.symbol||'⚓';avatarPreview.style.background=u.avatar?.color||'#183245';
+  }
+}
+function renderForum(){
+  const d=forumData(), me=currentForumUser(); let posts=[...d.posts];
+  if(forumSort==='top')posts.sort((a,b)=>(b.likes?.length||0)-(a.likes?.length||0));
+  else if(forumSort==='comments')posts.sort((a,b)=>(b.comments?.length||0)-(a.comments?.length||0));
+  else posts.sort((a,b)=>b.created-a.created);
+  forumFeed.innerHTML=posts.length?'':`<div class="note">${lang==='de'?'Noch keine Beiträge.':'No posts yet.'}</div>`;
+  posts.forEach(p=>{
+    const author=d.users.find(u=>u.name===p.author)||{name:p.author,server:p.server};
+    const liked=me&&(p.likes||[]).includes(me.name);
+    const comments=(p.comments||[]).map(c=>{
+      const cu=d.users.find(u=>u.name===c.author)||{name:c.author,server:c.server};
+      const cliked=me&&(c.likes||[]).includes(me.name);
+      return `<div class="forum-comment">${avatarHtml(cu)} <b>${esc(c.author)}</b> · <span class="forum-meta">${esc(c.server)}</span><div>${esc(c.text)}</div><button class="like-btn ${cliked?'liked':''}" data-comment-like="${p.id}" data-comment-id="${c.id}">👍 ${(c.likes||[]).length}</button></div>`;
+    }).join('');
+    const el=document.createElement('article');el.className='forum-post';
+    el.innerHTML=`<div class="forum-user">${avatarHtml(author)}<div><b>${esc(p.author)}</b> · ${esc(p.server)}<div class="forum-meta">${new Date(p.created).toLocaleString(lang==='de'?'de-DE':'en-GB')} · ${esc(p.category)}</div></div></div>
+      <h3>${esc(p.title)}</h3><p>${esc(p.text)}</p>${p.image?`<img src="${p.image}" alt="" style="max-width:100%;max-height:420px;border-radius:10px">`:''}
+      <div class="forum-reactions"><button class="like-btn ${liked?'liked':''}" data-post-like="${p.id}">👍 ${(p.likes||[]).length}</button><span>💬 ${(p.comments||[]).length}</span></div>
+      <div class="forum-comments">${comments}${me?`<div class="comment-row"><input maxlength="800" data-comment-input="${p.id}" placeholder="${lang==='de'?'Kommentar schreiben …':'Write a comment …'}"><button class="forum-action" data-comment-send="${p.id}">Senden</button></div>`:''}</div>`;
+    forumFeed.appendChild(el);
+  });
+  renderForumProfile();
+}
+function imageToData(file,max=900){
+  return new Promise((resolve,reject)=>{if(!file)return resolve(null);if(file.size>2*1024*1024)return reject(new Error('max2'));
+    const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.82))};img.src=r.result};r.readAsDataURL(file)});
+}
+forumRegister?.addEventListener('click',()=>{
+  const name=forumName.value.trim(), pass=forumPassword.value, server=forumServer.value;if(name.length<2||pass.length<6)return alert('Spielername und Passwort (mind. 6 Zeichen) eingeben.');
+  const d=forumData();if(d.users.some(u=>u.name.toLowerCase()===name.toLowerCase()&&u.server===server))return alert('Dieser Spielername ist auf diesem Server bereits registriert.');
+  // Prototype only: public version will hash passwords server-side.
+  d.users.push({name,server,pass,avatar:{symbol:'⚓',color:'#183245'}});saveForum(d);localStorage.setItem(forumUserKey,JSON.stringify({name,server,avatar:{symbol:'⚓',color:'#183245'}}));renderForum();
+});
+forumLogin?.addEventListener('click',()=>{const d=forumData(),u=d.users.find(x=>x.name.toLowerCase()===forumName.value.trim().toLowerCase()&&x.server===forumServer.value&&x.pass===forumPassword.value);if(!u)return alert('Anmeldedaten nicht gefunden.');localStorage.setItem(forumUserKey,JSON.stringify({name:u.name,server:u.server,avatar:u.avatar}));renderForum()});
+forumLogout?.addEventListener('click',()=>{localStorage.removeItem(forumUserKey);renderForum()});
+newPostBtn?.addEventListener('click',()=>{if(!currentForumUser())return alert('Zum Posten bitte anmelden.');forumCompose.classList.toggle('open')});
+publishPost?.addEventListener('click',async()=>{const me=currentForumUser();if(!me)return;const title=postTitle.value.trim(),text=postText.value.trim();if(!title||!text)return alert('Titel und Text fehlen.');let image=null;try{image=await imageToData(postImage.files[0])}catch(e){return alert('Bild maximal 2 MB.')}
+ const d=forumData();d.posts.push({id:Date.now(),author:me.name,server:me.server,category:postCategory.value,title,text,image,created:Date.now(),likes:[],comments:[]});saveForum(d);postTitle.value='';postText.value='';postImage.value='';forumCompose.classList.remove('open');renderForum()});
+forumFeed?.addEventListener('click',e=>{const me=currentForumUser();if(!me)return;
+ const d=forumData();const pl=e.target.closest('[data-post-like]');if(pl){const p=d.posts.find(x=>x.id==pl.dataset.postLike);p.likes=p.likes||[];p.likes=p.likes.includes(me.name)?p.likes.filter(x=>x!==me.name):[...p.likes,me.name];saveForum(d);return renderForum()}
+ const cl=e.target.closest('[data-comment-like]');if(cl){const p=d.posts.find(x=>x.id==cl.dataset.commentLike),c=p.comments.find(x=>x.id==cl.dataset.commentId);c.likes=c.likes||[];c.likes=c.likes.includes(me.name)?c.likes.filter(x=>x!==me.name):[...c.likes,me.name];saveForum(d);return renderForum()}
+ const cs=e.target.closest('[data-comment-send]');if(cs){const p=d.posts.find(x=>x.id==cs.dataset.commentSend),inp=forumFeed.querySelector(`[data-comment-input="${p.id}"]`),text=inp.value.trim();if(!text)return;p.comments=p.comments||[];p.comments.push({id:Date.now(),author:me.name,server:me.server,text,likes:[]});saveForum(d);return renderForum()}
+});
+forumNewest?.addEventListener('click',()=>{forumSort='newest';renderForum()});forumTop?.addEventListener('click',()=>{forumSort='top';renderForum()});forumCommentsSort?.addEventListener('click',()=>{forumSort='comments';renderForum()});
+avatarSymbol?.addEventListener('change',()=>avatarPreview.textContent=avatarSymbol.value);avatarColor?.addEventListener('input',()=>avatarPreview.style.background=avatarColor.value);
+saveAvatar?.addEventListener('click',()=>{const me=currentForumUser(),d=forumData(),u=d.users.find(x=>x.name===me.name&&x.server===me.server);u.avatar={symbol:avatarSymbol.value,color:avatarColor.value};saveForum(d);localStorage.setItem(forumUserKey,JSON.stringify({name:u.name,server:u.server,avatar:u.avatar}));renderForum()});
+avatarUpload?.addEventListener('change',async()=>{const me=currentForumUser();if(!me)return;let image;try{image=await imageToData(avatarUpload.files[0],400)}catch(e){return alert('Bild maximal 2 MB.')}const d=forumData(),u=d.users.find(x=>x.name===me.name&&x.server===me.server);u.avatar={image};saveForum(d);localStorage.setItem(forumUserKey,JSON.stringify({name:u.name,server:u.server,avatar:u.avatar}));renderForum()});
+
+// Eventkalender
+// Neue Events können künftig einfach in dieser Liste ergänzt werden.
+const calendarEvents = [
+  {
+    id:'sturmtag',
+    de:'Sturmtag',
+    en:'Storm Day',
+    recurrence:'monthly',
+    day:1
+  },
+  {
+    id:'grosser-sturmtag',
+    de:'Großer Sturmtag',
+    en:'Great Storm Day',
+    recurrence:'yearly',
+    month:7,
+    day:1
+  },
+  {
+    id:'tauchtag-2026-08-30',
+    de:'Tauchtag',
+    en:'Diving Day',
+    date:'2026-08-30'
+  }
+];
+
+const calendarState = {
+  year: new Date().getFullYear(),
+  month: new Date().getMonth()
+};
+
+function eventOccursOn(ev, date){
+  const y=date.getFullYear(), m=date.getMonth(), d=date.getDate();
+  if(ev.date){
+    const [ey,em,ed]=ev.date.split('-').map(Number);
+    return y===ey && m===em-1 && d===ed;
+  }
+  if(ev.recurrence==='monthly') return d===ev.day;
+  if(ev.recurrence==='yearly') return m===ev.month && d===ev.day;
+  return false;
+}
+
+function sameLocalDay(a,b){
+  return a.getFullYear()===b.getFullYear() &&
+         a.getMonth()===b.getMonth() &&
+         a.getDate()===b.getDate();
+}
+
+function renderCalendar(){
+  const grid=document.getElementById('calendarGrid');
+  const monthLabel=document.getElementById('calendarMonth');
+  if(!grid || !monthLabel) return;
+
+  const locale=lang==='de'?'de-DE':'en-GB';
+  const weekdays=lang==='de'
+    ? ['Mo','Di','Mi','Do','Fr','Sa','So']
+    : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  const year=calendarState.year, month=calendarState.month;
+  const first=new Date(year,month,1);
+  const firstMondayIndex=(first.getDay()+6)%7;
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const prevMonthDays=new Date(year,month,0).getDate();
+
+  monthLabel.textContent=new Intl.DateTimeFormat(locale,{month:'long',year:'numeric'}).format(first);
+  grid.innerHTML=weekdays.map(w=>`<div class="calendar-weekday">${w}</div>`).join('');
+
+  const today=new Date();
+  const totalCells=Math.ceil((firstMondayIndex+daysInMonth)/7)*7;
+
+  for(let cell=0;cell<totalCells;cell++){
+    let day, cellDate, outside=false;
+    if(cell<firstMondayIndex){
+      day=prevMonthDays-firstMondayIndex+cell+1;
+      cellDate=new Date(year,month-1,day);
+      outside=true;
+    }else if(cell>=firstMondayIndex+daysInMonth){
+      day=cell-(firstMondayIndex+daysInMonth)+1;
+      cellDate=new Date(year,month+1,day);
+      outside=true;
+    }else{
+      day=cell-firstMondayIndex+1;
+      cellDate=new Date(year,month,day);
+    }
+
+    const isToday=sameLocalDay(cellDate,today);
+    const events=calendarEvents.filter(ev=>eventOccursOn(ev,cellDate));
+
+    const box=document.createElement('div');
+    box.className='calendar-day'+(outside?' outside':'')+(isToday?' today':'');
+    const eventHtml=events.map(ev=>{
+      const isTodayEvent=isToday;
+      return `<span class="event-pill${isTodayEvent?' today-event':''}">${lang==='de'?ev.de:ev.en}</span>`;
+    }).join('');
+    box.innerHTML=`<div class="day-number">${day}</div>${eventHtml}`;
+    grid.appendChild(box);
+  }
+
+  const title=document.getElementById('calendarTitle');
+  const sub=document.getElementById('calendarSub');
+  const legend=document.getElementById('calendarLegend');
+  if(title) title.textContent=lang==='de'?'📅 Eventkalender':'📅 Event calendar';
+  if(sub) sub.textContent=lang==='de'?'Aktuelle und wiederkehrende Pirate-Storm-Events':'Current and recurring Pirate Storm events';
+  if(legend) legend.textContent=lang==='de'
+    ?'Der heutige Tag und heutige Events werden automatisch hervorgehoben.'
+    :'Today and today’s events are highlighted automatically.';
+}
+
+document.getElementById('calendarPrev')?.addEventListener('click',()=>{
+  calendarState.month--;
+  if(calendarState.month<0){calendarState.month=11;calendarState.year--;}
+  renderCalendar();
+});
+document.getElementById('calendarNext')?.addEventListener('click',()=>{
+  calendarState.month++;
+  if(calendarState.month>11){calendarState.month=0;calendarState.year++;}
+  renderCalendar();
+});
 
 function translate(){
   document.documentElement.lang=lang;
@@ -542,7 +845,7 @@ function translate(){
 }
 
 function renderAll(){
-  translate();renderShips();renderDecks();renderUpgrades();renderSets();renderWeapons();renderAmmo();renderItems();renderPvp();renderMaterials();renderGuild();renderTools();renderShop();
+  translate();renderCalendar();renderForum();renderShips();renderDecks();renderUpgrades();renderSets();renderWeapons();renderAmmo();renderItems();renderPvp();renderMaterials();renderGuild();renderTools();renderShop();
   statShips.textContent=ships.length;statDecks.textContent=decks.length;statCannons.textContent=cannons.length;statHarpoons.textContent=harpoonlaunchers.length;statSets.textContent=sets.length;statItems.textContent=items.length;
   applySearch();
 }
