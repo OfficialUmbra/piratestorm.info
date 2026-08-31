@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PirateStorm.info · V10</title>
+<title>PirateStorm.info · V12</title>
 <meta name="description" content="Unofficial Pirate Storm community database">
 <style>
 :root{
@@ -122,7 +122,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 <main>
 
 <section id="forum">
-  <div class="section-head"><div><h2 id="forumHeading">💬 Forum</h2><div class="sub" id="forumSub">PirateStorm Community – Beiträge, Bilder, Kommentare und Likes.</div></div></div>
+  <div class="section-head"><div><h2 id="forumHeading">💬 Forum</h2><div class="sub" id="forumSub">PirateStorm Community – echte Beiträge, Kommentare und Likes für alle Spieler.</div></div></div>
   <div class="forum-shell">
     <div class="forum-panel">
       <div class="forum-toolbar">
@@ -130,41 +130,35 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
         <button class="forum-action primary" id="newPostBtn">+ Beitrag erstellen</button>
       </div>
       <div class="forum-compose" id="forumCompose">
-        <select id="postCategory"><option>Allgemein</option><option>Fragen & Hilfe</option><option>Guides</option><option>Arena</option><option>PvP</option><option>Schiffe & Builds</option><option>Gilden</option><option>Screenshots</option></select>
-        <input id="postTitle" maxlength="90" placeholder="Titel">
-        <textarea id="postText" rows="5" maxlength="4000" placeholder="Was möchtest du teilen?"></textarea>
-        <input id="postImage" type="file" accept="image/png,image/jpeg,image/webp">
+        <select id="postCategory"><option value="Allgemein">Allgemein</option><option value="Fragen & Hilfe">Fragen & Hilfe</option><option value="Guides">Guides</option><option value="Arena">Arena</option><option value="PvP">PvP</option><option value="Schiffe & Builds">Schiffe & Builds</option><option value="Gilden">Gilden</option><option value="Screenshots">Screenshots</option></select>
+        <input id="postTitle" maxlength="120" placeholder="Titel">
+        <textarea id="postText" rows="5" maxlength="10000" placeholder="Was möchtest du teilen?"></textarea>
         <button class="forum-action primary" id="publishPost">Veröffentlichen</button>
       </div>
+      <div id="forumStatus" class="forum-note"></div>
       <div id="forumFeed"></div>
     </div>
     <aside class="forum-side">
       <div id="loggedOutBox">
         <h3 id="loginTitle">Anmelden / Registrieren</h3>
         <div class="forum-login">
-          <input id="forumName" maxlength="24" placeholder="Spielername">
-          <input id="forumPassword" type="password" minlength="6" placeholder="Individuelles Passwort">
+          <input id="forumName" maxlength="24" autocomplete="username" placeholder="Spielername">
+          <input id="forumPassword" type="password" minlength="6" maxlength="128" autocomplete="current-password" placeholder="Individuelles Passwort">
           <select id="forumServer">
-            <option>Arabien 1</option><option>Deutschland 1</option><option>Europa 1</option><option>Europa 2</option><option>Europa 3</option><option>Europa 4</option><option>Lateinamerika 1</option><option>USA 1</option>
+            <option value="Arabien 1">Arabien 1</option><option value="Deutschland 1">Deutschland 1</option><option value="Europa 1">Europa 1</option><option value="Europa 2">Europa 2</option><option value="Europa 3">Europa 3</option><option value="Europa 4">Europa 4</option><option value="Lateinamerika 1">Lateinamerika 1</option><option value="USA 1">USA 1</option>
           </select>
           <button class="forum-action primary" id="forumRegister">Registrieren</button>
           <button class="forum-action" id="forumLogin">Anmelden</button>
         </div>
       </div>
       <div id="loggedInBox" style="display:none" class="profile-box">
-        <div class="profile-avatar" id="profileAvatar">PS</div>
+        <div class="profile-avatar" id="profileAvatar">⚓</div>
         <h3 id="profileName">Spieler</h3><div class="sub" id="profileServer"></div>
         <div class="avatar-maker">
-          <b id="avatarMakerTitle">Profilbild erstellen</b>
-          <div class="avatar-preview" id="avatarPreview">⚓</div>
-          <select id="avatarSymbol"><option>⚓</option><option>☠</option><option>⚔</option><option>🛡</option><option>🌊</option><option>💀</option></select>
-          <input id="avatarColor" type="color" value="#183245">
-          <button class="forum-action" id="saveAvatar">Profilbild speichern</button>
-          <label class="forum-action" style="display:block">Eigenes Bild hochladen<input id="avatarUpload" type="file" accept="image/png,image/jpeg,image/webp" style="display:none"></label>
           <button class="forum-action" id="forumLogout">Abmelden</button>
         </div>
       </div>
-      <div class="forum-note" id="forumBackendNote">Forum-Vorschau: Konten, Beiträge, Kommentare und Likes werden in dieser HTML-Version lokal im Browser gespeichert. Für die öffentliche Website wird die gleiche Oberfläche an die Cloudflare-Datenbank angebunden, damit alle Spieler dieselben Inhalte sehen.</div>
+      <div class="forum-note" id="forumBackendNote">Live-Forum: Konten, Beiträge, Kommentare und Likes werden zentral in Cloudflare D1 gespeichert. Bilder sind derzeit bewusst deaktiviert.</div>
     </aside>
   </div>
 </section>
@@ -263,6 +257,7 @@ toolsTitle:'Calculators',toolsSub:'Damage calculator, ship configurator and guil
 shopTitle:'Shop',shopSub:'Cash offers and diamond packages only.'
 }};
 let lang='de';
+let currentSection='overview';
 const verified='2026-08';
 
 const ships=[
@@ -502,14 +497,53 @@ const kv=(k,v)=>`<div class="kv"><span>${k}</span><b>${v ?? '—'}</b></div>`;
 const tags=status=>status==='historical'?`<div class="tags"><span class="tag hist">Historical</span></div>`:`<div class="tags"><span class="tag ver">Verified ${verified}</span></div>`;
 const stripHtml=s=>String(s??'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
 const escAttr=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const EN_EXACT={
+'PvP / Kriegsrang':'PvP / War Rank','Standard / Händler':'Standard / Merchant','Standard':'Standard','Arena':'Arena','Sturmtag':'Storm Day','Blutmond':'Blood Moon','Winter':'Winter','Geister':'Ghost','Panther':'Panther','Sommer':'Summer','Adler':'Eagle','Skorpion':'Scorpion','Sobek':'Sobek','Gilde':'Guild','Event':'Event','Bonusmap':'Bonus Map','Spezial':'Special','Kriegsrang':'War Rank','PvP-Schutz':'PvP Protection','Raketen':'Rockets','Reparatur':'Repair','Buffs':'Buffs','Briefe':'Letters',
+'Ja':'Yes','Nein':'No','Händler':'Merchant','Event/Auktion':'Event/Auction','Event':'Event','Großer Sturmtag':'Great Storm Day',
+'Unteres · Mittleres · Oberes':'Lower · Middle · Upper','Unteres · Mittleres':'Lower · Middle','Unteres':'Lower',
+'Eigener Deckplatz':'Own deck slot','Mittlerer Deckplatz':'Middle deck slot','Vorderer Deckplatz':'Front deck slot','Oberer Deckplatz':'Upper deck slot','Unterer Deckplatz':'Lower deck slot','Blutmond-Spezialdeck':'Blood Moon special deck',
+'Preis historisch nicht sicher verifiziert':'Historical price not safely verified',
+'Arena-Saisongewinner':'Arena season winner',
+'Kanonenkugeln · Standard':'Cannonballs · Standard','Kanonenkugeln · Spezial':'Cannonballs · Special','Harpunen · Standard':'Harpoons · Standard','Harpunen · Spezial':'Harpoons · Special'
+};
+const EN_REPL=[
+[/Max\. Trefferpunkte/g,'Max HP'],[/Trefferpunkte/g,'HP'],[/Max\. Kanonen/g,'Max cannons'],[/Extra-Kanonen/g,'Extra cannons'],[/Max\. Harpunenwerfer/g,'Max harpoon launchers'],[/Extra-Harpunenwerfer/g,'Extra harpoon launchers'],[/Max\. Tempo/g,'Max speed'],[/Tempo-Bonus/g,'Speed bonus'],[/Knoten/g,'knots'],
+[/K\.T\.-Ausweichchance/g,'Critical dodge'],[/K\.T\.-Schaden/g,'Critical damage'],[/Kritische Ausweichchance/g,'Critical dodge'],[/Kritische Resistenz/g,'Critical resistance'],[/Raketen-Ausweichchance/g,'Rocket dodge'],
+[/Kanonen-Nachladen/g,'Cannon reload'],[/Harpunen-Nachladen/g,'Harpoon reload'],[/Kanonen-Streuung/g,'Cannon spread'],[/Harpunen-Streuung/g,'Harpoon spread'],[/Kanonen-Reichweite/g,'Cannon range'],[/Harpunen-Reichweite/g,'Harpoon range'],
+[/Reparatur/g,'Repair'],[/Sofortreparatur/g,'Instant repair'],[/Chance auf Deckrettung/g,'Deck save chance'],[/Bonus-HP bei Restaurierung/g,'Restoration HP bonus'],[/Gold-Belohnungen/g,'Gold rewards'],[/Schiffs-Schaden/g,'Ship damage'],[/Erhaltener Schaden/g,'Damage received'],
+[/Dauer/g,'Duration'],[/Abklingzeit/g,'Cooldown'],[/Fehlerquote/g,'Failure rate'],[/Min\. Schaden/g,'Min. damage'],[/Max\. Schaden/g,'Max. damage'],[/aktuelles Tempo/g,'current speed'],[/bis Versenkung\/Logout/g,'until sinking/logout'],
+[/Unversenkbar/g,'Indestructible'],[/Freischaltung/g,'Unlock'],[/Arena-Punkte/g,'Arena points'],[/Kriegsrang/g,'War rank'],[/Rang/g,'Rank'],[/Schädel/g,'Skulls'],[/mit Premium/g,'with Premium'],[/mit 25% Gildenrabatt/g,'with 25% guild discount'],[/normal/g,'normal'],
+[/Händler/g,'Merchant'],[/Standardausrüstung/g,'standard equipment'],[/Bonusmaps/g,'bonus maps'],[/Bonusmap/g,'bonus map'],[/historischer Forumspreis/g,'historical forum price'],[/Quelle/g,'Source'],
+[/Jeden 1\. des Monats/g,'Every 1st of the month'],[/Nur am 1\. August/g,'Only on August 1'],[/zusätzlich zu normalen Bugschotten ausrüstbar/g,'can be equipped in addition to normal bow bulkheads'],[/erhöht beim Erwerb auch die momentanen Trefferpunkte/g,'also increases current HP when acquired'],
+[/Spieler-XP/g,'Player XP'],[/Gilden-XP/g,'Guild XP'],[/Gilden-Gold-Bonus/g,'Guild gold bonus'],[/Spieler-Gold/g,'Player gold'],[/Ab Level/g,'From level'],[/Mitglieder/g,'members'],[/aktive Quest/g,'active quest'],[/aktive Quests/g,'active quests'],[/Gilden-Hauptquartier/g,'Guild headquarters'],[/Gold-Händlerrabatt/g,'Gold merchant discount'],[/Diamantenrabatt beim Erneuern/g,'Diamond renewal discount'],
+[/Grundausbildung – kurz/g,'Basic training – short'],[/Grundausbildung – lang/g,'Basic training – long'],[/Fortgeschrittene Ausbildung – kurz/g,'Advanced training – short'],[/Fortgeschrittene Ausbildung – lang/g,'Advanced training – long'],[/Tiefsee-Taucher/g,'Deep-sea diver'],[/einige Event-Bonusmaps/g,'some event bonus maps'],[/mögliche Belohnung/g,'possible reward'],
+[/Standardmunition/g,'Standard ammunition'],[/Spezialmunition/g,'Special ammunition'],[/Standard-\/Bonusmap-Munition/g,'Standard/bonus-map ammunition'],[/Händlerpreis/g,'Merchant price'],[/Eventpreis/g,'Event price'],
+[/Zerstörbar/g,'Destructible'],[/Schiffe/g,'Ships'],[/Monster/g,'Monsters'],[/Level/g,'Level'],[/Teile/g,'pieces'],[/Teil von/g,'Part of'],[/Nach Erwerb auf allen Schiffen verfügbar/g,'Available on all ships after acquisition'],[/Voraussetzung/g,'Requirement'],[/Vormonat/g,'previous month'],[/Große Sturmtag-Verbesserung/g,'Great Storm Day upgrade'],[/Arena-Verbesserung/g,'Arena upgrade'],[/Standard-Verbesserung/g,'standard upgrade'],[/Schiffskiel/g,'ship keel'],[/Treibanker/g,'sea anchor'],[/Segel/g,'sail'],[/Bugschott/g,'bow bulkhead'],[/Galionsfigur/g,'figurehead'],[/Mast/g,'mast'],[/Ruder/g,'rudder'],[/Kiel/g,'keel'],[/Schott/g,'bulkhead']
+];
+const EN_NAMES={
+'Kriegsfregatte „Piranha“':'War Frigate “Piranha”','Kriegsfregatte „Baphomet“':'War Frigate “Baphomet”','Kriegsfregatte „Orca“':'War Frigate “Orca”','Kriegsfregatte „Barracuda“':'War Frigate “Barracuda”','Große Fregatte':'Large Frigate','Fregatte':'Frigate','Kriegsbrigantine':'War Brigantine','Brigantine':'Brigantine','Schaluppe':'Sloop','Verwüster':'Devastator','Weltenzerstörer':'World Destroyer',
+'Großes Kriegsdeck':'Large War Deck','Blutmond Deck':'Blood Moon Deck','Mittleres Pantherdeck':'Middle Panther Deck','Oberes Stacheldeck':'Upper Spiked Deck','Unteres Sobek Deck':'Lower Sobek Deck','Gildendeck':'Guild Deck','Arena-Zwischendeck':'Arena Intermediate Deck','Oberes Mahagonideck':'Upper Mahogany Deck','Mittleres Mahagonideck':'Middle Mahogany Deck','Unteres Mahagonideck':'Lower Mahogany Deck','Oberes Buchendeck':'Upper Beech Deck','Mittleres Buchendeck':'Middle Beech Deck','Unteres Buchendeck':'Lower Beech Deck',
+'Macht des Winters':'Power of Winter','Macht der Geister':'Power of Ghosts','Blutmond-Leuchten':'Blood Moon Glow','Macht des Panthers':'Power of the Panther','Macht des Sommers':'Power of Summer','Macht des Adlers':'Power of the Eagle','Macht des Skorpions':'Power of the Scorpion',
+'Verstärktes Bugschott':'Reinforced Bow Bulkhead','Arena-Anker':'Arena Anchor','Arena-Ruder':'Arena Rudder','Arena-Kiel':'Arena Keel','Arena-Mast':'Arena Mast','Arena-Glocke':'Arena Bell','Galionsfigur Hades':'Hades Figurehead','Kriegsschott':'War Bulkhead','Kriegerkiel':'Warrior Keel','Verstärkter Schiffskiel':'Reinforced Ship Keel','Professioneller Treibanker':'Professional Sea Anchor','Leinensegel':'Linen Sail','Hanfsegel':'Hemp Sail','Einfacher Schiffskiel':'Simple Ship Keel','Einfaches Bugschott':'Simple Bow Bulkhead','Improvisierter Treibanker':'Improvised Sea Anchor','Grobe Leinensegel':'Coarse Linen Sail','Grobe Hanfsegel':'Coarse Hemp Sail','Kleines Sturmschott':'Small Storm Bulkhead','Großes Sturmschott':'Large Storm Bulkhead',
+'Eiszapfen-Ruder':'Icicle Rudder','Eissturm-Segel':'Ice Storm Sail','Arktischer Kiel':'Arctic Keel','Gefrorener Mast':'Frozen Mast','Seelen Segel':'Soul Sail','Ruder des Verdammten':'Rudder of the Damned','Höllen-Mast':'Hell Mast','Hum-Bug':'Hum-Bug','Mondgeschmiedetes Ankergewicht':'Moon-Forged Anchor Weight','Mondlicht-Galionsfigurlack':'Moonlight Figurehead Coating','Mondstrahl-Ruderverlängerung':'Moonbeam Rudder Extension','Blutmond-Bugschottenverstärkung':'Blood Moon Bow Bulkhead Reinforcement','Obsidian-Anker':'Obsidian Anchor','Netjerets Galionsfigur':'Netjeret’s Figurehead','Dunkler Schrei':'Dark Scream','Donner-Rumpf':'Thunder Hull','Flossen-Ruder':'Fin Rudder','Flatter-Segel':'Flutter Sail','Reißzahn-Kiel':'Fang Keel','Basilisken Mast':'Basilisk Mast','Kuguar-Schott':'Cougar Bulkhead','Riff-Deck':'Reef Deck',
+'Allgemein':'General','Fragen & Hilfe':'Questions & Help','Schiffe & Builds':'Ships & Builds','Gilden':'Guilds','Screenshots':'Screenshots'
+};
+function tr(v){
+  if(lang==='de'||v==null)return v;
+  let s=String(v);
+  if(EN_NAMES[s])return EN_NAMES[s];
+  if(EN_EXACT[s])return EN_EXACT[s];
+  for(const [r,repl] of EN_REPL)s=s.replace(r,repl);
+  return s;
+}
 const card=(title,body,status='verified',desc='',searchExtra='')=>{const search=escAttr((title+' '+stripHtml(body)+' '+stripHtml(desc)+' '+searchExtra).toLowerCase());return `<article class="card searchable" data-search="${search}"><h3>${title}</h3>${tags(status)}${desc?`<div class="desc">${desc}</div>`:''}${body}</article>`;};
 function grouped(data,renderer){
   const groups=[...new Set(data.map(x=>x.group))];
-  return groups.map(g=>`<div class="group searchable" data-search="${escAttr(g.toLowerCase())}">${g}</div><div class="grid">${data.filter(x=>x.group===g).map(renderer).join('')}</div>`).join('');
+  return groups.map(g=>`<div class="group searchable" data-search="${escAttr((g+' '+tr(g)).toLowerCase())}">${tr(g)}</div><div class="grid">${data.filter(x=>x.group===g).map(renderer).join('')}</div>`).join('');
 }
 
 function renderShips(){
-  shipsContent.innerHTML=grouped(ships,s=>card(s.name,
+  shipsContent.innerHTML=grouped(ships,s=>card(tr(s.name),
     kv(lang==='de'?'Max. Trefferpunkte':'Max HP',fmt(s.hp))+
     kv(lang==='de'?'Basis-Tempo':'Base speed',s.baseSpeed==null?'—':`${String(s.baseSpeed).replace('.',',')} Knoten`)+
     kv(lang==='de'?'Max. Tempo':'Max speed',s.maxSpeed==null?'—':`${String(s.maxSpeed).replace('.',',')} Knoten`)+
@@ -519,43 +553,43 @@ function renderShips(){
     kv(lang==='de'?'Kritische Resistenz':'Critical resistance',`${s.res}%`)+
     kv(lang==='de'?'Max. Waffenreichweite':'Max weapon range',fmt(s.range))+
     kv(lang==='de'?'Max. Sichtweite':'Max sight',fmt(s.sight))+
-    kv(lang==='de'?'Deckplätze':'Deck slots',s.decks)+
-    (s.unlock?kv(lang==='de'?'Freischaltung':'Unlock',s.unlock):'')+
-    kv(lang==='de'?'Preis / Quelle':'Price / source',s.price),s.status));
+    kv(lang==='de'?'Deckplätze':'Deck slots',tr(s.decks))+
+    (s.unlock?kv(lang==='de'?'Freischaltung':'Unlock',tr(s.unlock)):'')+
+    kv(lang==='de'?'Preis / Quelle':'Price / source',tr(s.price)),s.status));
 }
 function renderDecks(){
-  decksContent.innerHTML=grouped(decks,d=>card(d.name,
+  decksContent.innerHTML=grouped(decks,d=>card(tr(d.name),
     (d.c!=null?kv(lang==='de'?'Extra-Kanonen':'Extra cannons',typeof d.c==='number'?`+${d.c}`:d.c):'')+
     (d.h!=null?kv(lang==='de'?'Extra-Harpunenwerfer':'Extra harpoon launchers',typeof d.h==='number'?`+${d.h}`:d.h):'')+
-    (d.ind!=null?kv(lang==='de'?'Unversenkbar':'Indestructible',d.ind):'')+
-    kv(lang==='de'?'Deckplatz':'Deck slot',d.slot)+
+    (d.ind!=null?kv(lang==='de'?'Unversenkbar':'Indestructible',tr(d.ind)):'')+
+    kv(lang==='de'?'Deckplatz':'Deck slot',tr(d.slot))+
     (d.dur!==undefined?kv(lang==='de'?'Haltbarkeit':'Durability',d.dur):'')+
-    (d.unlock?kv(lang==='de'?'Freischaltung':'Unlock',d.unlock):'')+
-    kv(lang==='de'?'Normalpreis':'Normal price',d.normal)+
-    (d.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',d.premium):''),d.status,d.note));
+    (d.unlock?kv(lang==='de'?'Freischaltung':'Unlock',tr(d.unlock)):'')+
+    kv(lang==='de'?'Normalpreis':'Normal price',tr(d.normal))+
+    (d.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',tr(d.premium)):''),d.status,tr(d.note)));
 }
 function renderUpgrades(){
-  upgradesContent.innerHTML=grouped(upgrades,u=>card(u.name,
-    (u.effect?kv(lang==='de'?'Effekt':'Effect',u.effect):'')+(u.unlock?kv(lang==='de'?'Freischaltung':'Unlock',u.unlock):'')+kv(lang==='de'?'Normalpreis':'Normal price',u.normal)+(u.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',u.premium):''),u.status));
+  upgradesContent.innerHTML=grouped(upgrades,u=>card(tr(u.name),
+    (u.effect?kv(lang==='de'?'Effekt':'Effect',tr(u.effect)):'')+(u.unlock?kv(lang==='de'?'Freischaltung':'Unlock',tr(u.unlock)):'')+kv(lang==='de'?'Normalpreis':'Normal price',tr(u.normal))+(u.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',tr(u.premium)):''),u.status));
 }
 function renderSets(){
-  setsContent.innerHTML=sets.map(s=>`<div class="group">${s.group} · ${s.name}</div><div class="grid"><article class="card searchable" data-search="${escAttr((s.group+' '+s.name+' '+JSON.stringify(s)).toLowerCase())}"><h3>${s.name}</h3><div class="tags"><span class="tag ver">Verified ${verified}</span></div><div class="sub">${lang==='de'?'Gegenstände':'Items'}</div>${s.pieces.map(p=>`<div class="level"><b>${p[0]}</b><br>${p[1]}${p[2]?`<br><span class="muted">${lang==='de'?'Preis':'Price'}: ${p[2]}</span>`:''}</div>`).join('')}<div class="sub" style="margin-top:9px">${lang==='de'?'Setstufen':'Set levels'}</div>${s.levels.map(l=>`<div class="level"><b>${l[0]}</b><br>${l[1]}</div>`).join('')}</article></div>`).join('');
+  setsContent.innerHTML=sets.map(s=>`<div class="group">${s.group} · ${s.name}</div><div class="grid"><article class="card searchable" data-search="${escAttr((s.group+' '+s.name+' '+JSON.stringify(s)).toLowerCase())}"><h3>${tr(s.name)}</h3><div class="tags"><span class="tag ver">Verified ${verified}</span></div><div class="sub">${lang==='de'?'Gegenstände':'Items'}</div>${s.pieces.map(p=>`<div class="level"><b>${tr(p[0])}</b><br>${tr(p[1])}${p[2]?`<br><span class="muted">${lang==='de'?'Preis':'Price'}: ${p[2]}</span>`:''}</div>`).join('')}<div class="sub" style="margin-top:9px">${lang==='de'?'Setstufen':'Set levels'}</div>${s.levels.map(l=>`<div class="level"><b>${tr(l[0])}</b><br>${tr(l[1])}</div>`).join('')}</article></div>`).join('');
 }
 function renderWeapons(){
-  cannonsContent.innerHTML=grouped(cannons,c=>card(`${c.name} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Schiffe':'Ships')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',c.destroy)+(c.source?kv(lang==='de'?'Quelle':'Source',c.source):'')+(c.price?kv(lang==='de'?'Preis':'Price',c.price):''),c.status));
-  harpoonsContent.innerHTML=grouped(harpoonlaunchers,c=>card(`${c.name} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Monster':'Monsters')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',c.destroy)+(c.source?kv(lang==='de'?'Quelle':'Source',c.source):'')+(c.price?kv(lang==='de'?'Preis':'Price',c.price):''),c.status));
+  cannonsContent.innerHTML=grouped(cannons,c=>card(`${tr(c.name)} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Schiffe':'Ships')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',tr(c.destroy))+(c.source?kv(lang==='de'?'Quelle':'Source',tr(c.source)):'')+(c.price?kv(lang==='de'?'Preis':'Price',tr(c.price)):'') ,c.status));
+  harpoonsContent.innerHTML=grouped(harpoonlaunchers,c=>card(`${tr(c.name)} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Monster':'Monsters')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',tr(c.destroy))+(c.source?kv(lang==='de'?'Quelle':'Source',tr(c.source)):'')+(c.price?kv(lang==='de'?'Preis':'Price',tr(c.price)):'') ,c.status));
 }
 function renderAmmo(){
-  ammoContent.innerHTML=grouped(ammo,a=>card(a.name,kv(lang==='de'?'Effekt / Typ':'Effect / type',a.effect)+kv(lang==='de'?'Preis':'Price',a.price)+kv(lang==='de'?'Quelle':'Source',a.source),'verified'));
+  ammoContent.innerHTML=grouped(ammo,a=>card(tr(a.name),kv(lang==='de'?'Effekt / Typ':'Effect / type',tr(a.effect))+kv(lang==='de'?'Preis':'Price',tr(a.price))+kv(lang==='de'?'Quelle':'Source',tr(a.source)),'verified'));
 }
 function renderItems(){
-  itemsContent.innerHTML=grouped(items,i=>card(i.name,(i.effect?kv(lang==='de'?'Effekt':'Effect',i.effect):'')+(i.unlock?kv(lang==='de'?'Freischaltung':'Unlock',i.unlock):'')+kv(lang==='de'?'Normalpreis':'Normal price',i.normal)+(i.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',i.premium):''),'verified'));
+  itemsContent.innerHTML=grouped(items,i=>card(tr(i.name),(i.effect?kv(lang==='de'?'Effekt':'Effect',tr(i.effect)):'')+(i.unlock?kv(lang==='de'?'Freischaltung':'Unlock',tr(i.unlock)):'')+kv(lang==='de'?'Normalpreis':'Normal price',tr(i.normal))+(i.premium?kv(lang==='de'?'Mit Premium/Rabatt':'With premium/discount',tr(i.premium)):''),'verified'));
 }
 function renderPvp(){
-  pvpContent.innerHTML=grouped(pvp,i=>card(i.name,kv(lang==='de'?'Effekt / Werte':'Effect / values',i.effect)+kv(lang==='de'?'Preis':'Price',i.normal)+(i.premium?kv(lang==='de'?'Mit Premium':'With premium',i.premium):''),'verified'));
+  pvpContent.innerHTML=grouped(pvp,i=>card(tr(i.name),kv(lang==='de'?'Effekt / Werte':'Effect / values',i.effect)+kv(lang==='de'?'Preis':'Price',tr(i.normal))+(i.premium?kv(lang==='de'?'Mit Premium':'With premium',tr(i.premium)):''),'verified'));
 }
 function renderMaterials(){
-  materialsContent.innerHTML=`<div class="grid">${materials.map(m=>card(m.name,m.places.map(p=>`<div class="level">📍 ${p}</div>`).join(''),'verified')).join('')}</div>`;
+  materialsContent.innerHTML=`<div class="grid">${materials.map(m=>card(tr(m.name),m.places.map(p=>`<div class="level">📍 ${tr(p)}</div>`).join(''),'verified')).join('')}</div>`;
 }
 function renderGuild(){
   const knownTotal=3762016000;
@@ -565,21 +599,22 @@ function renderGuild(){
     ${card(lang==='de'?'Gesamt-Gilden-XP':'Total guild XP',kv(lang==='de'?'Gesamt bis Level 50':'Total to level 50',fmt(knownTotal)),'verified')}
   </div>
   <div class="group">${lang==='de'?'Gildenbelohnungen':'Guild rewards'}</div>
-  <div class="grid">${guildRewards.map(g=>card(`${lang==='de'?'Gilden-Level':'Guild level'} ${g[0]}`,kv(lang==='de'?'Belohnung':'Reward',g[1]),'verified')).join('')}</div>
+  <div class="grid">${guildRewards.map(g=>card(`${lang==='de'?'Gilden-Level':'Guild level'} ${g[0]}`,kv(lang==='de'?'Belohnung':'Reward',tr(g[1])),'verified')).join('')}</div>
   <div class="group">${lang==='de'?'Gilden-XP-Tabelle':'Guild XP table'}</div>
   <div class="tablewrap"><table class="table"><thead><tr><th>${lang==='de'?'Von':'From'}</th><th>${lang==='de'?'Bis':'To'}</th><th>${lang==='de'?'Benötigte Gilden-XP':'Required guild XP'}</th></tr></thead><tbody>${[...guildXP.filter(x=>x[0]<3),...Array.from({length:17},(_,i)=>[i+3,i+4,'?']),...guildXP.filter(x=>x[0]>=20)].map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${typeof x[2]==='number'?fmt(x[2]):x[2]}</td></tr>`).join('')}<tr><td colspan="2"><b>${lang==='de'?'Gesamt bis Level 50':'Total to level 50'}</b></td><td><b>ca. 3.762.016.000</b></td></tr></tbody></table></div>`;
 }
 function renderShop(){
-  shopContent.innerHTML=`<div class="grid">${cashShop.map(x=>card(x[0],kv(lang==='de'?'Preis':'Price',`<span class="price-eur">${x[1]}</span>`)+(x[2]?kv(lang==='de'?'Hinweis':'Note',x[2]):''),'verified')).join('')}</div>`;
+  shopContent.innerHTML=`<div class="grid">${cashShop.map(x=>card(tr(x[0]),kv(lang==='de'?'Preis':'Price',`<span class="price-eur">${x[1]}</span>`)+(x[2]?kv(lang==='de'?'Hinweis':'Note',x[2]):''),'verified')).join('')}</div>`;
 }
 
 function renderTools(){
-  const shipOptions=ships.filter(s=>typeof s.c==='number').map((s,i)=>`<option value="${ships.indexOf(s)}">${s.name}</option>`).join('');
-  const cannonOptions=cannons.map((c,i)=>`<option value="${i}">${c.name} · Lvl ${c.level}</option>`).join('');
-  const normalSetOptions=`<option value="">${lang==='de'?'Kein Set':'No set'}</option>`+sets.map((s,i)=>({s,i})).filter(x=>x.s.group!=='Blutmond').map(x=>`<option value="${x.i}">${x.s.name}</option>`).join('');
+  const shipOptions=ships.filter(s=>typeof s.c==='number').map(s=>`<option value="${ships.indexOf(s)}">${tr(s.name)}</option>`).join('');
+  const cannonOptions=cannons.map((c,i)=>`<option value="${i}">${tr(c.name)} · Lvl ${c.level}</option>`).join('');
+  const normalSetOptions=`<option value="">${lang==='de'?'Kein Set':'No set'}</option>`+sets.map((s,i)=>({s,i})).filter(x=>x.s.group!=='Blutmond').map(x=>`<option value="${x.i}">${tr(x.s.name)}</option>`).join('');
   const bloodIdx=sets.findIndex(s=>s.group==='Blutmond');
-  const bloodSetOptions=`<option value="">${lang==='de'?'Kein Blutmond-Set':'No Blood Moon set'}</option>`+(bloodIdx>=0?`<option value="${bloodIdx}">${sets[bloodIdx].name}</option>`:'');
-  const deckChecks=decks.filter(d=>typeof d.c==='number' && typeof d.h==='number').map((d,i)=>`<label class="check"><input type="checkbox" class="deckcheck" data-idx="${decks.indexOf(d)}"> <span>${d.name} · +${d.c} K / +${d.h} H · ${d.slot}</span></label>`).join('');
+  const bloodSetOptions=`<option value="">${lang==='de'?'Kein Blutmond-Set':'No Blood Moon set'}</option>`+(bloodIdx>=0?`<option value="${bloodIdx}">${tr(sets[bloodIdx].name)}</option>`:'');
+  const deckChecks=decks.filter(d=>typeof d.c==='number' && typeof d.h==='number').map(d=>`<label class="check"><input type="checkbox" class="deckcheck" data-idx="${decks.indexOf(d)}"> <span>${tr(d.name)} · +${d.c} K / +${d.h} H · ${tr(d.slot)}</span></label>`).join('');
+  const upgradeChecks=upgrades.map((u,i)=>`<label class="check"><input type="checkbox" class="upgradecheck" data-idx="${i}" data-slot="${upgradeSlot(u)}"> <span>${tr(u.name)}${u.effect?` · ${tr(u.effect)}`:''}</span></label>`).join('');
   toolsContent.innerHTML=`
   <div class="tools">
     <div class="tool">
@@ -606,6 +641,10 @@ function renderTools(){
         <div class="field"><label>${lang==='de'?'Rollen der Macht · Harpunen':'Rolls of Power · harpoons'}</label><input id="rollHarpoons" type="number" value="0"></div>
         <div class="field"><label>${lang==='de'?'Rollen der Macht · HP':'Rolls of Power · HP'}</label><input id="rollHp" type="number" value="0"></div>
       </div>
+      <div class="sub" style="margin-top:10px">${lang==='de'?'Set-Gegenstände auswählen – ihre HP-, Tempo-, Kanonen- und Harpunenwerte werden mitgerechnet':'Select set items – their HP, speed, cannon and harpoon values are included'}</div>
+      <div class="checks" id="setPieceChecks"></div>
+      <div class="sub" style="margin-top:10px">${lang==='de'?'Verbesserungen auswählen – Schotts, Kiele, Segel, Ruder, Masten, Anker und Galionsfiguren':'Select upgrades – bulkheads, keels, sails, rudders, masts, anchors and figureheads'}</div>
+      <div class="checks">${upgradeChecks}</div>
       <div class="sub" style="margin-top:10px">${lang==='de'?'Decks auswählen – gleiche Deckplätze schließen sich automatisch aus':'Select decks – identical deck slots are mutually exclusive'}</div>
       <div class="checks">${deckChecks}</div>
       <div class="result" id="shipResult"></div>
@@ -622,120 +661,206 @@ function renderTools(){
   bindCalcs();
 }
 
-function parseSetBonus(text){
+function parseBonus(text){
   const res={c:0,h:0,hp:0,speed:0};
-  const mc=text.match(/Max\. Kanonen \+(\d+)/); if(mc)res.c+=+mc[1];
-  const hp=text.match(/(?:Max\. Trefferpunkte|HP) \+([\d\.]+)/); if(hp)res.hp+=+hp[1].replace(/\./g,'');
-  const sp=text.match(/Max\. Tempo \+([\d,\.]+)/); if(sp)res.speed+=+sp[1].replace(',','.');
+  text=String(text||'');
+  let m;
+  const cannonRx=/(?:Max\. Kanonen|Extra-Kanonen) \+(\d+)/g; while((m=cannonRx.exec(text)))res.c+=+m[1];
+  const harpoonRx=/(?:Max\. Harpunenwerfer|Extra-Harpunenwerfer) \+(\d+)/g; while((m=harpoonRx.exec(text)))res.h+=+m[1];
+  const hpRx=/(?:Max\. Trefferpunkte|HP) \+([\d\.]+)/g; while((m=hpRx.exec(text)))res.hp+=+m[1].replace(/\./g,'');
+  const speedRx=/(?:Max\. Tempo|Tempo-Bonus) \+?([\d,\.]+)(?: Knoten)?/g; while((m=speedRx.exec(text)))res.speed+=+m[1].replace(',','.');
   return res;
 }
+function upgradeSlot(u){
+  const n=(u.name+' '+(u.effect||'')).toLowerCase();
+  if(n.includes('sturmschott'))return 'storm-bulkhead';
+  if(n.includes('schott'))return 'bulkhead';
+  if(n.includes('kiel'))return 'keel';
+  if(n.includes('segel'))return 'sail';
+  if(n.includes('ruder'))return 'rudder';
+  if(n.includes('mast'))return 'mast';
+  if(n.includes('anker'))return 'anchor';
+  if(n.includes('galionsfigur'))return 'figurehead';
+  if(n.includes('glocke'))return 'bell';
+  return 'other-'+upgrades.indexOf(u);
+}
 function bindCalcs(){
-  const updateDamage=()=>{const c=cannons[+calcCannon.value],count=+calcCount.value||0,m=+calcAmmo.value||0,b=+calcBonus.value||0;const base=c.damage*count;const total=base*m*(1+b/100);damageResult.innerHTML=`${lang==='de'?'Ergebnis':'Result'}: ${fmt(Math.round(total))}`};
+  const updateDamage=()=>{const c=cannons[+calcCannon.value],count=+calcCount.value||0,m=+calcAmmo.value||0,b=+calcBonus.value||0;const base=(+c.damage||0)*count;const total=base*m*(1+b/100);damageResult.innerHTML=`${lang==='de'?'Ergebnis':'Result'}: ${fmt(Math.round(total))}`};
   [calcCannon,calcCount,calcAmmo,calcBonus].forEach(e=>e.addEventListener('input',updateDamage)); updateDamage();
 
-  const fillSetLevels=(setEl,levelEl)=>{const idx=setEl.value;if(idx===''){levelEl.innerHTML=`<option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option>`;return;}levelEl.innerHTML=`<option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option>`+sets[+idx].levels.map((l,i)=>`<option value="${i}">${l[0]}</option>`).join('');};
-  [calcSet1,calcSet2,calcBloodSet].forEach((el,idx)=>el.addEventListener('change',()=>{const level=[calcSetLevel1,calcSetLevel2,calcBloodLevel][idx];fillSetLevels(el,level);updateShip();}));
+  const fillSetLevels=(setEl,levelEl)=>{const idx=setEl.value;if(idx===''){levelEl.innerHTML=`<option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option>`;return;}levelEl.innerHTML=`<option value="-1">${lang==='de'?'Kein Bonus':'No bonus'}</option>`+sets[+idx].levels.map((l,i)=>`<option value="${i}">${tr(l[0])}</option>`).join('');};
+  function renderSetPieces(){
+    const chosen=[];
+    [calcSet1,calcSet2,calcBloodSet].forEach(se=>{if(se.value!==''&&!chosen.includes(+se.value))chosen.push(+se.value);});
+    setPieceChecks.innerHTML=chosen.length?chosen.map(si=>sets[si].pieces.map((p,pi)=>`<label class="check"><input type="checkbox" class="setpiececheck" data-set="${si}" data-piece="${pi}"> <span>${tr(sets[si].name)} · ${tr(p[0])} · ${tr(p[1])}</span></label>`).join('')).join(''):`<span class="muted">${lang==='de'?'Wähle oben ein Set aus.':'Choose a set above.'}</span>`;
+    document.querySelectorAll('.setpiececheck').forEach(ch=>ch.addEventListener('change',updateShip));
+  }
+  [calcSet1,calcSet2,calcBloodSet].forEach((el,idx)=>el.addEventListener('change',()=>{const level=[calcSetLevel1,calcSetLevel2,calcBloodLevel][idx];fillSetLevels(el,level);renderSetPieces();updateShip();}));
 
-  const slotKey=s=>s.replace(/Eigener Deckplatz.*|Blutmond-Spezialdeck/,'special-'+Math.random()).trim();
   document.querySelectorAll('.deckcheck').forEach(ch=>ch.addEventListener('change',e=>{
-    if(e.target.checked){
-      const d=decks[+e.target.dataset.idx];
-      if(!/Eigener|Spezial/.test(d.slot)){
-        document.querySelectorAll('.deckcheck:checked').forEach(other=>{
-          if(other===e.target)return;
-          const od=decks[+other.dataset.idx];
-          if(od.slot===d.slot)other.checked=false;
-        });
-      }
-    }
+    if(e.target.checked){const d=decks[+e.target.dataset.idx];if(!/Eigener|Spezial/.test(d.slot)){document.querySelectorAll('.deckcheck:checked').forEach(other=>{if(other===e.target)return;const od=decks[+other.dataset.idx];if(od.slot===d.slot)other.checked=false;});}}
+    updateShip();
+  }));
+  document.querySelectorAll('.upgradecheck').forEach(ch=>ch.addEventListener('change',e=>{
+    if(e.target.checked){const slot=e.target.dataset.slot;if(slot && slot!=='storm-bulkhead' && !slot.startsWith('other-'))document.querySelectorAll(`.upgradecheck:checked[data-slot="${slot}"]`).forEach(other=>{if(other!==e.target)other.checked=false;});}
     updateShip();
   }));
   function updateShip(){
     const s=ships[+calcShip.value];let c=+s.c||0,h=+s.h||0,hp=typeof s.hp==='number'?s.hp:0,speed=typeof s.maxSpeed==='number'?s.maxSpeed:0;
     document.querySelectorAll('.deckcheck:checked').forEach(ch=>{const d=decks[+ch.dataset.idx];c+=+d.c||0;h+=+d.h||0;});
-    [[calcSet1,calcSetLevel1],[calcSet2,calcSetLevel2],[calcBloodSet,calcBloodLevel]].forEach(([se,le])=>{if(se.value!=='' && +le.value>=0){const b=parseSetBonus(sets[+se.value].levels[+le.value][1]);c+=b.c;h+=b.h;hp+=b.hp;speed+=b.speed;}});
+    document.querySelectorAll('.upgradecheck:checked').forEach(ch=>{const b=parseBonus(upgrades[+ch.dataset.idx].effect);c+=b.c;h+=b.h;hp+=b.hp;speed+=b.speed;});
+    document.querySelectorAll('.setpiececheck:checked').forEach(ch=>{const p=sets[+ch.dataset.set].pieces[+ch.dataset.piece];const b=parseBonus(p[1]);c+=b.c;h+=b.h;hp+=b.hp;speed+=b.speed;});
+    [[calcSet1,calcSetLevel1],[calcSet2,calcSetLevel2],[calcBloodSet,calcBloodLevel]].forEach(([se,le])=>{if(se.value!=='' && +le.value>=0){const b=parseBonus(sets[+se.value].levels[+le.value][1]);c+=b.c;h+=b.h;hp+=b.hp;speed+=b.speed;}});
     c+=+rollCannons.value||0;h+=+rollHarpoons.value||0;hp+=+rollHp.value||0;
-    shipResult.innerHTML=`${s.name}<br>💣 ${lang==='de'?'Max. Kanonen':'Max cannons'}: ${fmt(c)}<br>⌁ ${lang==='de'?'Max. Harpunenwerfer':'Max harpoon launchers'}: ${fmt(h)}<br>❤ ${lang==='de'?'Max. Trefferpunkte':'Max HP'}: ${fmt(hp)}<br>⛵ ${lang==='de'?'Max. Tempo':'Max speed'}: ${String(speed).replace('.',',')} ${lang==='de'?'Knoten':'knots'}`;
+    shipResult.innerHTML=`${tr(s.name)}<br>💣 ${lang==='de'?'Max. Kanonen':'Max cannons'}: ${fmt(c)}<br>⌁ ${lang==='de'?'Max. Harpunenwerfer':'Max harpoon launchers'}: ${fmt(h)}<br>❤ ${lang==='de'?'Max. Trefferpunkte':'Max HP'}: ${fmt(hp)}<br>⛵ ${lang==='de'?'Max. Tempo':'Max speed'}: ${String(Math.round(speed*10)/10).replace('.',lang==='de'?',':'.')} ${lang==='de'?'Knoten':'knots'}`;
   }
-  [calcShip,calcSetLevel1,calcSetLevel2,calcBloodLevel,rollCannons,rollHarpoons,rollHp].forEach(e=>e.addEventListener('input',updateShip)); fillSetLevels(calcSet1,calcSetLevel1); fillSetLevels(calcSet2,calcSetLevel2); fillSetLevels(calcBloodSet,calcBloodLevel); updateShip();
+  [calcShip,calcSetLevel1,calcSetLevel2,calcBloodLevel,rollCannons,rollHarpoons,rollHp].forEach(e=>e.addEventListener('input',updateShip));
+  fillSetLevels(calcSet1,calcSetLevel1);fillSetLevels(calcSet2,calcSetLevel2);fillSetLevels(calcBloodSet,calcBloodLevel);renderSetPieces();updateShip();
 
-  const updateGuild=()=>{const lvl=Math.max(1,Math.min(49,+guildLevel.value||1));const current=+guildCurrentXp.value||0;const row=guildXP.find(x=>x[0]===lvl);if(!row){guildCalcResult.innerHTML=`${lang==='de'?'Für dieses Level ist der Einzelwert noch unbekannt (?)':'The individual value for this level is still unknown (?)'}`;return;}const next=Math.max(0,row[2]-current);let remaining=next;let complete=true;for(let l=lvl+1;l<50;l++){const x=guildXP.find(r=>r[0]===l);if(x)remaining+=x[2];else complete=false;}guildCalcResult.innerHTML=`${lang==='de'?'Bis zum nächsten Level':'To next level'}: ${fmt(next)} XP<br>${lang==='de'?'Bis Level 50':'To level 50'}: ${complete?fmt(remaining)+' XP':'? (fehlende Einzelwerte zwischen Level 3–20)'}`;};
-  [guildLevel,guildCurrentXp].forEach(e=>e.addEventListener('input',updateGuild)); updateGuild();
+  const updateGuild=()=>{const lvl=Math.max(1,Math.min(49,+guildLevel.value||1));const current=+guildCurrentXp.value||0;const row=guildXP.find(x=>x[0]===lvl);if(!row){guildCalcResult.innerHTML=`${lang==='de'?'Für dieses Level ist der Einzelwert noch unbekannt (?)':'The individual value for this level is still unknown (?)'}`;return;}const next=Math.max(0,row[2]-current);let remaining=next;let complete=true;for(let l=lvl+1;l<50;l++){const x=guildXP.find(r=>r[0]===l);if(x)remaining+=x[2];else complete=false;}guildCalcResult.innerHTML=`${lang==='de'?'Bis zum nächsten Level':'To next level'}: ${fmt(next)} XP<br>${lang==='de'?'Bis Level 50':'To level 50'}: ${complete?fmt(remaining)+' XP':(lang==='de'?'? (fehlende Einzelwerte zwischen Level 3–20)':'? (missing individual values between levels 3–20)')}`;};
+  [guildLevel,guildCurrentXp].forEach(e=>e.addEventListener('input',updateGuild));updateGuild();
 }
 
 
 
-// Forum prototype. Local browser storage is used until the public Cloudflare backend is connected.
-const forumServers=['Arabien 1','Deutschland 1','Europa 1','Europa 2','Europa 3','Europa 4','Lateinamerika 1','USA 1'];
-const forumKey='piratestorm_forum_v1', forumUserKey='piratestorm_forum_user_v1';
+// Echtes Forum: Cloudflare Pages Functions + D1.
 let forumSort='newest';
-const forumData=()=>JSON.parse(localStorage.getItem(forumKey)||'{"users":[],"posts":[]}');
-const saveForum=d=>localStorage.setItem(forumKey,JSON.stringify(d));
-const currentForumUser=()=>JSON.parse(localStorage.getItem(forumUserKey)||'null');
+let forumCurrentUser=null;
+let forumPosts=[];
+let forumLoading=false;
+const forumLikedPosts=new Set();
+const forumLikedComments=new Set();
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-function avatarHtml(u,small=true){
-  if(u?.avatar?.image)return `<div class="forum-avatar"><img src="${u.avatar.image}" alt=""></div>`;
-  return `<div class="forum-avatar" style="background:${esc(u?.avatar?.color||'#183245')}">${esc(u?.avatar?.symbol||'⚓')}</div>`;
+const forumDate=unix=>new Date(Number(unix)*1000).toLocaleString(lang==='de'?'de-DE':'en-GB');
+function avatarHtml(u){
+  const symbol=u?.avatar_symbol||'⚓', color=u?.avatar_color||'#183245';
+  return `<div class="forum-avatar" style="background:${esc(color)}">${esc(symbol)}</div>`;
 }
-function forumUserByName(name){return forumData().users.find(u=>u.name===name)}
+function setForumStatus(message='',isError=false){
+  const el=document.getElementById('forumStatus');if(!el)return;
+  el.textContent=message;el.style.color=isError?'#ffb1b1':'';
+}
+async function apiJson(url,options={}){
+  const response=await fetch(url,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});
+  let data={};try{data=await response.json()}catch(e){}
+  if(!response.ok||data.success===false)throw new Error(data.error||(lang==='de'?'Serverfehler.':'Server error.'));
+  return data;
+}
 function renderForumProfile(){
-  const u=currentForumUser(), out=document.getElementById('loggedOutBox'), inn=document.getElementById('loggedInBox');
-  if(!out||!inn)return;
-  out.style.display=u?'none':'block';inn.style.display=u?'block':'none';
-  if(u){
-    profileName.textContent=u.name;profileServer.textContent=u.server;
-    profileAvatar.innerHTML=u.avatar?.image?`<img src="${u.avatar.image}" alt="">`:esc(u.avatar?.symbol||'⚓');
-    profileAvatar.style.background=u.avatar?.color||'#183245';
-    avatarPreview.textContent=u.avatar?.symbol||'⚓';avatarPreview.style.background=u.avatar?.color||'#183245';
+  const out=document.getElementById('loggedOutBox'), inn=document.getElementById('loggedInBox');if(!out||!inn)return;
+  out.style.display=forumCurrentUser?'none':'block';inn.style.display=forumCurrentUser?'block':'none';
+  if(forumCurrentUser){
+    profileName.textContent=forumCurrentUser.username;profileServer.textContent=forumCurrentUser.server;
+    profileAvatar.textContent=forumCurrentUser.avatar_symbol||'⚓';profileAvatar.style.background=forumCurrentUser.avatar_color||'#183245';
   }
 }
-function renderForum(){
-  const d=forumData(), me=currentForumUser(); let posts=[...d.posts];
-  if(forumSort==='top')posts.sort((a,b)=>(b.likes?.length||0)-(a.likes?.length||0));
-  else if(forumSort==='comments')posts.sort((a,b)=>(b.comments?.length||0)-(a.comments?.length||0));
-  else posts.sort((a,b)=>b.created-a.created);
-  forumFeed.innerHTML=posts.length?'':`<div class="note">${lang==='de'?'Noch keine Beiträge.':'No posts yet.'}</div>`;
-  posts.forEach(p=>{
-    const author=d.users.find(u=>u.name===p.author)||{name:p.author,server:p.server};
-    const liked=me&&(p.likes||[]).includes(me.name);
-    const comments=(p.comments||[]).map(c=>{
-      const cu=d.users.find(u=>u.name===c.author)||{name:c.author,server:c.server};
-      const cliked=me&&(c.likes||[]).includes(me.name);
-      return `<div class="forum-comment">${avatarHtml(cu)} <b>${esc(c.author)}</b> · <span class="forum-meta">${esc(c.server)}</span><div>${esc(c.text)}</div><button class="like-btn ${cliked?'liked':''}" data-comment-like="${p.id}" data-comment-id="${c.id}">👍 ${(c.likes||[]).length}</button></div>`;
-    }).join('');
-    const el=document.createElement('article');el.className='forum-post';
-    el.innerHTML=`<div class="forum-user">${avatarHtml(author)}<div><b>${esc(p.author)}</b> · ${esc(p.server)}<div class="forum-meta">${new Date(p.created).toLocaleString(lang==='de'?'de-DE':'en-GB')} · ${esc(p.category)}</div></div></div>
-      <h3>${esc(p.title)}</h3><p>${esc(p.text)}</p>${p.image?`<img src="${p.image}" alt="" style="max-width:100%;max-height:420px;border-radius:10px">`:''}
-      <div class="forum-reactions"><button class="like-btn ${liked?'liked':''}" data-post-like="${p.id}">👍 ${(p.likes||[]).length}</button><span>💬 ${(p.comments||[]).length}</span></div>
-      <div class="forum-comments">${comments}${me?`<div class="comment-row"><input maxlength="800" data-comment-input="${p.id}" placeholder="${lang==='de'?'Kommentar schreiben …':'Write a comment …'}"><button class="forum-action" data-comment-send="${p.id}">Senden</button></div>`:''}</div>`;
-    forumFeed.appendChild(el);
-  });
+async function loadForumSession(){
+  try{const data=await apiJson('/api/me',{method:'GET'});forumCurrentUser=data.loggedIn?data.user:null;}
+  catch(e){forumCurrentUser=null;}
   renderForumProfile();
 }
-function imageToData(file,max=900){
-  return new Promise((resolve,reject)=>{if(!file)return resolve(null);if(file.size>2*1024*1024)return reject(new Error('max2'));
-    const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.82))};img.src=r.result};r.readAsDataURL(file)});
+async function loadForumPosts(showLoading=true){
+  if(forumLoading)return;
+  forumLoading=true;
+  if(showLoading)setForumStatus(lang==='de'?'Beiträge werden geladen …':'Loading posts …');
+  try{
+    const data=await apiJson('/api/posts',{method:'GET'});
+    const posts=data.posts||[];
+    const withComments=await Promise.all(posts.map(async p=>{
+      try{const c=await apiJson(`/api/comments?post_id=${encodeURIComponent(p.id)}`,{method:'GET'});return {...p,commentList:c.comments||[]};}
+      catch(e){return {...p,commentList:[]};}
+    }));
+    forumPosts=withComments;
+    setForumStatus('');
+  }catch(e){setForumStatus(e.message,true);forumPosts=[];}
+  finally{forumLoading=false;renderForum();}
 }
-forumRegister?.addEventListener('click',()=>{
-  const name=forumName.value.trim(), pass=forumPassword.value, server=forumServer.value;if(name.length<2||pass.length<6)return alert('Spielername und Passwort (mind. 6 Zeichen) eingeben.');
-  const d=forumData();if(d.users.some(u=>u.name.toLowerCase()===name.toLowerCase()&&u.server===server))return alert('Dieser Spielername ist auf diesem Server bereits registriert.');
-  // Prototype only: public version will hash passwords server-side.
-  d.users.push({name,server,pass,avatar:{symbol:'⚓',color:'#183245'}});saveForum(d);localStorage.setItem(forumUserKey,JSON.stringify({name,server,avatar:{symbol:'⚓',color:'#183245'}}));renderForum();
+function renderForum(){
+  renderForumProfile();
+  const feed=document.getElementById('forumFeed');if(!feed)return;
+  let posts=[...forumPosts];
+  if(forumSort==='top')posts.sort((a,b)=>Number(b.likes||0)-Number(a.likes||0));
+  else if(forumSort==='comments')posts.sort((a,b)=>Number(b.comments||0)-Number(a.comments||0));
+  else posts.sort((a,b)=>Number(b.created_at||0)-Number(a.created_at||0));
+  feed.innerHTML=posts.length?'':`<div class="note">${lang==='de'?'Noch keine Beiträge.':'No posts yet.'}</div>`;
+  posts.forEach(p=>{
+    const comments=p.commentList||[];
+    const commentsHtml=comments.map(c=>`<div class="forum-comment">
+      <div class="forum-user">${avatarHtml(c)}<div><b>${esc(c.username)}</b> · ${esc(c.server)}<div class="forum-meta">${forumDate(c.created_at)}</div></div></div>
+      <div style="margin-top:6px;white-space:pre-wrap">${esc(c.content)}</div>
+      <button class="like-btn ${forumLikedComments.has(Number(c.id))?'liked':''}" data-comment-like="${c.id}">👍 ${Number(c.likes||0)}</button>
+    </div>`).join('');
+    const el=document.createElement('article');el.className='forum-post';
+    el.innerHTML=`<div class="forum-user">${avatarHtml(p)}<div><b>${esc(p.username)}</b> · ${esc(p.server)}<div class="forum-meta">${forumDate(p.created_at)} · ${esc(tr(p.category))}</div></div></div>
+      <h3>${esc(p.title)}</h3><p>${esc(p.content)}</p>
+      <div class="forum-reactions"><button class="like-btn ${forumLikedPosts.has(Number(p.id))?'liked':''}" data-post-like="${p.id}">👍 ${Number(p.likes||0)}</button><span>💬 ${Number(p.comments||comments.length||0)}</span></div>
+      <div class="forum-comments">${commentsHtml}${forumCurrentUser?`<div class="comment-row"><input maxlength="5000" data-comment-input="${p.id}" placeholder="${lang==='de'?'Kommentar schreiben …':'Write a comment …'}"><button class="forum-action" data-comment-send="${p.id}">${lang==='de'?'Senden':'Send'}</button></div>`:''}</div>`;
+    feed.appendChild(el);
+  });
+}
+async function forumLoginRequest(username,password,server){
+  const data=await apiJson('/api/login',{method:'POST',body:JSON.stringify({username,password,server})});
+  forumCurrentUser=data.user;renderForumProfile();return data;
+}
+forumRegister?.addEventListener('click',async()=>{
+  const username=forumName.value.trim(),password=forumPassword.value,server=forumServer.value;
+  if(username.length<2||password.length<6)return alert(lang==='de'?'Spielername und Passwort (mind. 6 Zeichen) eingeben.':'Enter a player name and password (min. 6 characters).');
+  forumRegister.disabled=true;
+  try{
+    await apiJson('/api/register',{method:'POST',body:JSON.stringify({username,password,server})});
+    await forumLoginRequest(username,password,server);forumPassword.value='';
+    alert(lang==='de'?'Account erstellt und du bist angemeldet.':'Account created and you are signed in.');
+    await loadForumPosts(false);
+  }catch(e){alert(e.message);}finally{forumRegister.disabled=false;}
 });
-forumLogin?.addEventListener('click',()=>{const d=forumData(),u=d.users.find(x=>x.name.toLowerCase()===forumName.value.trim().toLowerCase()&&x.server===forumServer.value&&x.pass===forumPassword.value);if(!u)return alert('Anmeldedaten nicht gefunden.');localStorage.setItem(forumUserKey,JSON.stringify({name:u.name,server:u.server,avatar:u.avatar}));renderForum()});
-forumLogout?.addEventListener('click',()=>{localStorage.removeItem(forumUserKey);renderForum()});
-newPostBtn?.addEventListener('click',()=>{if(!currentForumUser())return alert('Zum Posten bitte anmelden.');forumCompose.classList.toggle('open')});
-publishPost?.addEventListener('click',async()=>{const me=currentForumUser();if(!me)return;const title=postTitle.value.trim(),text=postText.value.trim();if(!title||!text)return alert('Titel und Text fehlen.');let image=null;try{image=await imageToData(postImage.files[0])}catch(e){return alert('Bild maximal 2 MB.')}
- const d=forumData();d.posts.push({id:Date.now(),author:me.name,server:me.server,category:postCategory.value,title,text,image,created:Date.now(),likes:[],comments:[]});saveForum(d);postTitle.value='';postText.value='';postImage.value='';forumCompose.classList.remove('open');renderForum()});
-forumFeed?.addEventListener('click',e=>{const me=currentForumUser();if(!me)return;
- const d=forumData();const pl=e.target.closest('[data-post-like]');if(pl){const p=d.posts.find(x=>x.id==pl.dataset.postLike);p.likes=p.likes||[];p.likes=p.likes.includes(me.name)?p.likes.filter(x=>x!==me.name):[...p.likes,me.name];saveForum(d);return renderForum()}
- const cl=e.target.closest('[data-comment-like]');if(cl){const p=d.posts.find(x=>x.id==cl.dataset.commentLike),c=p.comments.find(x=>x.id==cl.dataset.commentId);c.likes=c.likes||[];c.likes=c.likes.includes(me.name)?c.likes.filter(x=>x!==me.name):[...c.likes,me.name];saveForum(d);return renderForum()}
- const cs=e.target.closest('[data-comment-send]');if(cs){const p=d.posts.find(x=>x.id==cs.dataset.commentSend),inp=forumFeed.querySelector(`[data-comment-input="${p.id}"]`),text=inp.value.trim();if(!text)return;p.comments=p.comments||[];p.comments.push({id:Date.now(),author:me.name,server:me.server,text,likes:[]});saveForum(d);return renderForum()}
+forumLogin?.addEventListener('click',async()=>{
+  const username=forumName.value.trim(),password=forumPassword.value,server=forumServer.value;
+  forumLogin.disabled=true;
+  try{await forumLoginRequest(username,password,server);forumPassword.value='';await loadForumPosts(false);}
+  catch(e){alert(e.message);}finally{forumLogin.disabled=false;}
 });
-forumNewest?.addEventListener('click',()=>{forumSort='newest';renderForum()});forumTop?.addEventListener('click',()=>{forumSort='top';renderForum()});forumCommentsSort?.addEventListener('click',()=>{forumSort='comments';renderForum()});
-avatarSymbol?.addEventListener('change',()=>avatarPreview.textContent=avatarSymbol.value);avatarColor?.addEventListener('input',()=>avatarPreview.style.background=avatarColor.value);
-saveAvatar?.addEventListener('click',()=>{const me=currentForumUser(),d=forumData(),u=d.users.find(x=>x.name===me.name&&x.server===me.server);u.avatar={symbol:avatarSymbol.value,color:avatarColor.value};saveForum(d);localStorage.setItem(forumUserKey,JSON.stringify({name:u.name,server:u.server,avatar:u.avatar}));renderForum()});
-avatarUpload?.addEventListener('change',async()=>{const me=currentForumUser();if(!me)return;let image;try{image=await imageToData(avatarUpload.files[0],400)}catch(e){return alert('Bild maximal 2 MB.')}const d=forumData(),u=d.users.find(x=>x.name===me.name&&x.server===me.server);u.avatar={image};saveForum(d);localStorage.setItem(forumUserKey,JSON.stringify({name:u.name,server:u.server,avatar:u.avatar}));renderForum()});
+forumLogout?.addEventListener('click',async()=>{
+  try{await apiJson('/api/logout',{method:'POST',body:'{}'});}catch(e){}
+  forumCurrentUser=null;forumLikedPosts.clear();forumLikedComments.clear();forumCompose.classList.remove('open');renderForum();
+});
+newPostBtn?.addEventListener('click',()=>{
+  if(!forumCurrentUser)return alert(lang==='de'?'Zum Posten bitte anmelden.':'Please sign in to post.');
+  forumCompose.classList.toggle('open');
+});
+publishPost?.addEventListener('click',async()=>{
+  if(!forumCurrentUser)return;
+  const title=postTitle.value.trim(),content=postText.value.trim(),category=postCategory.value;
+  if(!title||!content)return alert(lang==='de'?'Titel und Text fehlen.':'Title and text are required.');
+  publishPost.disabled=true;
+  try{
+    await apiJson('/api/posts',{method:'POST',body:JSON.stringify({category,title,content})});
+    postTitle.value='';postText.value='';forumCompose.classList.remove('open');await loadForumPosts(false);
+  }catch(e){alert(e.message);}finally{publishPost.disabled=false;}
+});
+forumFeed?.addEventListener('click',async e=>{
+  const pl=e.target.closest('[data-post-like]');
+  const cl=e.target.closest('[data-comment-like]');
+  const cs=e.target.closest('[data-comment-send]');
+  if((pl||cl||cs)&&!forumCurrentUser)return alert(lang==='de'?'Bitte zuerst anmelden.':'Please sign in first.');
+  try{
+    if(pl){
+      pl.disabled=true;const id=Number(pl.dataset.postLike);const data=await apiJson('/api/post-likes',{method:'POST',body:JSON.stringify({post_id:id})});
+      data.liked?forumLikedPosts.add(id):forumLikedPosts.delete(id);const p=forumPosts.find(x=>Number(x.id)===id);if(p)p.likes=data.likes;renderForum();return;
+    }
+    if(cl){
+      cl.disabled=true;const id=Number(cl.dataset.commentLike);const data=await apiJson('/api/comment-likes',{method:'POST',body:JSON.stringify({comment_id:id})});
+      data.liked?forumLikedComments.add(id):forumLikedComments.delete(id);
+      for(const p of forumPosts){const c=(p.commentList||[]).find(x=>Number(x.id)===id);if(c){c.likes=data.likes;break;}}renderForum();return;
+    }
+    if(cs){
+      cs.disabled=true;const postId=Number(cs.dataset.commentSend),inp=forumFeed.querySelector(`[data-comment-input="${postId}"]`),content=inp?.value.trim();if(!content)return;
+      await apiJson('/api/comments',{method:'POST',body:JSON.stringify({post_id:postId,content})});await loadForumPosts(false);return;
+    }
+  }catch(err){alert(err.message);if(pl)pl.disabled=false;if(cl)cl.disabled=false;if(cs)cs.disabled=false;}
+});
+forumNewest?.addEventListener('click',()=>{forumSort='newest';renderForum()});
+forumTop?.addEventListener('click',()=>{forumSort='top';renderForum()});
+forumCommentsSort?.addEventListener('click',()=>{forumSort='comments';renderForum()});
 
 // Eventkalender
 // Neue Events können künftig einfach in dieser Liste ergänzt werden.
@@ -863,6 +988,24 @@ function translate(){
   brandSub.textContent=lang==='de'?'Inoffizielles Community-Projekt':'Unofficial community project';
   search.placeholder=lang==='de'?'Schiffe, Decks, Sets, Kanonen, Items … durchsuchen':'Search ships, decks, sets, cannons, items …';
   footerText.textContent=lang==='de'?'Inoffizielles Community-Projekt. Pirate Storm sowie zugehörige Marken und Inhalte gehören Bigpoint. Live-Werte basieren auf Ingame-Screenshots vom August 2026; historische Referenzen sind separat markiert.':'Unofficial community project. Pirate Storm and related trademarks/content belong to Bigpoint. Live values are based on in-game screenshots from August 2026; historical references are marked separately.';
+  if(document.getElementById('forumSub')) forumSub.textContent=lang==='de'?'PirateStorm Community – echte Beiträge, Kommentare und Likes für alle Spieler.':'PirateStorm community – shared posts, comments and likes for all players.';
+  if(document.getElementById('loginTitle')) loginTitle.textContent=lang==='de'?'Anmelden / Registrieren':'Sign in / Register';
+  if(document.getElementById('forumRegister')) forumRegister.textContent=lang==='de'?'Registrieren':'Register';
+  if(document.getElementById('forumLogin')) forumLogin.textContent=lang==='de'?'Anmelden':'Sign in';
+  if(document.getElementById('forumLogout')) forumLogout.textContent=lang==='de'?'Abmelden':'Sign out';
+  if(document.getElementById('newPostBtn')) newPostBtn.textContent=lang==='de'?'+ Beitrag erstellen':'+ Create post';
+  if(document.getElementById('publishPost')) publishPost.textContent=lang==='de'?'Veröffentlichen':'Publish';
+  if(document.getElementById('forumNewest')) forumNewest.textContent=lang==='de'?'Neueste':'Newest';
+  if(document.getElementById('forumTop')) forumTop.textContent=lang==='de'?'Meiste 👍':'Most 👍';
+  if(document.getElementById('forumCommentsSort')) forumCommentsSort.textContent=lang==='de'?'Meiste Kommentare':'Most comments';
+  if(document.getElementById('forumBackendNote')) forumBackendNote.textContent=lang==='de'?'Live-Forum: Konten, Beiträge, Kommentare und Likes werden zentral in Cloudflare D1 gespeichert. Bilder sind derzeit bewusst deaktiviert.':'Live forum: accounts, posts, comments and likes are stored centrally in Cloudflare D1. Images are intentionally disabled for now.';
+  if(document.getElementById('forumHeading')) forumHeading.textContent='💬 '+(lang==='de'?'Forum':'Forum');
+  if(document.getElementById('forumName')) forumName.placeholder=lang==='de'?'Spielername':'Player name';
+  if(document.getElementById('forumPassword')) forumPassword.placeholder=lang==='de'?'Individuelles Passwort':'Individual password';
+  if(document.getElementById('postTitle')) postTitle.placeholder=lang==='de'?'Titel':'Title';
+  if(document.getElementById('postText')) postText.placeholder=lang==='de'?'Was möchtest du teilen?':'What would you like to share?';
+  if(document.getElementById('postCategory')) [...postCategory.options].forEach(o=>{o.textContent=tr(o.value);});
+  if(document.getElementById('forumServer')) [...forumServer.options].forEach(o=>{const map={"Arabien 1":"Arabia 1","Deutschland 1":"Germany 1","Europa 1":"Europe 1","Europa 2":"Europe 2","Europa 3":"Europe 3","Europa 4":"Europe 4","Lateinamerika 1":"Latin America 1","USA 1":"USA 1"};o.textContent=lang==='de'?o.value:(map[o.value]||o.value);});
 }
 
 function renderAll(){
@@ -888,10 +1031,11 @@ function applySearch(){
   }
 }
 search.addEventListener('input',applySearch);
-nav.addEventListener('click',e=>{const b=e.target.closest('button[data-sec]');if(!b)return;document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main section').forEach(s=>s.classList.remove('active-section'));document.getElementById(b.dataset.sec).classList.add('active-section');window.scrollTo({top:0,behavior:'smooth'});});
+nav.addEventListener('click',e=>{const b=e.target.closest('button[data-sec]');if(!b)return;currentSection=b.dataset.sec;document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main section').forEach(s=>s.classList.remove('active-section'));document.getElementById(currentSection).classList.add('active-section');if(currentSection==='forum')loadForumPosts(false);window.scrollTo({top:0,behavior:'smooth'});});
 document.querySelectorAll('[data-jump]').forEach(b=>b.addEventListener('click',()=>document.querySelector(`nav button[data-sec="${b.dataset.jump}"]`).click()));
 langBtn.addEventListener('click',()=>{lang=lang==='de'?'en':'de';langBtn.textContent=lang==='de'?'EN':'DE';renderAll();});
 renderAll();
+loadForumSession().then(()=>loadForumPosts(false));
 async function updateOnline(){try{const r=await fetch('/api/online',{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json();onlineCount.textContent=`🟢 ${j.count} ${lang==='de'?(j.count===1?'Besucher online':'Besucher online'):'online'}`;}catch(e){onlineCount.textContent=lang==='de'?'🟢 Besucher online: –':'🟢 Online: –';}}
 updateOnline(); setInterval(updateOnline,30000);
 </script>
