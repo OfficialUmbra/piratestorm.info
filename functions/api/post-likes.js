@@ -49,7 +49,11 @@ async function getCurrentUser(request, env) {
 }
 
 
+// ----------------------------------------------------
 // POST /api/post-like
+// Like setzen oder wieder entfernen
+// ----------------------------------------------------
+
 export async function onRequestPost(context) {
   try {
     const { request, env } = context;
@@ -73,6 +77,7 @@ export async function onRequestPost(context) {
       }, 400);
     }
 
+    // Prüfen, ob der Beitrag existiert
     const post = await env.DB
       .prepare(`
         SELECT id
@@ -89,6 +94,7 @@ export async function onRequestPost(context) {
       }, 404);
     }
 
+    // Prüfen, ob dieser Benutzer bereits geliked hat
     const existingLike = await env.DB
       .prepare(`
         SELECT post_id
@@ -99,9 +105,11 @@ export async function onRequestPost(context) {
       .bind(postId, user.id)
       .first();
 
-    let liked;
+    let liked = false;
 
     if (existingLike) {
+
+      // Like entfernen
       await env.DB
         .prepare(`
           DELETE FROM post_likes
@@ -114,6 +122,8 @@ export async function onRequestPost(context) {
       liked = false;
 
     } else {
+
+      // Like hinzufügen
       await env.DB
         .prepare(`
           INSERT INTO post_likes
@@ -126,6 +136,7 @@ export async function onRequestPost(context) {
       liked = true;
     }
 
+    // Aktuelle Anzahl Likes ermitteln
     const countResult = await env.DB
       .prepare(`
         SELECT COUNT(*) AS count
@@ -137,12 +148,12 @@ export async function onRequestPost(context) {
 
     return json({
       success: true,
-      liked,
+      liked: liked,
       likes: Number(countResult.count)
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("POST-LIKE ERROR:", error);
 
     return json({
       success: false,
