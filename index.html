@@ -194,7 +194,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
         <button id="calendarNext" type="button" aria-label="Nächster Monat">›</button>
       </div>
     </div>
-    <div id="calendarGrid" class="calendar-grid"></div>
+    <div class="sub" style="margin-bottom:10px">September 2026: Termine nach offiziellem Pirate-Storm-Forumkalender, Stand 02.09.2026.</div><div id="calendarGrid" class="calendar-grid"></div>
     <div class="calendar-legend" id="calendarLegend">Der heutige Tag und heutige Events werden automatisch hervorgehoben.</div>
   </div>
 
@@ -216,7 +216,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 </main>
 </div>
 
-<footer id="footerText">Unofficial community project. Pirate Storm and related trademarks/assets belong to Bigpoint. Die Live-Besucherzahl nutzt /api/online und benötigt auf Cloudflare Pages eine kleine Worker/Function-Anbindung. Live values are based on in-game screenshots from August 2026; historical references are marked separately. · Build V14</footer>
+<footer id="footerText">Unofficial community project. Pirate Storm and related trademarks/assets belong to Bigpoint. Die Live-Besucherzahl nutzt /api/online und benötigt auf Cloudflare Pages eine kleine Worker/Function-Anbindung. Live values are based on in-game screenshots from August 2026; historical references are marked separately. · Build V15</footer>
 
 <script>
 const t={
@@ -262,7 +262,10 @@ const verified='2026-08';
 
 const ships=[
 
-{group:'Event',name:'Eiserner Adler II',hp:13500,baseSpeed:6.5,maxSpeed:14,c:70,h:50,dodge:6,res:6,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'60 Adler-Orden',status:'verified'},
+{group:'Winterevent',name:'Frostbrand',hp:0,baseSpeed:0,maxSpeed:0,c:0,h:0,dodge:0,res:0,range:0,sight:0,decks:'Eventschiff',price:'Winterevent',bonus:'Raunacht-Deck ist ausschließlich auf Frostbrand ausrüstbar.',status:'verified'},
+
+{group:'Event',name:'Adlerschiff',hp:13500,baseSpeed:6.5,maxSpeed:14,c:70,h:50,dodge:6,res:6,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'Adler-Event',bonus:'Eiserner Adler ist als separat kaufbares Schiffsdesign verfügbar.',status:'verified'},
+{group:'Schiffsdesign',name:'Eiserner Adler',hp:null,baseSpeed:null,maxSpeed:null,c:null,h:null,dodge:null,res:null,range:null,sight:null,decks:'—',price:'60 Adler-Orden',bonus:'Separat kaufbares Schiffsdesign ausschließlich für das Adlerschiff.',ships:['Adlerschiff'],status:'verified'},
 {group:'Event',name:'Arachne',hp:13500,baseSpeed:6.5,maxSpeed:14,c:70,h:40,dodge:6,res:6,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'85.000 💎 normal · 82.450 💎 mit Premium',bonus:'Schiffs-Schaden auf Schlachtfeldern +7%',status:'verified'},
 {group:'Event',name:'Große Buthu-Fregatte',hp:12000,baseSpeed:5.5,maxSpeed:14,c:60,h:30,dodge:5,res:5,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'65.000 💎 normal · 63.050 💎 mit Premium',set:'Macht des Skorpions',status:'verified'},
 {group:'PvP / Kriegsrang',name:'Kriegsfregatte „Piranha“',hp:9750,baseSpeed:5.5,maxSpeed:14,c:55,h:45,dodge:4,res:4,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'500 💀 Schädel',unlock:'Kriegsrang 16',status:'verified'},
@@ -270,7 +273,7 @@ const ships=[
 {group:'PvP / Kriegsrang',name:'Kriegsfregatte „Orca“',hp:13750,baseSpeed:5.5,maxSpeed:14,c:78,h:40,dodge:6,res:6,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'9.000 💀 Schädel',unlock:'Kriegsrang 3',status:'verified'},
 {group:'PvP / Kriegsrang',name:'Kriegsfregatte „Barracuda“',hp:13000,baseSpeed:5.5,maxSpeed:14,c:66,h:42,dodge:4,res:4,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'5.500 💀 Schädel',unlock:'Kriegsrang 8',status:'verified'},
 {group:'Arena',name:'Weltenzerstörer',hp:14500,baseSpeed:5.5,maxSpeed:14,c:90,h:50,dodge:10,res:10,range:220,sight:350,decks:'Unteres · Mittleres · Oberes',price:'Arena-Saisongewinner',unlock:'Arena-Saisongewinner · Muss seit dem 15. des Vormonats Mitglied des Arena-Teams sein.',status:'verified'},
-{group:'Schiffsdesign',name:'Weltenvernichter',hp:null,baseSpeed:null,maxSpeed:null,c:null,h:null,dodge:null,res:null,range:null,sight:null,decks:'—',price:'9.700 💎',bonus:'Schiffsdesign – kein eigenes Schiff; verändert die Basiswerte des Schiffs nicht.',status:'verified'},
+{group:'Schiffsdesign',name:'Weltenvernichter',hp:null,baseSpeed:null,maxSpeed:null,c:null,h:null,dodge:null,res:null,range:null,sight:null,decks:'—',price:'10.000 💎 normal · 9.700 💎 mit Premium',unlock:'Arena-Saisongewinner · Muss seit dem 15. des Vormonats Mitglied des Arena-Teams sein.',bonus:'Schiffsdesign für den Weltenzerstörer – kein eigenes Schiff; verändert die Basiswerte des Schiffs nicht.',ships:['Weltenzerstörer'],status:'verified'},
 {group:'Arena',name:'Gladiator',hp:14000,baseSpeed:5.5,maxSpeed:14,c:80,h:40,dodge:8,res:8,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'40.000 💎 normal · 38.800 💎 mit Premium',unlock:'3.000 Arena-Punkte',status:'verified'},
 {group:'Standard / Händler',name:'Cordone',hp:13750,baseSpeed:5.5,maxSpeed:14,c:77,h:42,dodge:10,res:10,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'100.000 💎 normal · 97.000 💎 mit Premium',status:'verified'},
 {group:'Standard / Händler',name:'Große Fregatte',hp:12000,baseSpeed:5.5,maxSpeed:14,c:60,h:30,dodge:4,res:4,range:200,sight:350,decks:'Unteres · Mittleres · Oberes',price:'80.000 💎 normal · 77.600 💎 mit Premium',status:'verified'},
@@ -284,9 +287,10 @@ const ships=[
 
 const decks=[
 {group:'PvP / Kriegsrang',name:'Großes Kriegsdeck',c:10,h:12,ind:'Ja',slot:'Eigener Deckplatz',normal:'7.000 💀 Schädel',premium:null,unlock:'Kriegsrang 2',note:'Nur auf Schädelschiffen/Kriegsrang-Schiffen ausrüstbar.',status:'verified'},
-{group:'Blutmond',name:'Blutmond Deck',c:12,h:12,ind:'Ja',slot:'Eigener Deckplatz',normal:'Event/Auktion',premium:null,note:'Nach Erwerb auf allen Schiffen verfügbar.',status:'verified'},
-{group:'Blutmond',name:'Corona-Deck',c:12,h:12,ind:'Ja',slot:'Blutmond-Spezialdeck',normal:'Event/Auktion',premium:null,note:'Für das Blutmond/Eclipse-System.',status:'verified'},
+{group:'Blutmond',name:'Blutmond Deck',c:12,h:12,ind:'Ja',slot:'Blutmond-Zusatzdeck',normal:'Event/Auktion',premium:null,note:'Nach Erwerb auf jedem Schiff zusätzlich zu den normalen Deckplätzen ausrüstbar; blockiert kein normales Deck.',bloodmoonExtra:true,status:'verified'},
+{group:'Blutmond',name:'Corona-Deck',c:12,h:12,ind:'Ja',slot:'Blutmond-Spezialdeck',normal:'Event/Auktion',premium:null,note:'Ausschließlich auf dem Blutmond-Schiff ausrüstbar.',ships:['Blutmond'],status:'verified'},
 {group:'Panther',name:'Mittleres Pantherdeck',c:10,h:6,ind:'Ja',slot:'Mittlerer Deckplatz',normal:'Event',premium:null,note:'Teil von Macht des Panthers.',status:'verified'},
+{group:'Adler',name:'Adlerklaue',c:0,h:0,ind:'Ja',slot:'Adler-Spezialdeck',normal:'Adler-Event',premium:null,note:'Ausschließlich auf dem Adlerschiff ausrüstbar.',ships:['Adlerschiff'],status:'verified'},
 {group:'Adler',name:'Riff-Deck',c:6,h:6,ind:'Ja',slot:'Vorderer Deckplatz',normal:'Event',premium:null,note:'Teil von Macht des Adlers.',status:'verified'},
 {group:'Skorpion',name:'Oberes Stacheldeck',c:10,h:6,ind:'Ja',slot:'Oberer Deckplatz',normal:'Event',premium:null,note:'Teil von Macht des Skorpions.',status:'verified'},
 {group:'Sobek',name:'Unteres Sobek Deck',c:10,h:6,ind:'Ja',slot:'Unterer Deckplatz',normal:'Event',premium:null,note:'Sobek-Eventdeck.',status:'verified'},
@@ -311,6 +315,27 @@ const upgrades=[
 {group:'Arena',name:'Arena-Mast',normal:'10.000.000 Gold',premium:'7.500.000 Gold',effect:'Max. Trefferpunkte +2.300',unlock:'5.500 Arena-Punkte',status:'verified'},
 {group:'Arena',name:'Arena-Glocke',normal:'1.500.000 Gold',premium:'1.125.000 Gold',effect:'Raketen-Ausweichchance +5%',unlock:'350 Arena-Punkte',status:'verified'},
 
+{group:'Event · Macht des Winters',name:'Eiszapfen-Ruder',normal:'Eventpreis',premium:null,effect:'Max. Trefferpunkte +3.500; Raketen-Ausweichchance +10%',status:'verified'},
+{group:'Event · Macht des Winters',name:'Eissturm-Segel',normal:'Eventpreis',premium:null,effect:'Tempo-Bonus 9,2 Knoten',status:'verified'},
+{group:'Event · Macht des Winters',name:'Arktischer Kiel',normal:'Eventpreis',premium:null,effect:'Max. Trefferpunkte +2.250; Max. Tempo +0,7 Knoten',status:'verified'},
+{group:'Event · Macht des Winters',name:'Gefrorener Mast',normal:'Eventpreis',premium:null,effect:'Max. Trefferpunkte +3.000',status:'verified'},
+{group:'Event · Macht der Geister',name:'Seelen Segel',normal:'Eventpreis',premium:null,effect:'Tempo-Bonus 9,2 Knoten',status:'verified'},
+{group:'Event · Macht der Geister',name:'Ruder des Verdammten',normal:'Eventpreis',premium:null,effect:'Max. Trefferpunkte +2.750; Raketen-Ausweichchance +13%',status:'verified'},
+{group:'Event · Macht der Geister',name:'Höllen-Mast',normal:'Eventpreis',premium:null,effect:'Max. Trefferpunkte +2.750',status:'verified'},
+{group:'Event · Macht der Geister',name:'Hum-Bug',normal:'Eventpreis',premium:null,effect:'Max. Trefferpunkte +2.000; Max. Tempo +1 Knoten',status:'verified'},
+{group:'Event · Blutmond',name:'Mondgeschmiedetes Ankergewicht',normal:'Event/Auktion',premium:null,effect:'Gold-Belohnungen +10%; Reparatur −5%; Chance auf Deckrettung 5%',note:'Blutmond-Gegenstand: zusätzlicher eigener Slot; blockiert keinen normalen Anker.',bloodmoonExtra:true,status:'verified'},
+{group:'Event · Blutmond',name:'Mondlicht-Galionsfigurlack',normal:'Event/Auktion',premium:null,effect:'Kanonen-Reichweite +5%; Kanonen-Nachladen −5%; Harpunen-Reichweite +5%; Harpunen-Nachladen −5%; Reparatur −5%; Kanonen-Streuung −5%; Harpunen-Streuung −5%',note:'Blutmond-Gegenstand: zusätzlicher eigener Slot; blockiert keine normale Galionsfigur.',bloodmoonExtra:true,status:'verified'},
+{group:'Event · Blutmond',name:'Mondstrahl-Ruderverlängerung',normal:'Event/Auktion',premium:null,effect:'Max. Trefferpunkte +2.000; Raketen-Ausweichchance +10%',note:'Blutmond-Gegenstand: zusätzlicher eigener Slot; blockiert kein normales Ruder.',bloodmoonExtra:true,status:'verified'},
+{group:'Event · Blutmond',name:'Blutmond-Bugschottenverstärkung',normal:'Event/Auktion',premium:null,effect:'Max. Trefferpunkte +3.000',note:'Blutmond-Gegenstand: zusätzlicher eigener Slot; blockiert kein normales Schott.',bloodmoonExtra:true,status:'verified'},
+{group:'Event · Macht des Panthers',name:'Obsidian-Anker',normal:'Eventpreis',premium:null,effect:'Chance auf Deckrettung 25%; Bonus-HP bei Restaurierung +10%',status:'verified'},
+{group:'Event · Macht des Panthers',name:'Netjerets Galionsfigur',normal:'Eventpreis',premium:null,effect:'Kanonen-Reichweite +5%; Kanonen-Nachladen −12%; Kanonen-Streuung −10%',status:'verified'},
+{group:'Event · Macht des Panthers',name:'Dunkler Schrei',normal:'Eventpreis',premium:null,effect:'K.T.-Schaden +10%',status:'verified'},
+{group:'Event · Macht des Panthers',name:'Donner-Rumpf',normal:'Eventpreis',premium:null,effect:'Max. Trefferpunkte +2.000',status:'verified'},
+{group:'Event · Macht des Sommers',name:'Flossen-Ruder',normal:'Eventpreis',premium:null,effect:'Max. Trefferpunkte +2.500; Raketen-Ausweichchance +10%',status:'verified'},
+{group:'Event · Macht des Sommers',name:'Flatter-Segel',normal:'Eventpreis',premium:null,effect:'Tempo-Bonus 9,2 Knoten',status:'verified'},
+{group:'Event · Macht des Sommers',name:'Reißzahn-Kiel',normal:'Eventpreis',premium:null,effect:'Max. Trefferpunkte +2.000; Max. Tempo +0,7 Knoten',status:'verified'},
+{group:'Event · Macht des Sommers',name:'Basilisken Mast',normal:'Eventpreis',premium:null,effect:'Max. Trefferpunkte +2.500',status:'verified'},
+{group:'Event · Macht des Adlers',name:'Kuguar-Schott',normal:'Eventpreis',premium:null,effect:'Max. Trefferpunkte +3.800',status:'verified'},
 {group:'PvP / Kriegsrang',name:'Galionsfigur Hades',normal:'1.000 💀 Schädel',premium:null,effect:'Reparatur −20%',unlock:'Kriegsrang 5',status:'verified'},
 {group:'PvP / Kriegsrang',name:'Kriegsschott',normal:'400 💀 Schädel',premium:null,effect:'Max. Trefferpunkte +3.500',unlock:'Kriegsrang 12',status:'verified'},
 {group:'PvP / Kriegsrang',name:'Kriegerkiel',normal:'150 💀 Schädel',premium:null,effect:'Max. Trefferpunkte +1.300; Max. Tempo +0,7 Knoten',unlock:'Kriegsrang 14',status:'verified'},
@@ -364,8 +389,8 @@ const sets=[
 ];
 
 const cannons=[
-{group:'Spezial',name:'Die Bombastische',source:'Voodoo-Schädel',level:1,damage:19,spread:30,destroy:'Nein',status:'verified'},
-{group:'Spezial',name:'Die Bombastische',source:'Voodoo-Schädel',level:3,damage:21,spread:30,destroy:'Nein',status:'verified'},
+{group:'Bonusmap',name:'Die Bombastische',source:'Voodoo-Schädel',level:1,damage:19,spread:30,destroy:'Nein',status:'verified'},
+{group:'Bonusmap',name:'Die Bombastische',source:'Voodoo-Schädel',level:3,damage:21,spread:30,destroy:'Nein',status:'verified'},
 {group:'Blutmond',name:'Mondstahl Kanone',level:1,damage:18,spread:45,destroy:'Nein',status:'verified'},
 {group:'Winter',name:'Eissturm',level:1,damage:16,spread:50,destroy:'Nein',status:'verified'},
 {group:'Event',name:'Adler-Geschütz',level:1,damage:16,spread:20,destroy:'Nein',source:'Adler-Event',price:'4 Adler-Orden',status:'verified'},
@@ -376,8 +401,8 @@ const cannons=[
 {group:'Arena',name:'Dampfhammer',level:1,damage:12,spread:60,destroy:'Ja',source:'Arena 2vs2 · 300 Arena-Punkte',price:'1.000.000 Gold normal · 750.000 Gold mit 25% Gildenrabatt',status:'verified'},
 {group:'Arena',name:'Bestienschrei',level:1,damage:17,spread:45,destroy:'Nein',source:'Arena 1vs1 · 900 Arena-Punkte',price:'9.000 💎 (historischer Forumspreis)',status:'verified'},
 {group:'Bonusmap',name:'Lochmacher',source:'Schwarzer Rum',level:1,damage:16,spread:60,destroy:'Nein',status:'verified'},
-{group:'Spezial',name:'Eisenhagel',source:'Blutiger Haken',level:1,damage:12,spread:40,destroy:'Nein',status:'verified'},
-{group:'Spezial',name:'Friedensstifter',source:'Schützenfest',level:1,damage:16,spread:35,destroy:'Nein',status:'verified'},
+{group:'Bonusmap',name:'Eisenhagel',source:'Blutiger Haken',level:1,damage:12,spread:40,destroy:'Nein',status:'verified'},
+{group:'Bonusmap',name:'Friedensstifter',source:'Schützenfest',level:1,damage:16,spread:35,destroy:'Nein',status:'verified'},
 
 {group:'Standard',name:'6-Pfünder',level:1,damage:6,spread:80,destroy:'Ja',source:'Händler / Standardausrüstung',price:'500 Gold normal · 375 Gold mit 25% Gildenrabatt',status:'verified'},
 {group:'Standard',name:'9-Pfünder',level:1,damage:9,spread:70,destroy:'Ja',source:'Händler / Standardausrüstung',price:'2.000 Gold normal · 1.500 Gold mit 25% Gildenrabatt',status:'verified'},
@@ -405,18 +430,18 @@ const harpoonlaunchers=[
 ];
 
 const ammo=[
-{group:'Kanonenkugeln · Standard',name:'Steinkanonenkugeln',effect:'Basis-Schaden 1; K.T.-Chance 5%; K.T.-Bonusschaden 2%',price:'10.000 Gold normal · 7.500 Gold mit 25% Gildenrabatt',source:'Händler'},
-{group:'Kanonenkugeln · Standard',name:'Eisenkanonenkugeln',effect:'Basis-Schaden 2; K.T.-Chance 10%; K.T.-Bonusschaden 2%',price:'30.000 Gold normal · 22.500 Gold mit 25% Gildenrabatt',source:'Händler'},
-{group:'Kanonenkugeln · Standard',name:'Stahlkanonenkugeln',effect:'Basis-Schaden 10; K.T.-Chance 15%; K.T.-Bonusschaden 10%',price:'1.000 💎 normal · 970 💎 mit Premium',source:'Händler; Blutiger Haken; Voodoo-Schädel'},
+{group:'Kanonenkugeln · Standard',name:'1.000× Steinkanonenkugeln',effect:'Basis-Schaden 1; K.T.-Chance 5%; K.T.-Bonusschaden 2%',price:'10.000 Gold normal · 7.500 Gold mit 25% Gildenrabatt',source:'Händler'},
+{group:'Kanonenkugeln · Standard',name:'1.000× Eisenkanonenkugeln',effect:'Basis-Schaden 2; K.T.-Chance 10%; K.T.-Bonusschaden 2%',price:'30.000 Gold normal · 22.500 Gold mit 25% Gildenrabatt',source:'Händler'},
+{group:'Kanonenkugeln · Standard',name:'1.000× Stahlkanonenkugeln',effect:'Basis-Schaden 10; K.T.-Chance 15%; K.T.-Bonusschaden 10%',price:'1.000 💎 normal · 970 💎 mit Premium',source:'Händler; Blutiger Haken; Voodoo-Schädel'},
 {group:'Kanonenkugeln · Event',name:'1.000× Blutbeißer',effect:'Basis-Schaden 10; Schiffs-Schaden 100%; K.T.-Chance 16%; K.T.-Bonusschaden 12%; doppelter Schaden auf Haus-Kirus-Schlachtfeldern',price:'2.000 💎 normal · 1.940 💎 mit Premium',source:'Event'},
 {group:'Kanonenkugeln · Event',name:'1.000× Giftkugel',effect:'Basis-Schaden 10; Schiffs-Schaden 100%; K.T.-Chance 16%; K.T.-Bonusschaden 12%; doppelter Schaden auf Haus-Buthu-Schlachtfeldern',price:'2.000 💎 normal · 1.940 💎 mit Premium',source:'Event'},
 {group:'Kanonenkugeln · Event',name:'1.000× Pantherbiss',effect:'Basis-Schaden 10; Schiffs-Schaden 100%; K.T.-Chance 16%; K.T.-Bonusschaden 12%; doppelter Schaden auf Haus-Pentar-Schlachtfeldern',price:'2.000 💎 normal · 1.940 💎 mit Premium',source:'Event'},
 {group:'Kanonenkugeln · Event',name:'1.000× Krokodilbiss',effect:'Basis-Schaden 10; Schiffs-Schaden 100%; K.T.-Chance 16%; K.T.-Bonusschaden 12%; doppelter Schaden auf Haus-Sobek-Schlachtfeldern',price:'2.000 💎 normal · 1.940 💎 mit Premium',source:'Event'},
 {group:'Kanonenkugeln · Event',name:'1.000× Sägezahn',effect:'Basis-Schaden 10; Schiffs-Schaden 100%; K.T.-Chance 16%; K.T.-Bonusschaden 12%; besonders effektiv auf Lodos-Schlachtfeldern',price:'2.000 💎 normal · 1.940 💎 mit Premium',source:'Event'},
 {group:'Kanonenkugeln · Event',name:'1.000× Spinnenklauen',effect:'Basis-Schaden 10; Schiffs-Schaden 100%; K.T.-Chance 16%; K.T.-Bonusschaden 12%; doppelter Schaden auf Anansi-Schlachtfeldern',price:'2.000 💎 normal · 1.940 💎 mit Premium',source:'Event'},
-{group:'Harpunen · Standard',name:'Harpunen',effect:'Basis-Schaden 1; K.T.-Chance 5%; K.T.-Bonusschaden 20%',price:'10.000 Gold normal · 7.500 Gold mit 25% Gildenrabatt',source:'Händler'},
-{group:'Harpunen · Standard',name:'Eisenharpunen',effect:'Basis-Schaden 2; K.T.-Chance 10%; K.T.-Bonusschaden 20%',price:'30.000 Gold normal · 22.500 Gold mit 25% Gildenrabatt',source:'Händler'},
-{group:'Harpunen · Standard',name:'Stahlharpunen',effect:'Basis-Schaden 10; K.T.-Chance 15%; K.T.-Bonusschaden 20%',price:'1.000 💎 normal · 970 💎 mit Premium',source:'Händler; Blutiger Haken; Voodoo-Schädel'},
+{group:'Harpunen · Standard',name:'1.000× Harpunen',effect:'Basis-Schaden 1; K.T.-Chance 5%; K.T.-Bonusschaden 20%',price:'10.000 Gold normal · 7.500 Gold mit 25% Gildenrabatt',source:'Händler'},
+{group:'Harpunen · Standard',name:'1.000× Eisenharpunen',effect:'Basis-Schaden 2; K.T.-Chance 10%; K.T.-Bonusschaden 20%',price:'30.000 Gold normal · 22.500 Gold mit 25% Gildenrabatt',source:'Händler'},
+{group:'Harpunen · Standard',name:'1.000× Stahlharpunen',effect:'Basis-Schaden 10; K.T.-Chance 15%; K.T.-Bonusschaden 20%',price:'1.000 💎 normal · 970 💎 mit Premium',source:'Händler; Blutiger Haken; Voodoo-Schädel'},
 {group:'Harpunen · Event',name:'1.000× Adlerharpune',effect:'Basis-Schaden 10; K.T.-Chance 15%; K.T.-Bonusschaden 20%',price:'1.000 💎 normal · 970 💎 mit Premium',source:'Event'}
 ];
 
@@ -652,7 +677,7 @@ function renderShop(){
 const SET_PIECE_META={
 'Eiszapfen-Ruder':{set:'Macht des Winters',slot:'rudder'},'Eissturm-Segel':{set:'Macht des Winters',slot:'sail'},'Arktischer Kiel':{set:'Macht des Winters',slot:'keel'},'Gefrorener Mast':{set:'Macht des Winters',slot:'mast'},
 'Seelen Segel':{set:'Macht der Geister',slot:'sail'},'Ruder des Verdammten':{set:'Macht der Geister',slot:'rudder'},'Höllen-Mast':{set:'Macht der Geister',slot:'mast'},'Hum-Bug':{set:'Macht der Geister',slot:'bulkhead'},
-'Mondgeschmiedetes Ankergewicht':{set:'Blutmond-Leuchten',slot:'anchor'},'Mondlicht-Galionsfigurlack':{set:'Blutmond-Leuchten',slot:'figurehead'},'Mondstrahl-Ruderverlängerung':{set:'Blutmond-Leuchten',slot:'rudder'},'Blutmond-Bugschottenverstärkung':{set:'Blutmond-Leuchten',slot:'bulkhead'},
+'Mondgeschmiedetes Ankergewicht':{set:'Blutmond-Leuchten',slot:'bloodmoon-anchor'},'Mondlicht-Galionsfigurlack':{set:'Blutmond-Leuchten',slot:'bloodmoon-figurehead'},'Mondstrahl-Ruderverlängerung':{set:'Blutmond-Leuchten',slot:'bloodmoon-rudder'},'Blutmond-Bugschottenverstärkung':{set:'Blutmond-Leuchten',slot:'bloodmoon-bulkhead'},
 'Obsidian-Anker':{set:'Macht des Panthers',slot:'anchor'},'Netjerets Galionsfigur':{set:'Macht des Panthers',slot:'figurehead'},'Dunkler Schrei':{set:'Macht des Panthers',slot:'other'},'Donner-Rumpf':{set:'Macht des Panthers',slot:'bulkhead'},
 'Flossen-Ruder':{set:'Macht des Sommers',slot:'rudder'},'Flatter-Segel':{set:'Macht des Sommers',slot:'sail'},'Reißzahn-Kiel':{set:'Macht des Sommers',slot:'keel'},'Basilisken Mast':{set:'Macht des Sommers',slot:'mast'},
 'Kuguar-Schott':{set:'Macht des Adlers',slot:'bulkhead'}
@@ -663,29 +688,31 @@ function deckSlotKey(d){const x=(d.slot||'').toLowerCase();if(x.includes('ober')
 function renderTools(){
   const shipOptions=ships.filter(s=>typeof s.c==='number').map(s=>`<option value="${ships.indexOf(s)}">${tr(s.name)}</option>`).join('');
   const cannonOptions=cannons.map((c,i)=>`<option value="${i}">${tr(c.name)} · Lvl ${c.level}</option>`).join('');
+  const cannonAmmo=ammo.filter(a=>a.group.startsWith('Kanonenkugeln')).map(a=>({a,idx:ammo.indexOf(a),base:+((a.effect.match(/Basis-Schaden (\d+)/)||[])[1]||0)}));
+  const ammoOptions=cannonAmmo.map(x=>`<option value="${x.idx}">${tr(x.a.name)}</option>`).join('');
   const setGear=[]; sets.forEach((set,si)=>set.pieces.forEach((p,pi)=>{if(!/deck/i.test(p[0]))setGear.push({name:p[0],effect:p[1],set:set.name,setIndex:si,pieceIndex:pi,slot:(SET_PIECE_META[p[0]]||{}).slot||upgradeSlot({name:p[0],effect:p[1]})});}));
   const allGear=[...upgrades.map((u,i)=>({name:u.name,effect:u.effect||'',set:null,upgradeIndex:i,slot:upgradeSlot(u)})),...setGear];
-  const order=['sail','mast','bulkhead','keel','rudder','anchor','figurehead','bell','other'];
-  const labels={sail:['Segel','Sails'],mast:['Mast','Masts'],bulkhead:['Schott','Bulkheads'],keel:['Kiel','Keels'],rudder:['Ruder','Rudders'],anchor:['Anker','Anchors'],figurehead:['Galionsfigur','Figureheads'],bell:['Glocke','Bells'],other:['Sonstige / Spezial','Other / special']};
+  const order=['sail','mast','bulkhead','keel','rudder','anchor','figurehead','bell','bloodmoon-anchor','bloodmoon-figurehead','bloodmoon-rudder','bloodmoon-bulkhead','other'];
+  const labels={sail:['Segel','Sails'],mast:['Mast','Masts'],bulkhead:['Schott','Bulkheads'],keel:['Kiel','Keels'],rudder:['Ruder','Rudders'],anchor:['Anker','Anchors'],figurehead:['Galionsfigur','Figureheads'],bell:['Glocke','Bells'],'bloodmoon-anchor':['Blutmond · Zusatzanker','Blood Moon · extra anchor'],'bloodmoon-figurehead':['Blutmond · Zusatz-Galionsfigur','Blood Moon · extra figurehead'],'bloodmoon-rudder':['Blutmond · Zusatzruder','Blood Moon · extra rudder'],'bloodmoon-bulkhead':['Blutmond · Zusatzschott','Blood Moon · extra bulkhead'],other:['Sonstige / Spezial','Other / special']};
   const gearHtml=order.map(slot=>{const arr=allGear.filter(g=>(g.slot||'').startsWith('other-')?slot==='other':g.slot===slot);if(!arr.length)return'';return `<div class="group">${labels[slot][lang==='de'?0:1]}</div><div class="checks">${arr.map((g,i)=>`<label class="check"><input type="checkbox" class="gearcheck" data-key="${escAttr(g.name)}" data-slot="${g.slot}" data-upgrade="${g.upgradeIndex??''}" data-set="${g.setIndex??''}" data-piece="${g.pieceIndex??''}"> <span><b>${tr(g.name)}</b>${g.set?` · <span class="muted">${lang==='de'?'Set':'Set'}: ${tr(g.set)}</span>`:''}${g.effect?`<br><span class="muted">${tr(g.effect)}</span>`:''}</span></label>`).join('')}</div>`}).join('');
   const deckChecks=decks.filter(d=>typeof d.c==='number'&&typeof d.h==='number').map(d=>`<label class="check"><input type="checkbox" class="deckcheck" data-idx="${decks.indexOf(d)}" data-slot="${deckSlotKey(d)}"> <span><b>${tr(d.name)}</b>${DECK_SET_META[d.name]?` · <span class="muted">Set: ${tr(DECK_SET_META[d.name])}</span>`:''} · +${d.c} K / +${d.h} H · ${tr(d.slot)}</span></label>`).join('');
-  toolsContent.innerHTML=`<div class="tools"><div class="tool"><h3>⚔️ ${lang==='de'?'Schadensrechner':'Damage calculator'}</h3><div class="fields"><div class="field"><label>${lang==='de'?'Kanone':'Cannon'}</label><select id="calcCannon">${cannonOptions}</select></div><div class="field"><label>${lang==='de'?'Anzahl Kanonen':'Cannon count'}</label><input id="calcCount" type="number" value="180" min="1"></div><div class="field"><label>${lang==='de'?'Munitionsmultiplikator':'Ammo multiplier'}</label><input id="calcAmmo" type="number" value="1" step=".1"></div><div class="field"><label>${lang==='de'?'Weitere Schadensboni %':'Additional damage %'}</label><input id="calcBonus" type="number" value="0" step=".1"></div></div><div class="result" id="damageResult"></div></div>
+  toolsContent.innerHTML=`<div class="tools"><div class="tool"><h3>⚔️ ${lang==='de'?'Schadensrechner':'Damage calculator'}</h3><div class="fields"><div class="field"><label>${lang==='de'?'Kanone':'Cannon'}</label><select id="calcCannon">${cannonOptions}</select></div><div class="field"><label>${lang==='de'?'Anzahl Kanonen':'Cannon count'}</label><input id="calcCount" type="number" value="180" min="1"></div><div class="field"><label>${lang==='de'?'Munition':'Ammo'}</label><select id="calcAmmoSelect">${ammoOptions}</select></div><div class="field"><label>${lang==='de'?'Weitere Schadensboni %':'Additional damage %'}</label><input id="calcBonus" type="number" value="0" step=".1"></div></div><div class="result" id="damageResult"></div></div>
   <div class="tool"><h3>🚢 ${lang==='de'?'Schiffs-Konfigurator':'Ship configurator'}</h3><div class="fields"><div class="field"><label>${lang==='de'?'Schiff':'Ship'}</label><select id="calcShip">${shipOptions}</select></div><div class="field"><label>${lang==='de'?'Rollen der Macht · Kanonen':'Rolls of Power · cannons'}</label><input id="rollCannons" type="number" value="0"></div><div class="field"><label>${lang==='de'?'Rollen der Macht · Harpunen':'Rolls of Power · harpoons'}</label><input id="rollHarpoons" type="number" value="0"></div><div class="field"><label>${lang==='de'?'Rollen der Macht · HP':'Rolls of Power · HP'}</label><input id="rollHp" type="number" value="0"></div></div><div class="sub" style="margin-top:10px">${lang==='de'?'Verbesserungen nach Slot – Setzugehörigkeit steht direkt am Item. Setstufen werden automatisch aktiviert.':'Upgrades by slot – set membership is shown on each item. Set levels activate automatically.'}</div>${gearHtml}<div class="group">${lang==='de'?'Decks':'Decks'}</div><div class="checks">${deckChecks}</div><div class="result" id="activeSets"></div><div class="result" id="shipResult"></div></div>
   <div class="tool"><h3>♜ ${lang==='de'?'Gilden-XP-Rechner':'Guild XP calculator'}</h3><div class="fields"><div class="field"><label>${lang==='de'?'Aktuelles Gildenlevel':'Current guild level'}</label><input id="guildLevel" type="number" value="1" min="1" max="49"></div><div class="field"><label>${lang==='de'?'XP im aktuellen Level':'XP in current level'}</label><input id="guildCurrentXp" type="number" value="0" min="0"></div></div><div class="result" id="guildCalcResult"></div></div></div>`; bindCalcs();
 }
-function parseBonus(text){const res={c:0,h:0,hp:0,speed:0};text=String(text||'');let m;const cannonRx=/(?:Max\. Kanonen|Extra-Kanonen) \+(\d+)/g;while((m=cannonRx.exec(text)))res.c+=+m[1];const harpoonRx=/(?:Max\. Harpunenwerfer|Extra-Harpunenwerfer) \+(\d+)/g;while((m=harpoonRx.exec(text)))res.h+=+m[1];const hpRx=/(?:Max\. Trefferpunkte|HP) \+([\d\.]+)/g;while((m=hpRx.exec(text)))res.hp+=+m[1].replace(/\./g,'');const speedRx=/(?:Max\. Tempo|Tempo-Bonus) \+?([\d,\.]+)(?: Knoten)?/g;while((m=speedRx.exec(text)))res.speed+=+m[1].replace(',','.');return res;}
+function parseBonus(text){const res={c:0,h:0,hp:0,speed:0,rangePct:0};text=String(text||'');let m;const cannonRx=/(?:Max\. Kanonen|Extra-Kanonen) \+(\d+)/g;while((m=cannonRx.exec(text)))res.c+=+m[1];const harpoonRx=/(?:Max\. Harpunenwerfer|Extra-Harpunenwerfer) \+(\d+)/g;while((m=harpoonRx.exec(text)))res.h+=+m[1];const hpRx=/(?:Max\. Trefferpunkte|HP) \+([\d\.]+)/g;while((m=hpRx.exec(text)))res.hp+=+m[1].replace(/\./g,'');const speedRx=/(?:Max\. Tempo|Tempo-Bonus) \+?([\d,\.]+)(?: Knoten)?/g;while((m=speedRx.exec(text)))res.speed+=+m[1].replace(',','.');const rangeRx=/(?:Kanonen-Reichweite|Waffenreichweite) \+(\d+)%/g;while((m=rangeRx.exec(text)))res.rangePct+=+m[1];return res;}
 function upgradeSlot(u){const n=(u.name+' '+(u.effect||'')).toLowerCase();if(n.includes('sturmschott'))return 'storm-bulkhead';if(n.includes('schott')||n.includes('rumpf')||n.includes('bug'))return 'bulkhead';if(n.includes('kiel'))return 'keel';if(n.includes('segel'))return 'sail';if(n.includes('ruder'))return 'rudder';if(n.includes('mast'))return 'mast';if(n.includes('anker'))return 'anchor';if(n.includes('galionsfigur'))return 'figurehead';if(n.includes('glocke'))return 'bell';return 'other-'+upgrades.indexOf(u);}
 function bindCalcs(){
- const updateDamage=()=>{const c=cannons[+calcCannon.value],count=+calcCount.value||0,m=+calcAmmo.value||0,b=+calcBonus.value||0;damageResult.innerHTML=`${lang==='de'?'Ergebnis':'Result'}: ${fmt(Math.round((+c.damage||0)*count*m*(1+b/100)))}`};[calcCannon,calcCount,calcAmmo,calcBonus].forEach(e=>e.addEventListener('input',updateDamage));updateDamage();
+ const updateDamage=()=>{const c=cannons[+calcCannon.value],a=ammo[+calcAmmoSelect.value],count=+calcCount.value||0,b=+calcBonus.value||0,base=+((String(a?.effect||'').match(/Basis-Schaden (\d+)/)||[])[1]||0);const per=(+c.damage||0)+base;damageResult.innerHTML=`${lang==='de'?'Basisschaden pro Kanone inkl. Munition':'Base damage per cannon incl. ammo'}: ${fmt(per)}<br>${lang==='de'?'Ergebnis':'Result'}: ${fmt(Math.round(per*count*(1+b/100)))}`};[calcCannon,calcCount,calcAmmoSelect,calcBonus].forEach(e=>e.addEventListener('input',updateDamage));updateDamage();
  function shipName(){return ships[+calcShip.value].name.replace(/^Kriegsfregatte „|“$/g,'');}
  function validDeck(d){const n=shipName();if(d.ships&&!d.ships.includes(n))return false;if(d.group==='PvP / Kriegsrang'||/^Kriegs/.test(d.name)||d.name==='Vorderes Kriegsdeck')return ships[+calcShip.value].group==='PvP / Kriegsrang';return true;}
  document.querySelectorAll('.gearcheck').forEach(ch=>ch.addEventListener('change',e=>{if(e.target.checked){const slot=e.target.dataset.slot;if(slot==='storm-bulkhead'){document.querySelectorAll('.gearcheck:checked[data-slot="storm-bulkhead"]').forEach(o=>{if(o!==e.target)o.checked=false;});}else if(slot&&!slot.startsWith('other-')){document.querySelectorAll(`.gearcheck:checked[data-slot="${slot}"]`).forEach(o=>{if(o!==e.target)o.checked=false;});}}updateShip();}));
  document.querySelectorAll('.deckcheck').forEach(ch=>ch.addEventListener('change',e=>{const d=decks[+e.target.dataset.idx];if(e.target.checked&&!validDeck(d)){e.target.checked=false;return updateShip();}if(e.target.checked){const slot=e.target.dataset.slot;if(!slot.startsWith('special-'))document.querySelectorAll(`.deckcheck:checked[data-slot="${slot}"]`).forEach(o=>{if(o!==e.target)o.checked=false;});}updateShip();}));
- function updateShip(){const s=ships[+calcShip.value];let c=+s.c||0,h=+s.h||0,hp=+s.hp||0,speed=+s.maxSpeed||0;const counts={};
- document.querySelectorAll('.gearcheck:checked').forEach(ch=>{let effect='';if(ch.dataset.upgrade!=='')effect=upgrades[+ch.dataset.upgrade].effect||'';else{const si=+ch.dataset.set,pi=+ch.dataset.piece;effect=sets[si].pieces[pi][1];counts[si]=(counts[si]||0)+1;}const b=parseBonus(effect);c+=b.c;h+=b.h;hp+=b.hp;speed+=b.speed;});
+ function updateShip(){const s=ships[+calcShip.value];let c=+s.c||0,h=+s.h||0,hp=+s.hp||0,speed=+s.maxSpeed||0,range=+s.range||0,rangePct=0;const counts={};
+ document.querySelectorAll('.gearcheck:checked').forEach(ch=>{let effect='';if(ch.dataset.upgrade!=='')effect=upgrades[+ch.dataset.upgrade].effect||'';else{const si=+ch.dataset.set,pi=+ch.dataset.piece;effect=sets[si].pieces[pi][1];counts[si]=(counts[si]||0)+1;}const b=parseBonus(effect);c+=b.c;h+=b.h;hp+=b.hp;speed+=b.speed;rangePct+=b.rangePct||0;});
  document.querySelectorAll('.deckcheck:checked').forEach(ch=>{const d=decks[+ch.dataset.idx];if(!validDeck(d)){ch.checked=false;return;}c+=+d.c||0;h+=+d.h||0;const setName=DECK_SET_META[d.name];if(setName){const si=sets.findIndex(x=>x.name===setName);if(si>=0)counts[si]=(counts[si]||0)+1;}});
- const active=[];Object.entries(counts).forEach(([si,count])=>{const set=sets[+si],li=setLevelForCount(set,count);if(li>=0){const b=parseBonus(set.levels[li][1]);c+=b.c;h+=b.h;hp+=b.hp;speed+=b.speed;active.push(`${tr(set.name)}: ${tr(set.levels[li][0])} — ${tr(set.levels[li][1])}`);}else active.push(`${tr(set.name)}: ${count} ${lang==='de'?'Teil(e), noch kein Setbonus':'piece(s), no set bonus yet'}`);});
- c+=+rollCannons.value||0;h+=+rollHarpoons.value||0;hp+=+rollHp.value||0;activeSets.innerHTML=`<b>${lang==='de'?'Aktive Sets':'Active sets'}:</b><br>${active.length?active.join('<br>'):(lang==='de'?'Keine Setstufe aktiv':'No set level active')}`;shipResult.innerHTML=`${tr(s.name)}<br>💣 ${lang==='de'?'Max. Kanonen':'Max cannons'}: ${fmt(c)}<br>⌁ ${lang==='de'?'Max. Harpunenwerfer':'Max harpoon launchers'}: ${fmt(h)}<br>❤ ${lang==='de'?'Max. Trefferpunkte':'Max HP'}: ${fmt(hp)}<br>⛵ ${lang==='de'?'Max. Tempo':'Max speed'}: ${String(Math.round(speed*10)/10).replace('.',lang==='de'?',':'.')} ${lang==='de'?'Knoten':'knots'}`;}
+ const active=[];Object.entries(counts).forEach(([si,count])=>{const set=sets[+si],li=setLevelForCount(set,count);if(li>=0){const b=parseBonus(set.levels[li][1]);c+=b.c;h+=b.h;hp+=b.hp;speed+=b.speed;rangePct+=b.rangePct||0;active.push(`${tr(set.name)}: ${tr(set.levels[li][0])} — ${tr(set.levels[li][1])}`);}else active.push(`${tr(set.name)}: ${count} ${lang==='de'?'Teil(e), noch kein Setbonus':'piece(s), no set bonus yet'}`);});
+ c+=+rollCannons.value||0;h+=+rollHarpoons.value||0;hp+=+rollHp.value||0;range=range*(1+rangePct/100);activeSets.innerHTML=`<b>${lang==='de'?'Aktive Sets':'Active sets'}:</b><br>${active.length?active.join('<br>'):(lang==='de'?'Keine Setstufe aktiv':'No set level active')}`;shipResult.innerHTML=`${tr(s.name)}<br>💣 ${lang==='de'?'Max. Kanonen':'Max cannons'}: ${fmt(c)}<br>⌁ ${lang==='de'?'Max. Harpunenwerfer':'Max harpoon launchers'}: ${fmt(h)}<br>❤ ${lang==='de'?'Max. Trefferpunkte':'Max HP'}: ${fmt(hp)}<br>⛵ ${lang==='de'?'Max. Tempo':'Max speed'}: ${String(Math.round(speed*10)/10).replace('.',lang==='de'?',':'.')} ${lang==='de'?'Knoten':'knots'}<br>🎯 ${lang==='de'?'Waffenreichweite':'Weapon range'}: ${fmt(Math.round(range*10)/10)}`;}
  [calcShip,rollCannons,rollHarpoons,rollHp].forEach(e=>e.addEventListener('input',updateShip));calcShip.addEventListener('change',updateShip);updateShip();
  const updateGuild=()=>{const lvl=Math.max(1,Math.min(49,+guildLevel.value||1)),current=+guildCurrentXp.value||0,row=guildXP.find(x=>x[0]===lvl);if(!row){guildCalcResult.textContent='?';return;}const next=Math.max(0,row[2]-current);guildCalcResult.innerHTML=`${lang==='de'?'Bis zum nächsten Level':'To next level'}: ${fmt(next)} XP`;};[guildLevel,guildCurrentXp].forEach(e=>e.addEventListener('input',updateGuild));updateGuild();
 }
@@ -832,27 +859,52 @@ forumCommentsSort?.addEventListener('click',()=>{forumSort='comments';renderForu
 // Eventkalender
 // Neue Events können künftig einfach in dieser Liste ergänzt werden.
 const calendarEvents = [
-  {
-    id:'sturmtag',
-    de:'Sturmtag',
-    en:'Storm Day',
-    recurrence:'monthly',
-    day:1
-  },
-  {
-    id:'grosser-sturmtag',
-    de:'Großer Sturmtag',
-    en:'Great Storm Day',
-    recurrence:'yearly',
-    month:7,
-    day:1
-  },
-  {
-    id:'tauchtag-2026-08-30',
-    de:'Tauchtag',
-    en:'Diving Day',
-    date:'2026-08-30'
-  }
+  {id:'sturmtag',de:'Sturmtag',en:'Storm Day',recurrence:'monthly',day:1},
+  {id:'grosser-sturmtag',de:'Großer Sturmtag',en:'Great Storm Day',recurrence:'yearly',month:7,day:1},
+  {id:'tauchtag-2026-08-30',de:'Tauchtag',en:'Diving Day',date:'2026-08-30'},
+  {id:'sep01-piratefest',de:'Piratenfest',en:'Pirate Fest',date:'2026-09-01'},
+  {id:'sep01-heroes',de:'Feier der Helden',en:'Celebration of Heroes',date:'2026-09-01'},
+  {id:'sep02-heroes',de:'Feier der Helden',en:'Celebration of Heroes',date:'2026-09-02'},
+  {id:'sep02-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-02'},
+  {id:'sep03-heroes',de:'Feier der Helden',en:'Celebration of Heroes',date:'2026-09-03'},
+  {id:'sep03-bargains',de:'Angebote des Kapitäns',en:"Captain's Bargains",date:'2026-09-03'},
+  {id:'sep03-smuggler-set',de:'Schmugglerbucht · Setgegenstände',en:"Smuggler's Bay · Set Items",date:'2026-09-03'},
+  {id:'sep03-ammo',de:'Munition · Voll beladen',en:'Ammo · Fully Loaded',date:'2026-09-03'},
+  ...['04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','21','22','23','24','25','26','27'].map(d=>({id:'hunt-'+d,de:'Nervenkitzel der Jagd',en:'Thrill of the Hunt',date:'2026-09-'+d})),
+  {id:'sep04-smuggler-ships',de:'Schmugglerbucht · Schiffe',en:"Smuggler's Bay · Ships",date:'2026-09-04'},
+  {id:'sep05-ships',de:'Schiffe · Voll beladen',en:'Ships · Fully Loaded',date:'2026-09-05'},
+  {id:'sep06-seals',de:'Siegel · Voll beladen',en:'Seals · Fully Loaded',date:'2026-09-06'},
+  {id:'sep07-upgrades',de:'Verbesserungen · Voll beladen',en:'Improvements · Fully Loaded',date:'2026-09-07'},
+  {id:'sep07-monster',de:'Monsterjagd',en:'Monster Hunt',date:'2026-09-07'},
+  {id:'sep08-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-08'},
+  ...Array.from({length:22},(_,i)=>i+9).map(d=>({id:'pvp-'+d,de:'PvP-Saison 1',en:'PVP Season 1',date:`2026-09-${String(d).padStart(2,'0')}`})),
+  ...Array.from({length:7},(_,i)=>i+10).map(d=>({id:'ctf-'+d,de:'Schlachtfeldwoche · Capture the Flag',en:'Battlefield Week · Capture the Flag',date:`2026-09-${d}`})),
+  {id:'sep10-skull',de:'Totenkopf-&-Knochen-Tag',en:'Skull & Crossbones Day',date:'2026-09-10'},
+  {id:'sep11-ammo',de:'Munition · Voll beladen',en:'Ammo · Fully Loaded',date:'2026-09-11'},
+  {id:'sep11-smuggler-bg',de:'Schmugglerbucht · Schlachtfeldgegenstände',en:"Smuggler's Bay · Battlefield Items",date:'2026-09-11'},
+  {id:'sep12-upgrades',de:'Verbesserungen · Voll beladen',en:'Improvements · Fully Loaded',date:'2026-09-12'},
+  {id:'sep13-ships',de:'Schiffe · Voll beladen',en:'Ships · Fully Loaded',date:'2026-09-13'},
+  {id:'sep14-smuggler-bg',de:'Schmugglerbucht · Schlachtfeldgegenstände',en:"Smuggler's Bay · Battlefield Items",date:'2026-09-14'},
+  {id:'sep15-piratefest',de:'Piratenfest',en:'Pirate Fest',date:'2026-09-15'},
+  {id:'sep15-items',de:'Gebrauchsgegenstände · Voll beladen',en:'Used Items · Fully Loaded',date:'2026-09-15'},
+  {id:'sep16-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-16'},
+  ...['17','18','19'].map(d=>({id:'doublexp-'+d,de:'Doppel-XP-Tag',en:'Double XP Day',date:'2026-09-'+d})),
+  {id:'sep18-upgrades',de:'Verbesserungen · Voll beladen',en:'Improvements · Fully Loaded',date:'2026-09-18'},
+  {id:'sep19-smuggler-set',de:'Schmugglerbucht · Setgegenstände',en:"Smuggler's Bay · Set Items",date:'2026-09-19'},
+  {id:'sep20-piratefest',de:'Piratenfest',en:'Pirate Fest',date:'2026-09-20'},
+  {id:'sep20-skull',de:'Totenkopf-&-Knochen-Tag',en:'Skull & Crossbones Day',date:'2026-09-20'},
+  {id:'sep21-monster',de:'Monsterjagd',en:'Monster Hunt',date:'2026-09-21'},
+  {id:'sep21-weapons',de:'Kanonen & Harpunenwerfer · Voll beladen',en:'Cannons & Harpoon Launchers · Fully Loaded',date:'2026-09-21'},
+  {id:'sep22-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-22'},
+  ...Array.from({length:9},(_,i)=>i+22).map(d=>({id:'dominion-'+d,de:'Schlachtfeldwoche · Pirate’s Dominion',en:"Battlefield Week · Pirate's Dominion",date:`2026-09-${d}`})),
+  {id:'sep23-bargains',de:'Angebote des Kapitäns',en:"Captain's Bargains",date:'2026-09-23'},
+  {id:'sep24-seals',de:'Siegel · Voll beladen',en:'Seals · Fully Loaded',date:'2026-09-24'},
+  ...['25','26','27'].map(d=>({id:'guildxp-'+d,de:'Gilden-XP-Tag',en:'Guild XP Day',date:'2026-09-'+d})),
+  {id:'sep26-ships',de:'Schiffe · Voll beladen',en:'Ships · Fully Loaded',date:'2026-09-26'},
+  {id:'sep27-items',de:'Gebrauchsgegenstände · Voll beladen',en:'Used Items · Fully Loaded',date:'2026-09-27'},
+  {id:'sep28-fullmoon',de:'Vollmond-Event',en:'Full Moon Event',date:'2026-09-28'},
+  {id:'sep29-upgrades',de:'Verbesserungen · Voll beladen',en:'Improvements · Fully Loaded',date:'2026-09-29'},
+  {id:'sep30-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-30'}
 ];
 
 const calendarState = {
@@ -954,7 +1006,7 @@ function translate(){
   heroText.textContent=t[lang].heroText;
   brandSub.textContent=lang==='de'?'Inoffizielles Community-Projekt':'Unofficial community project';
   search.placeholder=lang==='de'?'Schiffe, Decks, Sets, Kanonen, Items … durchsuchen':'Search ships, decks, sets, cannons, items …';
-  footerText.textContent=lang==='de'?'Inoffizielles Community-Projekt. Pirate Storm sowie zugehörige Marken und Inhalte gehören Bigpoint. Live-Werte basieren auf Ingame-Screenshots vom August 2026; historische Referenzen sind separat markiert. · Build V14':'Unofficial community project. Pirate Storm and related trademarks/content belong to Bigpoint. Live values are based on in-game screenshots from August 2026; historical references are marked separately. · Build V14';
+  footerText.textContent=lang==='de'?'Inoffizielles Community-Projekt. Pirate Storm sowie zugehörige Marken und Inhalte gehören Bigpoint. Live-Werte basieren auf Ingame-Screenshots vom August 2026; historische Referenzen sind separat markiert. · Build V15':'Unofficial community project. Pirate Storm and related trademarks/content belong to Bigpoint. Live values are based on in-game screenshots from August 2026; historical references are marked separately. · Build V15';
   if(document.getElementById('forumSub')) forumSub.textContent=lang==='de'?'PirateStorm Community – echte Beiträge, Kommentare und Likes für alle Spieler.':'PirateStorm community – shared posts, comments and likes for all players.';
   if(document.getElementById('loginTitle')) loginTitle.textContent=lang==='de'?'Anmelden / Registrieren':'Sign in / Register';
   if(document.getElementById('forumRegister')) forumRegister.textContent=lang==='de'?'Registrieren':'Register';
