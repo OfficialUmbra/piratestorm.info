@@ -46,7 +46,7 @@ h2{margin:0;font-size:28px}.sub{color:var(--muted);font-size:13px;margin-top:4px
 .price-dia{color:#8bdcff}.price-gold{color:var(--gold)}.price-eur{color:#a9f2c5}
 .level{padding:7px 0;border-top:1px solid rgba(255,255,255,.07);font-size:12px;line-height:1.45}
 .note{margin:12px 0;border:1px solid var(--line);background:#0c1a24;color:#bed0da;padding:12px 13px;border-radius:11px;font-size:12px;line-height:1.5}
-.tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.tool{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:15px}
+.tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}.tool{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:15px;height:max-content}.tool.ship-config{grid-column:2;grid-row:1 / span 2}.tool.guild-calc{grid-column:1;grid-row:2}
 .fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}.field label{font-size:11px;color:var(--muted)}.field input,.field select{width:100%;margin-top:4px;padding:9px}
 .checks{display:grid;gap:6px;margin-top:8px}.check{display:flex;align-items:flex-start;gap:7px;font-size:12px;color:#d8e7ee}.check input{width:auto;margin-top:2px}
 .result{margin-top:10px;border:1px solid #214052;background:#07151e;padding:11px;border-radius:9px;font-weight:800;line-height:1.5}
@@ -216,7 +216,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 </main>
 </div>
 
-<footer id="footerText">Unofficial community project. Pirate Storm and related trademarks/assets belong to Bigpoint. Die Live-Besucherzahl nutzt /api/online und benötigt auf Cloudflare Pages eine kleine Worker/Function-Anbindung. Live values are based on in-game screenshots from August 2026; historical references are marked separately. · Build V15</footer>
+<footer id="footerText">Unofficial community project. Pirate Storm and related trademarks/assets belong to Bigpoint. Die Live-Besucherzahl nutzt /api/online und benötigt auf Cloudflare Pages eine kleine Worker/Function-Anbindung. Live values are based on in-game screenshots from August 2026; historical references are marked separately. · Build V16</footer>
 
 <script>
 const t={
@@ -289,14 +289,14 @@ const decks=[
 {group:'PvP / Kriegsrang',name:'Großes Kriegsdeck',c:10,h:12,ind:'Ja',slot:'Eigener Deckplatz',normal:'7.000 💀 Schädel',premium:null,unlock:'Kriegsrang 2',note:'Nur auf Schädelschiffen/Kriegsrang-Schiffen ausrüstbar.',status:'verified'},
 {group:'Blutmond',name:'Blutmond Deck',c:12,h:12,ind:'Ja',slot:'Blutmond-Zusatzdeck',normal:'Event/Auktion',premium:null,note:'Nach Erwerb auf jedem Schiff zusätzlich zu den normalen Deckplätzen ausrüstbar; blockiert kein normales Deck.',bloodmoonExtra:true,status:'verified'},
 {group:'Blutmond',name:'Corona-Deck',c:12,h:12,ind:'Ja',slot:'Blutmond-Spezialdeck',normal:'Event/Auktion',premium:null,note:'Ausschließlich auf dem Blutmond-Schiff ausrüstbar.',ships:['Blutmond'],status:'verified'},
-{group:'Panther',name:'Mittleres Pantherdeck',c:10,h:6,ind:'Ja',slot:'Mittlerer Deckplatz',normal:'Event',premium:null,note:'Teil von Macht des Panthers.',status:'verified'},
-{group:'Adler',name:'Adlerklaue',c:0,h:0,ind:'Ja',slot:'Adler-Spezialdeck',normal:'Adler-Event',premium:null,note:'Ausschließlich auf dem Adlerschiff ausrüstbar.',ships:['Adlerschiff'],status:'verified'},
-{group:'Adler',name:'Riff-Deck',c:6,h:6,ind:'Ja',slot:'Vorderer Deckplatz',normal:'Event',premium:null,note:'Teil von Macht des Adlers.',status:'verified'},
-{group:'Skorpion',name:'Oberes Stacheldeck',c:10,h:6,ind:'Ja',slot:'Oberer Deckplatz',normal:'Event',premium:null,note:'Teil von Macht des Skorpions.',status:'verified'},
-{group:'Sobek',name:'Unteres Sobek Deck',c:10,h:6,ind:'Ja',slot:'Unterer Deckplatz',normal:'Event',premium:null,note:'Sobek-Eventdeck.',status:'verified'},
+{group:'Panther',name:'Mittleres Pantherdeck',c:10,h:6,ind:'Ja',slot:'Mittlerer Deckplatz',normal:'Preis laut Event-Screenshot',premium:null,note:'Teil von Macht des Panthers.',status:'verified'},
+{group:'Adler',name:'Adlerklaue',c:null,h:null,ind:'Ja',slot:'Adler-Spezialdeck',normal:'Adler-Event',premium:null,note:'Ausschließlich auf dem Adlerschiff ausrüstbar.',ships:['Adlerschiff'],status:'verified'},
+{group:'Adler',name:'Riff-Deck',c:6,h:6,ind:'Ja',slot:'Vorderer Deckplatz',normal:'Preis laut Event-Screenshot',premium:null,note:'Teil von Macht des Adlers.',status:'verified'},
+{group:'Skorpion',name:'Oberes Stacheldeck',c:10,h:6,ind:'Ja',slot:'Oberer Deckplatz',normal:'Preis laut Event-Screenshot',premium:null,note:'Teil von Macht des Skorpions.',status:'verified'},
+{group:'Sobek',name:'Unteres Sobek Deck',c:10,h:6,ind:'Ja',slot:'Unterer Deckplatz',normal:'Preis laut Event-Screenshot',premium:null,note:'Sobek-Eventdeck.',status:'verified'},
 {group:'Gilde',name:'Gildendeck',c:10,h:6,ind:'Ja',slot:'Eigener Deckplatz',normal:'50.000 💎',premium:'48.500 💎',note:'Voraussetzung: Die Gilde muss im Vormonat Top 10 beim Plündern gewesen sein.',status:'verified'},
 {group:'Winterevent',name:'Raunacht-Deck',c:40,h:36,ind:'Ja',slot:'Eigener Deckplatz',normal:'Event',premium:null,note:'Nur auf Frostbrand ausrüstbar.',ships:['Frostbrand'],status:'verified'},
-{group:'Spezial',name:'Donnerschall-Deck',c:2,h:18,ind:'Ja',slot:'Hinterer Deckplatz',normal:'Eventpreis nicht sicher verifiziert',premium:null,note:'Eventdeck.',status:'verified'},
+{group:'Spezial',name:'Donnerschall-Deck',c:2,h:18,ind:'Ja',slot:'Hinterer Deckplatz',normal:'Preis laut Event-Screenshot',premium:null,note:'Eventdeck.',status:'verified'},
 {group:'Standard / Händler',name:'Oberes Mahagonideck',c:8,h:4,ind:'Nein',slot:'Oberer Deckplatz',dur:50,normal:'40.000 💎',premium:'38.800 💎',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
 {group:'Arena',name:'Arena-Zwischendeck',c:14,h:2,ind:'Ja',slot:'Zwischendeck',dur:'Unversenkbar',normal:'20.000 💎',premium:'19.400 💎',unlock:'4.800 Arena-Punkte',note:'Nur auf Verwüster, Gladiator und Weltenzerstörer ausrüstbar.',ships:['Verwüster','Gladiator','Weltenzerstörer'],status:'verified'},
 {group:'Standard / Händler',name:'Mittleres Mahagonideck',c:8,h:4,ind:'Nein',slot:'Mittlerer Deckplatz',dur:50,normal:'20.000 💎',premium:'19.400 💎',note:'Geht nach einigen Versenkungen verloren.',status:'verified'},
@@ -388,6 +388,11 @@ const sets=[
 ],levels:[['Level 1 · 3 Teile','Raketen-Ausweichchance +6%'],['Level 2 · 4 Teile','Kanonen-Nachladen +8%; Kanonen-Streuung −7%; Raketen-Ausweichchance +6%'],['Level 3 · 5 Teile','Kanonen-Nachladen +8%; Kanonen-Streuung −12%; Max. Kanonen +5; Raketen-Ausweichchance +6%'],['Level 4 · 6 Teile','Kanonen-Nachladen +16%; Kanonen-Streuung −20%; Max. Kanonen +10; Raketen-Ausweichchance +6%; Unversenkbar']]}
 ];
 
+
+// Set-Verbesserungen zusätzlich unter Verbesserungen → Event anzeigen.
+// Im Konfigurator werden weiterhin die originalen Setteile verwendet, damit nichts doppelt auswählbar ist.
+const eventSetUpgrades = sets.flatMap(set => set.pieces.filter(p=>!/deck/i.test(p[0])).map(p=>({group:'Event',name:p[0],effect:p[1],price:p[2]||null,source:`Set: ${set.name}`,status:'verified',displayOnlySetPiece:true})));
+upgrades.push(...eventSetUpgrades);
 const cannons=[
 {group:'Bonusmap',name:'Die Bombastische',source:'Voodoo-Schädel',level:1,damage:19,spread:30,destroy:'Nein',status:'verified'},
 {group:'Bonusmap',name:'Die Bombastische',source:'Voodoo-Schädel',level:3,damage:21,spread:30,destroy:'Nein',status:'verified'},
@@ -691,19 +696,19 @@ function renderTools(){
   const cannonAmmo=ammo.filter(a=>a.group.startsWith('Kanonenkugeln')).map(a=>({a,idx:ammo.indexOf(a),base:+((a.effect.match(/Basis-Schaden (\d+)/)||[])[1]||0)}));
   const ammoOptions=cannonAmmo.map(x=>`<option value="${x.idx}">${tr(x.a.name)}</option>`).join('');
   const setGear=[]; sets.forEach((set,si)=>set.pieces.forEach((p,pi)=>{if(!/deck/i.test(p[0]))setGear.push({name:p[0],effect:p[1],set:set.name,setIndex:si,pieceIndex:pi,slot:(SET_PIECE_META[p[0]]||{}).slot||upgradeSlot({name:p[0],effect:p[1]})});}));
-  const allGear=[...upgrades.map((u,i)=>({name:u.name,effect:u.effect||'',set:null,upgradeIndex:i,slot:upgradeSlot(u)})),...setGear];
-  const order=['sail','mast','bulkhead','keel','rudder','anchor','figurehead','bell','bloodmoon-anchor','bloodmoon-figurehead','bloodmoon-rudder','bloodmoon-bulkhead','other'];
-  const labels={sail:['Segel','Sails'],mast:['Mast','Masts'],bulkhead:['Schott','Bulkheads'],keel:['Kiel','Keels'],rudder:['Ruder','Rudders'],anchor:['Anker','Anchors'],figurehead:['Galionsfigur','Figureheads'],bell:['Glocke','Bells'],'bloodmoon-anchor':['Blutmond · Zusatzanker','Blood Moon · extra anchor'],'bloodmoon-figurehead':['Blutmond · Zusatz-Galionsfigur','Blood Moon · extra figurehead'],'bloodmoon-rudder':['Blutmond · Zusatzruder','Blood Moon · extra rudder'],'bloodmoon-bulkhead':['Blutmond · Zusatzschott','Blood Moon · extra bulkhead'],other:['Sonstige / Spezial','Other / special']};
-  const gearHtml=order.map(slot=>{const arr=allGear.filter(g=>(g.slot||'').startsWith('other-')?slot==='other':g.slot===slot);if(!arr.length)return'';return `<div class="group">${labels[slot][lang==='de'?0:1]}</div><div class="checks">${arr.map((g,i)=>`<label class="check"><input type="checkbox" class="gearcheck" data-key="${escAttr(g.name)}" data-slot="${g.slot}" data-upgrade="${g.upgradeIndex??''}" data-set="${g.setIndex??''}" data-piece="${g.pieceIndex??''}"> <span><b>${tr(g.name)}</b>${g.set?` · <span class="muted">${lang==='de'?'Set':'Set'}: ${tr(g.set)}</span>`:''}${g.effect?`<br><span class="muted">${tr(g.effect)}</span>`:''}</span></label>`).join('')}</div>`}).join('');
-  const deckChecks=decks.filter(d=>typeof d.c==='number'&&typeof d.h==='number').map(d=>`<label class="check"><input type="checkbox" class="deckcheck" data-idx="${decks.indexOf(d)}" data-slot="${deckSlotKey(d)}"> <span><b>${tr(d.name)}</b>${DECK_SET_META[d.name]?` · <span class="muted">Set: ${tr(DECK_SET_META[d.name])}</span>`:''} · +${d.c} K / +${d.h} H · ${tr(d.slot)}</span></label>`).join('');
-  toolsContent.innerHTML=`<div class="tools"><div class="tool"><h3>⚔️ ${lang==='de'?'Schadensrechner':'Damage calculator'}</h3><div class="fields"><div class="field"><label>${lang==='de'?'Kanone':'Cannon'}</label><select id="calcCannon">${cannonOptions}</select></div><div class="field"><label>${lang==='de'?'Anzahl Kanonen':'Cannon count'}</label><input id="calcCount" type="number" value="180" min="1"></div><div class="field"><label>${lang==='de'?'Munition':'Ammo'}</label><select id="calcAmmoSelect">${ammoOptions}</select></div><div class="field"><label>${lang==='de'?'Weitere Schadensboni %':'Additional damage %'}</label><input id="calcBonus" type="number" value="0" step=".1"></div></div><div class="result" id="damageResult"></div></div>
-  <div class="tool"><h3>🚢 ${lang==='de'?'Schiffs-Konfigurator':'Ship configurator'}</h3><div class="fields"><div class="field"><label>${lang==='de'?'Schiff':'Ship'}</label><select id="calcShip">${shipOptions}</select></div><div class="field"><label>${lang==='de'?'Rollen der Macht · Kanonen':'Rolls of Power · cannons'}</label><input id="rollCannons" type="number" value="0"></div><div class="field"><label>${lang==='de'?'Rollen der Macht · Harpunen':'Rolls of Power · harpoons'}</label><input id="rollHarpoons" type="number" value="0"></div><div class="field"><label>${lang==='de'?'Rollen der Macht · HP':'Rolls of Power · HP'}</label><input id="rollHp" type="number" value="0"></div></div><div class="sub" style="margin-top:10px">${lang==='de'?'Verbesserungen nach Slot – Setzugehörigkeit steht direkt am Item. Setstufen werden automatisch aktiviert.':'Upgrades by slot – set membership is shown on each item. Set levels activate automatically.'}</div>${gearHtml}<div class="group">${lang==='de'?'Decks':'Decks'}</div><div class="checks">${deckChecks}</div><div class="result" id="activeSets"></div><div class="result" id="shipResult"></div></div>
-  <div class="tool"><h3>♜ ${lang==='de'?'Gilden-XP-Rechner':'Guild XP calculator'}</h3><div class="fields"><div class="field"><label>${lang==='de'?'Aktuelles Gildenlevel':'Current guild level'}</label><input id="guildLevel" type="number" value="1" min="1" max="49"></div><div class="field"><label>${lang==='de'?'XP im aktuellen Level':'XP in current level'}</label><input id="guildCurrentXp" type="number" value="0" min="0"></div></div><div class="result" id="guildCalcResult"></div></div></div>`; bindCalcs();
+  const allGear=[...upgrades.map((u,i)=>({name:u.name,effect:u.effect||'',set:null,upgradeIndex:i,slot:upgradeSlot(u)})).filter((_,i)=>!upgrades[i].displayOnlySetPiece),...setGear];
+  const order=['sail','mast','bulkhead','keel','rudder','anchor','figurehead','bell','bloodmoon','other'];
+  const labels={sail:['Segel','Sails'],mast:['Mast','Masts'],bulkhead:['Schott','Bulkheads'],keel:['Kiel','Keels'],rudder:['Ruder','Rudders'],anchor:['Anker','Anchors'],figurehead:['Galionsfigur','Figureheads'],bell:['Glocke','Bells'],bloodmoon:['Blutmond · zusätzliche Ausrüstung','Blood Moon · additional equipment'],other:['Sonstige / Spezial','Other / special']};
+  const gearHtml=order.map(slot=>{const arr=allGear.filter(g=>slot==='bloodmoon'?(g.slot||'').startsWith('bloodmoon-'):((g.slot||'').startsWith('other-')?slot==='other':g.slot===slot));if(!arr.length)return'';return `<div class="group">${labels[slot][lang==='de'?0:1]}</div><div class="checks">${arr.map((g,i)=>`<label class="check"><input type="checkbox" class="gearcheck" data-key="${escAttr(g.name)}" data-slot="${g.slot}" data-upgrade="${g.upgradeIndex??''}" data-set="${g.setIndex??''}" data-piece="${g.pieceIndex??''}"> <span><b>${tr(g.name)}</b>${g.set?` · <span class="muted">${lang==='de'?'Set':'Set'}: ${tr(g.set)}</span>`:''}${g.effect?`<br><span class="muted">${tr(g.effect)}</span>`:''}</span></label>`).join('')}</div>`}).join('');
+  const deckRow=d=>`<label class="check"><input type="checkbox" class="deckcheck" data-idx="${decks.indexOf(d)}" data-slot="${deckSlotKey(d)}"> <span><b>${tr(d.name)}</b>${DECK_SET_META[d.name]?` · <span class="muted">Set: ${tr(DECK_SET_META[d.name])}</span>`:''} · +${d.c} K / +${d.h} H · ${tr(d.slot)}</span></label>`; const deckPool=decks.filter(d=>typeof d.c==='number'&&typeof d.h==='number'); const deckChecks=deckPool.filter(d=>d.group!=='Blutmond').map(deckRow).join(''); const bloodmoonDeckChecks=deckPool.filter(d=>d.group==='Blutmond').map(deckRow).join('');
+  toolsContent.innerHTML=`<div class="tools"><div class="tool damage-calc"><h3>⚔️ ${lang==='de'?'Schadensrechner':'Damage calculator'}</h3><div class="fields"><div class="field"><label>${lang==='de'?'Schadensart':'Damage type'}</label><select id="calcType"><option value="cannon">${lang==='de'?'Kanonen':'Cannons'}</option><option value="harpoon">${lang==='de'?'Harpunen':'Harpoons'}</option></select></div><div class="field"><label id="calcWeaponLabel">${lang==='de'?'Kanone':'Cannon'}</label><select id="calcWeapon"></select></div><div class="field"><label id="calcCountLabel">${lang==='de'?'Anzahl Kanonen':'Cannon count'}</label><input id="calcCount" type="number" value="180" min="1"></div><div class="field"><label>${lang==='de'?'Munition':'Ammo'}</label><select id="calcAmmoSelect"></select></div><div class="field"><label>${lang==='de'?'Weitere Schadensboni %':'Additional damage %'}</label><input id="calcBonus" type="number" value="0" step=".1"></div></div><div class="result" id="damageResult"></div></div>
+  <div class="tool ship-config"><h3>🚢 ${lang==='de'?'Schiffs-Konfigurator':'Ship configurator'}</h3><div class="fields"><div class="field"><label>${lang==='de'?'Schiff':'Ship'}</label><select id="calcShip">${shipOptions}</select></div><div class="field"><label>${lang==='de'?'Rollen der Macht · Kanonen':'Rolls of Power · cannons'}</label><input id="rollCannons" type="number" value="0"></div><div class="field"><label>${lang==='de'?'Rollen der Macht · Harpunen':'Rolls of Power · harpoons'}</label><input id="rollHarpoons" type="number" value="0"></div><div class="field"><label>${lang==='de'?'Rollen der Macht · HP':'Rolls of Power · HP'}</label><input id="rollHp" type="number" value="0"></div></div><div class="sub" style="margin-top:10px">${lang==='de'?'Verbesserungen nach Slot – Setzugehörigkeit steht direkt am Item. Setstufen werden automatisch aktiviert.':'Upgrades by slot – set membership is shown on each item. Set levels activate automatically.'}</div>${gearHtml}<div class="group">${lang==='de'?'Decks':'Decks'}</div><div class="checks">${deckChecks}</div><div class="group">${lang==='de'?'Blutmond · zusätzliche Decks':'Blood Moon · additional decks'}</div><div class="checks">${bloodmoonDeckChecks}</div><div class="result" id="activeSets"></div><div class="result" id="shipResult"></div></div>
+  <div class="tool guild-calc"><h3>♜ ${lang==='de'?'Gilden-XP-Rechner':'Guild XP calculator'}</h3><div class="fields"><div class="field"><label>${lang==='de'?'Aktuelles Gildenlevel':'Current guild level'}</label><input id="guildLevel" type="number" value="1" min="1" max="49"></div><div class="field"><label>${lang==='de'?'XP im aktuellen Level':'XP in current level'}</label><input id="guildCurrentXp" type="number" value="0" min="0"></div></div><div class="result" id="guildCalcResult"></div></div></div>`; bindCalcs();
 }
 function parseBonus(text){const res={c:0,h:0,hp:0,speed:0,rangePct:0};text=String(text||'');let m;const cannonRx=/(?:Max\. Kanonen|Extra-Kanonen) \+(\d+)/g;while((m=cannonRx.exec(text)))res.c+=+m[1];const harpoonRx=/(?:Max\. Harpunenwerfer|Extra-Harpunenwerfer) \+(\d+)/g;while((m=harpoonRx.exec(text)))res.h+=+m[1];const hpRx=/(?:Max\. Trefferpunkte|HP) \+([\d\.]+)/g;while((m=hpRx.exec(text)))res.hp+=+m[1].replace(/\./g,'');const speedRx=/(?:Max\. Tempo|Tempo-Bonus) \+?([\d,\.]+)(?: Knoten)?/g;while((m=speedRx.exec(text)))res.speed+=+m[1].replace(',','.');const rangeRx=/(?:Kanonen-Reichweite|Waffenreichweite) \+(\d+)%/g;while((m=rangeRx.exec(text)))res.rangePct+=+m[1];return res;}
 function upgradeSlot(u){const n=(u.name+' '+(u.effect||'')).toLowerCase();if(n.includes('sturmschott'))return 'storm-bulkhead';if(n.includes('schott')||n.includes('rumpf')||n.includes('bug'))return 'bulkhead';if(n.includes('kiel'))return 'keel';if(n.includes('segel'))return 'sail';if(n.includes('ruder'))return 'rudder';if(n.includes('mast'))return 'mast';if(n.includes('anker'))return 'anchor';if(n.includes('galionsfigur'))return 'figurehead';if(n.includes('glocke'))return 'bell';return 'other-'+upgrades.indexOf(u);}
 function bindCalcs(){
- const updateDamage=()=>{const c=cannons[+calcCannon.value],a=ammo[+calcAmmoSelect.value],count=+calcCount.value||0,b=+calcBonus.value||0,base=+((String(a?.effect||'').match(/Basis-Schaden (\d+)/)||[])[1]||0);const per=(+c.damage||0)+base;damageResult.innerHTML=`${lang==='de'?'Basisschaden pro Kanone inkl. Munition':'Base damage per cannon incl. ammo'}: ${fmt(per)}<br>${lang==='de'?'Ergebnis':'Result'}: ${fmt(Math.round(per*count*(1+b/100)))}`};[calcCannon,calcCount,calcAmmoSelect,calcBonus].forEach(e=>e.addEventListener('input',updateDamage));updateDamage();
+ const weaponOptions=()=>{const isC=calcType.value==='cannon',arr=isC?cannons:harpoonlaunchers;calcWeapon.innerHTML=arr.map((w,i)=>`<option value="${i}">${tr(w.name)} · Lvl ${w.level}</option>`).join('');const m=ammo.filter(a=>isC?a.group.startsWith('Kanonenkugeln'):a.group.startsWith('Harpunen'));calcAmmoSelect.innerHTML=m.map(a=>`<option value="${ammo.indexOf(a)}">${tr(String(a.name).replace(/^1\.000×\s*/,''))}</option>`).join('');calcWeaponLabel.textContent=isC?(lang==='de'?'Kanone':'Cannon'):(lang==='de'?'Harpunenwerfer':'Harpoon launcher');calcCountLabel.textContent=isC?(lang==='de'?'Anzahl Kanonen':'Cannon count'):(lang==='de'?'Anzahl Harpunenwerfer':'Harpoon launcher count');}; const updateDamage=()=>{const isC=calcType.value==='cannon',arr=isC?cannons:harpoonlaunchers,w=arr[+calcWeapon.value],a=ammo[+calcAmmoSelect.value],count=+calcCount.value||0,b=+calcBonus.value||0,base=+((String(a?.effect||'').match(/Basis-Schaden (\d+)/)||[])[1]||0);const per=(+w?.damage||0)+base;damageResult.innerHTML=`${lang==='de'?'Basisschaden pro Treffer inkl. Munition':'Base damage per hit incl. ammo'}: ${fmt(per)}<br>${lang==='de'?'Ergebnis':'Result'}: ${fmt(Math.round(per*count*(1+b/100)))}`};calcType.addEventListener('change',()=>{weaponOptions();updateDamage()});[calcWeapon,calcCount,calcAmmoSelect,calcBonus].forEach(e=>e.addEventListener('input',updateDamage));weaponOptions();updateDamage();
  function shipName(){return ships[+calcShip.value].name.replace(/^Kriegsfregatte „|“$/g,'');}
  function validDeck(d){const n=shipName();if(d.ships&&!d.ships.includes(n))return false;if(d.group==='PvP / Kriegsrang'||/^Kriegs/.test(d.name)||d.name==='Vorderes Kriegsdeck')return ships[+calcShip.value].group==='PvP / Kriegsrang';return true;}
  document.querySelectorAll('.gearcheck').forEach(ch=>ch.addEventListener('change',e=>{if(e.target.checked){const slot=e.target.dataset.slot;if(slot==='storm-bulkhead'){document.querySelectorAll('.gearcheck:checked[data-slot="storm-bulkhead"]').forEach(o=>{if(o!==e.target)o.checked=false;});}else if(slot&&!slot.startsWith('other-')){document.querySelectorAll(`.gearcheck:checked[data-slot="${slot}"]`).forEach(o=>{if(o!==e.target)o.checked=false;});}}updateShip();}));
@@ -859,52 +864,25 @@ forumCommentsSort?.addEventListener('click',()=>{forumSort='comments';renderForu
 // Eventkalender
 // Neue Events können künftig einfach in dieser Liste ergänzt werden.
 const calendarEvents = [
-  {id:'sturmtag',de:'Sturmtag',en:'Storm Day',recurrence:'monthly',day:1},
-  {id:'grosser-sturmtag',de:'Großer Sturmtag',en:'Great Storm Day',recurrence:'yearly',month:7,day:1},
-  {id:'tauchtag-2026-08-30',de:'Tauchtag',en:'Diving Day',date:'2026-08-30'},
-  {id:'sep01-piratefest',de:'Piratenfest',en:'Pirate Fest',date:'2026-09-01'},
-  {id:'sep01-heroes',de:'Feier der Helden',en:'Celebration of Heroes',date:'2026-09-01'},
-  {id:'sep02-heroes',de:'Feier der Helden',en:'Celebration of Heroes',date:'2026-09-02'},
-  {id:'sep02-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-02'},
-  {id:'sep03-heroes',de:'Feier der Helden',en:'Celebration of Heroes',date:'2026-09-03'},
+  {id:'sep-pvp',de:'PvP-Saison 1 · 01.–30.09.',en:'PVP Season 1 · Sep 1–30',date:'2026-09-01'},
+  {id:'sep01-storm',de:'Sturmtag',en:'Storm Day',date:'2026-09-01'},
+  {id:'sep01-smuggler-ships',de:'Schmugglerbucht · Schiffsauktion',en:"Smuggler's Bay · Ship Auction",date:'2026-09-01'},
+  {id:'sep02-upgrades',de:'Verbesserungen · Voll beladen',en:'Improvements · Fully Loaded',date:'2026-09-02'},
   {id:'sep03-bargains',de:'Angebote des Kapitäns',en:"Captain's Bargains",date:'2026-09-03'},
-  {id:'sep03-smuggler-set',de:'Schmugglerbucht · Setgegenstände',en:"Smuggler's Bay · Set Items",date:'2026-09-03'},
-  {id:'sep03-ammo',de:'Munition · Voll beladen',en:'Ammo · Fully Loaded',date:'2026-09-03'},
-  ...['04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','21','22','23','24','25','26','27'].map(d=>({id:'hunt-'+d,de:'Nervenkitzel der Jagd',en:'Thrill of the Hunt',date:'2026-09-'+d})),
-  {id:'sep04-smuggler-ships',de:'Schmugglerbucht · Schiffe',en:"Smuggler's Bay · Ships",date:'2026-09-04'},
-  {id:'sep05-ships',de:'Schiffe · Voll beladen',en:'Ships · Fully Loaded',date:'2026-09-05'},
-  {id:'sep06-seals',de:'Siegel · Voll beladen',en:'Seals · Fully Loaded',date:'2026-09-06'},
-  {id:'sep07-upgrades',de:'Verbesserungen · Voll beladen',en:'Improvements · Fully Loaded',date:'2026-09-07'},
-  {id:'sep07-monster',de:'Monsterjagd',en:'Monster Hunt',date:'2026-09-07'},
-  {id:'sep08-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-08'},
-  ...Array.from({length:22},(_,i)=>i+9).map(d=>({id:'pvp-'+d,de:'PvP-Saison 1',en:'PVP Season 1',date:`2026-09-${String(d).padStart(2,'0')}`})),
-  ...Array.from({length:7},(_,i)=>i+10).map(d=>({id:'ctf-'+d,de:'Schlachtfeldwoche · Capture the Flag',en:'Battlefield Week · Capture the Flag',date:`2026-09-${d}`})),
-  {id:'sep10-skull',de:'Totenkopf-&-Knochen-Tag',en:'Skull & Crossbones Day',date:'2026-09-10'},
-  {id:'sep11-ammo',de:'Munition · Voll beladen',en:'Ammo · Fully Loaded',date:'2026-09-11'},
-  {id:'sep11-smuggler-bg',de:'Schmugglerbucht · Schlachtfeldgegenstände',en:"Smuggler's Bay · Battlefield Items",date:'2026-09-11'},
-  {id:'sep12-upgrades',de:'Verbesserungen · Voll beladen',en:'Improvements · Fully Loaded',date:'2026-09-12'},
-  {id:'sep13-ships',de:'Schiffe · Voll beladen',en:'Ships · Fully Loaded',date:'2026-09-13'},
-  {id:'sep14-smuggler-bg',de:'Schmugglerbucht · Schlachtfeldgegenstände',en:"Smuggler's Bay · Battlefield Items",date:'2026-09-14'},
-  {id:'sep15-piratefest',de:'Piratenfest',en:'Pirate Fest',date:'2026-09-15'},
-  {id:'sep15-items',de:'Gebrauchsgegenstände · Voll beladen',en:'Used Items · Fully Loaded',date:'2026-09-15'},
-  {id:'sep16-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-16'},
-  ...['17','18','19'].map(d=>({id:'doublexp-'+d,de:'Doppel-XP-Tag',en:'Double XP Day',date:'2026-09-'+d})),
-  {id:'sep18-upgrades',de:'Verbesserungen · Voll beladen',en:'Improvements · Fully Loaded',date:'2026-09-18'},
-  {id:'sep19-smuggler-set',de:'Schmugglerbucht · Setgegenstände',en:"Smuggler's Bay · Set Items",date:'2026-09-19'},
-  {id:'sep20-piratefest',de:'Piratenfest',en:'Pirate Fest',date:'2026-09-20'},
-  {id:'sep20-skull',de:'Totenkopf-&-Knochen-Tag',en:'Skull & Crossbones Day',date:'2026-09-20'},
-  {id:'sep21-monster',de:'Monsterjagd',en:'Monster Hunt',date:'2026-09-21'},
-  {id:'sep21-weapons',de:'Kanonen & Harpunenwerfer · Voll beladen',en:'Cannons & Harpoon Launchers · Fully Loaded',date:'2026-09-21'},
-  {id:'sep22-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-22'},
-  ...Array.from({length:9},(_,i)=>i+22).map(d=>({id:'dominion-'+d,de:'Schlachtfeldwoche · Pirate’s Dominion',en:"Battlefield Week · Pirate's Dominion",date:`2026-09-${d}`})),
-  {id:'sep23-bargains',de:'Angebote des Kapitäns',en:"Captain's Bargains",date:'2026-09-23'},
-  {id:'sep24-seals',de:'Siegel · Voll beladen',en:'Seals · Fully Loaded',date:'2026-09-24'},
-  ...['25','26','27'].map(d=>({id:'guildxp-'+d,de:'Gilden-XP-Tag',en:'Guild XP Day',date:'2026-09-'+d})),
-  {id:'sep26-ships',de:'Schiffe · Voll beladen',en:'Ships · Fully Loaded',date:'2026-09-26'},
-  {id:'sep27-items',de:'Gebrauchsgegenstände · Voll beladen',en:'Used Items · Fully Loaded',date:'2026-09-27'},
-  {id:'sep28-fullmoon',de:'Vollmond-Event',en:'Full Moon Event',date:'2026-09-28'},
-  {id:'sep29-upgrades',de:'Verbesserungen · Voll beladen',en:'Improvements · Fully Loaded',date:'2026-09-29'},
-  {id:'sep30-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-30'}
+  {id:'sep04-monster',de:'Monsterjagd',en:'Monster Hunt',date:'2026-09-04'}, {id:'sep04-skull',de:'Totenkopf-&-Knochen-Tag',en:'Skull & Crossbones Day',date:'2026-09-04'},
+  {id:'sep05-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-05'},
+  {id:'sep06-items',de:'Gebrauchsgegenstände · Voll beladen',en:'Used Items · Fully Loaded',date:'2026-09-06'},
+  {id:'sep07-pirate',de:'Piratenfest',en:'Pirate Fest',date:'2026-09-07'},
+  ...Array.from({length:8},(_,i)=>i+7).map(d=>({id:'thunder-'+d,de:'Schlachtfeldwoche · Thunderball',en:'Battlefield Week · Thunderball',date:`2026-09-${String(d).padStart(2,'0')}`})),
+  ...Array.from({length:5},(_,i)=>i+7).map(d=>({id:'overboard-'+d,de:'Überbordpreise',en:'Overboard Prices',date:`2026-09-${String(d).padStart(2,'0')}`})),
+  {id:'sep08-seals',de:'Siegel · Voll beladen',en:'Seals · Fully Loaded',date:'2026-09-08'}, {id:'sep09-ammo',de:'Munition · Voll beladen',en:'Ammo · Fully Loaded',date:'2026-09-09'}, {id:'sep10-ships',de:'Schiffe · Voll beladen',en:'Ships · Fully Loaded',date:'2026-09-10'}, {id:'sep11-items',de:'Gebrauchsgegenstände · Voll beladen',en:'Used Items · Fully Loaded',date:'2026-09-11'}, {id:'sep12-upgrades',de:'Verbesserungen · Voll beladen',en:'Improvements · Fully Loaded',date:'2026-09-12'}, {id:'sep13-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-13'}, {id:'sep14-upgrades',de:'Verbesserungen · Voll beladen',en:'Improvements · Fully Loaded',date:'2026-09-14'},
+  {id:'sep15-smuggler-bg',de:'Schmugglerbucht · Schlachtfeldauktion',en:"Smuggler's Bay · Battlefield Auction",date:'2026-09-15'}, {id:'sep15-skull',de:'Totenkopf-&-Knochen-Tag',en:'Skull & Crossbones Day',date:'2026-09-15'},
+  {id:'sep16-pirate',de:'Piratenfest',en:'Pirate Fest',date:'2026-09-16'}, {id:'sep16-weapons',de:'Kanonen & Harpunenwerfer · Voll beladen',en:'Cannons & Harpoon Launchers · Fully Loaded',date:'2026-09-16'},
+  {id:'sep17-smuggler-bg',de:'Schmugglerbucht · Schlachtfeldauktion',en:"Smuggler's Bay · Battlefield Auction",date:'2026-09-17'},
+  {id:'sep18-monster',de:'Monsterjagd',en:'Monster Hunt',date:'2026-09-18'}, {id:'sep18-ships',de:'Schiffe · Voll beladen',en:'Ships · Fully Loaded',date:'2026-09-18'},
+  {id:'sep19-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-19'}, {id:'sep20-smuggler-set',de:'Schmugglerbucht · Setgegenstände',en:"Smuggler's Bay · Set Items",date:'2026-09-20'},
+  ...Array.from({length:8},(_,i)=>i+21).map(d=>({id:'spider-'+d,de:'Schlachtfeldwoche · Spider Bay',en:'Battlefield Week · Spider Bay',date:`2026-09-${String(d).padStart(2,'0')}`})),
+  {id:'sep26-fullmoon',de:'Vollmond-Event',en:'Full Moon Event',date:'2026-09-26'}
 ];
 
 const calendarState = {
@@ -1006,7 +984,7 @@ function translate(){
   heroText.textContent=t[lang].heroText;
   brandSub.textContent=lang==='de'?'Inoffizielles Community-Projekt':'Unofficial community project';
   search.placeholder=lang==='de'?'Schiffe, Decks, Sets, Kanonen, Items … durchsuchen':'Search ships, decks, sets, cannons, items …';
-  footerText.textContent=lang==='de'?'Inoffizielles Community-Projekt. Pirate Storm sowie zugehörige Marken und Inhalte gehören Bigpoint. Live-Werte basieren auf Ingame-Screenshots vom August 2026; historische Referenzen sind separat markiert. · Build V15':'Unofficial community project. Pirate Storm and related trademarks/content belong to Bigpoint. Live values are based on in-game screenshots from August 2026; historical references are marked separately. · Build V15';
+  footerText.textContent=lang==='de'?'Inoffizielles Community-Projekt. Pirate Storm sowie zugehörige Marken und Inhalte gehören Bigpoint. Live-Werte basieren auf Ingame-Screenshots vom August 2026; historische Referenzen sind separat markiert. · Build V16':'Unofficial community project. Pirate Storm and related trademarks/content belong to Bigpoint. Live values are based on in-game screenshots from August 2026; historical references are marked separately. · Build V16';
   if(document.getElementById('forumSub')) forumSub.textContent=lang==='de'?'PirateStorm Community – echte Beiträge, Kommentare und Likes für alle Spieler.':'PirateStorm community – shared posts, comments and likes for all players.';
   if(document.getElementById('loginTitle')) loginTitle.textContent=lang==='de'?'Anmelden / Registrieren':'Sign in / Register';
   if(document.getElementById('forumRegister')) forumRegister.textContent=lang==='de'?'Registrieren':'Register';
