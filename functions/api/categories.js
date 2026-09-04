@@ -9,7 +9,6 @@ function json(data, status = 200) {
 
 function getCookie(request, name) {
   const cookieHeader = request.headers.get("Cookie");
-
   if (!cookieHeader) return null;
 
   for (const cookie of cookieHeader.split(";")) {
@@ -25,7 +24,6 @@ function getCookie(request, name) {
 
 async function getCurrentUser(request, env) {
   const sessionId = getCookie(request, "ps_session");
-
   if (!sessionId) return null;
 
   const now = Math.floor(Date.now() / 1000);
@@ -47,7 +45,8 @@ async function getCurrentUser(request, env) {
 }
 
 async function requireAdmin(request, env) {
-  const user = await getCurrentUser(request, env);
+  const user =
+    await getCurrentUser(request, env);
 
   if (!user) {
     return {
@@ -80,7 +79,8 @@ export async function onRequestGet(context) {
   try {
     const { request, env } = context;
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(request, env);
 
     const result = await env.DB
       .prepare(`
@@ -89,10 +89,17 @@ export async function onRequestGet(context) {
           categories.name,
           categories.created_at,
           COUNT(posts.id) AS thread_count
+
         FROM categories
+
         LEFT JOIN posts
           ON posts.category = categories.name
-        GROUP BY categories.id
+
+        GROUP BY
+          categories.id,
+          categories.name,
+          categories.created_at
+
         ORDER BY categories.id ASC
       `)
       .all();
@@ -116,14 +123,15 @@ export async function onRequestGet(context) {
 
 // ----------------------------------------------------
 // POST /api/categories
-// Neues Überthema – NUR ADMIN
+// Überthema erstellen – NUR ADMIN
 // ----------------------------------------------------
 
 export async function onRequestPost(context) {
   try {
     const { request, env } = context;
 
-    const auth = await requireAdmin(request, env);
+    const auth =
+      await requireAdmin(request, env);
 
     if (auth.error) return auth.error;
 
@@ -194,7 +202,8 @@ export async function onRequestPut(context) {
   try {
     const { request, env } = context;
 
-    const auth = await requireAdmin(request, env);
+    const auth =
+      await requireAdmin(request, env);
 
     if (auth.error) return auth.error;
 
@@ -255,10 +264,9 @@ export async function onRequestPut(context) {
     }
 
     /*
-      Wichtig:
-      Die Posts speichern aktuell den Kategorienamen.
-      Deshalb müssen beim Umbenennen auch die Threads
-      auf den neuen Namen umgestellt werden.
+      Threads behalten wir beim Umbenennen.
+      Deshalb wird der Kategoriename in posts
+      ebenfalls geändert.
     */
 
     await env.DB.batch([
@@ -304,7 +312,8 @@ export async function onRequestDelete(context) {
   try {
     const { request, env } = context;
 
-    const auth = await requireAdmin(request, env);
+    const auth =
+      await requireAdmin(request, env);
 
     if (auth.error) return auth.error;
 
@@ -342,12 +351,6 @@ export async function onRequestDelete(context) {
       `)
       .bind(category.name)
       .first();
-
-    /*
-      Sicherheit:
-      Ein Überthema mit vorhandenen Threads wird
-      NICHT einfach mitsamt aller Inhalte gelöscht.
-    */
 
     if (Number(threadCount.count) > 0) {
       return json({
