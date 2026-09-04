@@ -27,6 +27,12 @@ function getCookie(request, name) {
   return null;
 }
 
+
+// ----------------------------------------------------
+// GET /api/me
+// Aktuellen Login-Status + Benutzerrolle abrufen
+// ----------------------------------------------------
+
 export async function onRequestGet(context) {
   try {
     const { request, env } = context;
@@ -48,6 +54,7 @@ export async function onRequestGet(context) {
           users.id,
           users.username,
           users.server,
+          users.role,
           users.avatar_symbol,
           users.avatar_color,
           sessions.expires_at
@@ -81,6 +88,8 @@ export async function onRequestGet(context) {
         id: user.id,
         username: user.username,
         server: user.server,
+        role: user.role,
+        is_admin: user.role === "admin",
         avatar_symbol: user.avatar_symbol,
         avatar_color: user.avatar_color
       }
