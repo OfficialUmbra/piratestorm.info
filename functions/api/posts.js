@@ -49,7 +49,11 @@ async function getCurrentUser(request, env) {
 
   return await env.DB
     .prepare(`
-      SELECT users.id, users.username, users.server
+      SELECT
+        users.id,
+        users.username,
+        users.server,
+        users.role
       FROM sessions
       JOIN users ON users.id = sessions.user_id
       WHERE sessions.id = ?
@@ -67,7 +71,9 @@ async function getCurrentUser(request, env) {
 
 export async function onRequestGet(context) {
   try {
-    const { env } = context;
+    const { request, env } = context;
+
+    const currentUser = await getCurrentUser(request, env);
 
     const result = await env.DB
       .prepare(`
@@ -81,6 +87,7 @@ export async function onRequestGet(context) {
           users.id AS user_id,
           users.username,
           users.server,
+          users.role,
           users.avatar_symbol,
           users.avatar_color,
 
@@ -107,6 +114,7 @@ export async function onRequestGet(context) {
 
     return json({
       success: true,
+      is_admin: currentUser?.role === "admin",
       posts: result.results
     });
 
@@ -199,6 +207,7 @@ export async function onRequestPost(context) {
         user_id: user.id,
         username: user.username,
         server: user.server,
+        role: user.role,
         category,
         title,
         content
@@ -211,6 +220,234 @@ export async function onRequestPost(context) {
     return json({
       success: false,
       error: "Der Beitrag konnte nicht erstellt werden."
+    }, 500);
+  }
+}
+
+
+// ----------------------------------------------------
+// PUT /api/posts
+// Beitrag bearbeiten
+// Nur Admin
+// ----------------------------------------------------
+
+export async function onRequestPut(context) {
+  try {
+    const { request, env } = context;
+
+    const user = await getCurrentUser(request, env);
+
+    if (!user) {
+      return json({
+        success: false,
+        error: "Du musst angemeldet sein."
+      }, 401);
+    }
+
+    if (user.role !== "admin") {
+      return json({
+        success: false,
+        error: "Keine Admin-Berechtigung."
+      }, 403);
+    }
+
+    const body = await request.json();
+
+    const postId = Number(body.id);
+
+    const category =
+      typeof body.category === "string"
+        ? body.category.trim()
+        : "";
+
+    const title =
+      typeof body.title === "string"
+        ? body.title.trim()
+        : "";
+
+    const content =
+      typeof body.content === "string"
+        ? body.content.trim()
+        : "";
+
+    if (!Number.isInteger(postId) || postId <= 0) {
+      return json({
+        success: false,
+        error: "Ungültige Beitrags-ID."
+      }, 400);
+    }
+
+    if (!CATEGORIES.includes(category)) {
+      return json({
+        success: false,
+        error: "Ungültige Kategorie."
+      }, 400);
+    }
+
+    if (title.length < 3 || title.length > 120) {
+      return json({
+        success: false,
+        error: "Der Titel muss zwischen 3 und 120 Zeichen lang sein."
+      }, 400);
+    }
+
+    if (content.length < 1 || content.length > 10000) {
+      return json({
+        success: false,
+        error: "Der Beitrag darf maximal 10.000 Zeichen enthalten."
+      }, 400);
+    }
+
+    const existingPost = await env.DB
+      .prepare(`
+        SELECT id
+        FROM posts
+        WHERE id = ?
+      `)
+      .bind(postId)
+      .first();
+
+    if (!existingPost) {
+      return json({
+        success: false,
+        error: "Beitrag nicht gefunden."
+      }, 404);
+    }
+
+    await env.DB
+      .prepare(`
+        UPDATE posts
+        SET category = ?, title = ?, content = ?
+        WHERE id = ?
+      `)
+      .bind(
+        category,
+        title,
+        content,
+        postId
+      )
+      .run();
+
+    return json({
+      success: true,
+      message: "Beitrag erfolgreich bearbeitet."
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return json({
+      success: false,
+      error: "Der Beitrag konnte nicht bearbeitet werden."
+    }, 500);
+  }
+}
+
+
+// ----------------------------------------------------
+// DELETE /api/posts
+// Beitrag löschen
+// Nur Admin
+// ----------------------------------------------------
+
+export async function onRequestDelete(context) {
+  try {
+    const { request, env } = context;
+
+    const user = await getCurrentUser(request, env);
+
+    if (!user) {
+      return json({
+        success: false,
+        error: "Du musst angemeldet sein."
+      }, 401);
+    }
+
+    if (user.role !== "admin") {
+      return json({
+        success: false,
+        error: "Keine Admin-Berechtigung."
+      }, 403);
+    }
+
+    const body = await request.json();
+    const postId = Number(body.id);
+
+    if (!Number.isInteger(postId) || postId <= 0) {
+      return json({
+        success: false,
+        error: "Ungültige Beitrags-ID."
+      }, 400);
+    }
+
+    const existingPost = await env.DB
+      .prepare(`
+        SELECT id
+        FROM posts
+        WHERE id = ?
+      `)
+      .bind(postId)
+      .first();
+
+    if (!existingPost) {
+      return json({
+        success: false,
+        error: "Beitrag nicht gefunden."
+      }, 404);
+    }
+
+    /*
+      Zuerst Likes der Kommentare entfernen,
+      danach Kommentare, Post-Likes und zuletzt den Beitrag.
+    */
+
+    await env.DB
+      .prepare(`
+        DELETE FROM comment_likes
+        WHERE comment_id IN (
+          SELECT id
+          FROM comments
+          WHERE post_id = ?
+        )
+      `)
+      .bind(postId)
+      .run();
+
+    await env.DB
+      .prepare(`
+        DELETE FROM comments
+        WHERE post_id = ?
+      `)
+      .bind(postId)
+      .run();
+
+    await env.DB
+      .prepare(`
+        DELETE FROM post_likes
+        WHERE post_id = ?
+      `)
+      .bind(postId)
+      .run();
+
+    await env.DB
+      .prepare(`
+        DELETE FROM posts
+        WHERE id = ?
+      `)
+      .bind(postId)
+      .run();
+
+    return json({
+      success: true,
+      message: "Beitrag erfolgreich gelöscht."
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return json({
+      success: false,
+      error: "Der Beitrag konnte nicht gelöscht werden."
     }, 500);
   }
 }
