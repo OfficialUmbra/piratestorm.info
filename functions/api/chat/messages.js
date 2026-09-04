@@ -47,17 +47,24 @@ async function getCurrentUser(request, env) {
       users.server,
       users.role
     FROM sessions
-    JOIN users ON users.id = sessions.user_id
+    JOIN users
+      ON users.id = sessions.user_id
     WHERE sessions.token = ?
       AND sessions.expires_at > ?
     LIMIT 1
   `)
-    .bind(token, Math.floor(Date.now() / 1000))
+    .bind(
+      token,
+      Math.floor(Date.now() / 1000)
+    )
     .first();
 }
 
 function isAdmin(user) {
-  return user && user.role === "admin";
+  return Boolean(
+    user &&
+    user.role === "admin"
+  );
 }
 
 function getServerCode(server) {
@@ -76,8 +83,49 @@ function getRoomLanguage(roomType, server) {
   return "en";
 }
 
-async function getActiveBan(env, userId) {
-  const now = Math.floor(Date.now() / 1000);
+/*
+ * =====================================================
+ * ABGELAUFENE BANS BEREINIGEN
+ * =====================================================
+ */
+async function cleanExpiredBans(env, userId) {
+  const now =
+    Math.floor(Date.now() / 1000);
+
+  await env.DB.prepare(`
+    UPDATE chat_bans
+    SET active = 0
+    WHERE user_id = ?
+      AND active = 1
+      AND expires_at IS NOT NULL
+      AND expires_at <= ?
+  `)
+    .bind(
+      userId,
+      now
+    )
+    .run();
+}
+
+/*
+ * =====================================================
+ * AKTIVEN CHAT-BAN PRÜFEN
+ * =====================================================
+ *
+ * WICHTIG:
+ * Admin-Accounts sind grundsätzlich immun.
+ *
+ * Selbst wenn durch alte Daten versehentlich ein
+ * chat_bans-Eintrag für einen Admin existiert,
+ * wird dieser hier niemals angewendet.
+ */
+async function getActiveBan(env, user) {
+  if (!user || isAdmin(user)) {
+    return null;
+  }
+
+  const now =
+    Math.floor(Date.now() / 1000);
 
   return await env.DB.prepare(`
     SELECT
@@ -92,29 +140,28 @@ async function getActiveBan(env, userId) {
         expires_at IS NULL
         OR expires_at > ?
       )
-    ORDER BY banned_at DESC
+    ORDER BY
+      banned_at DESC,
+      id DESC
     LIMIT 1
   `)
-    .bind(userId, now)
+    .bind(
+      user.id,
+      now
+    )
     .first();
 }
 
-async function cleanExpiredBans(env, userId) {
-  const now = Math.floor(Date.now() / 1000);
-
-  await env.DB.prepare(`
-    UPDATE chat_bans
-    SET active = 0
-    WHERE user_id = ?
-      AND active = 1
-      AND expires_at IS NOT NULL
-      AND expires_at <= ?
-  `)
-    .bind(userId, now)
-    .run();
-}
-
-function validateRoom(user, roomType, requestedServer) {
+/*
+ * =====================================================
+ * CHATRAUM VALIDIEREN
+ * =====================================================
+ */
+function validateRoom(
+  user,
+  roomType,
+  requestedServer
+) {
   if (roomType === "global") {
     return {
       ok: true,
@@ -126,18 +173,25 @@ function validateRoom(user, roomType, requestedServer) {
   if (roomType !== "server") {
     return {
       ok: false,
-      error: "Ungültiger Chatraum."
+      error:
+        "Ungültiger Chatraum."
     };
   }
 
-  // Admins dürfen jeden existierenden Serverchat betreten.
+  /*
+   * Admin darf jeden existierenden
+   * Serverchat betreten.
+   */
   if (isAdmin(user)) {
-    const server = requestedServer || user.server;
+    const server =
+      requestedServer ||
+      user.server;
 
     if (!SERVER_MAP[server]) {
       return {
         ok: false,
-        error: "Ungültiger Server."
+        error:
+          "Ungültiger Server."
       };
     }
 
@@ -148,7 +202,24 @@ function validateRoom(user, roomType, requestedServer) {
     };
   }
 
-  // Normale Nutzer können niemals einen fremden Server auswählen.
+  /*
+   * Auch der gespeicherte Server eines normalen
+   * Accounts muss gültig sein.
+   */
+  if (!SERVER_MAP[user.server]) {
+    return {
+      ok: false,
+      error:
+        "Ungültiger Server."
+    };
+  }
+
+  /*
+   * Normale Nutzer werden IMMER auf ihren
+   * registrierten Server gezwungen.
+   *
+   * Manipulierte URL-/Body-Werte werden ignoriert.
+   */
   return {
     ok: true,
     roomType: "server",
@@ -168,13 +239,20 @@ function normalizeMessage(value) {
 }
 
 /*
- * Erste Basis für den Wortfilter.
+ * =====================================================
+ * WORTFILTER
+ * =====================================================
  *
- * WICHTIG:
- * Der echte Originaltext wird weiterhin in original_message gespeichert.
- * message enthält die öffentlich sichtbare, gefilterte Version.
+ * Das ist weiterhin nur unsere erste Basis.
  *
- * Die Liste erweitern wir später gemeinsam deutlich.
+ * original_message:
+ * exakter eingegebener Text
+ *
+ * message:
+ * öffentlich sichtbare gefilterte Version
+ *
+ * Später verbessern wir den Filter zusätzlich gegen
+ * Schreibweisen wie Sonderzeichen/Leerzeichen usw.
  */
 function censorMessage(text) {
   const blockedWords = [
@@ -188,115 +266,224 @@ function censorMessage(text) {
   let result = text;
 
   for (const word of blockedWords) {
-    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(`\\b${escaped}\\b`, "giu");
+    const escaped =
+      word.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&"
+      );
 
-    result = result.replace(regex, match => "*".repeat(match.length));
+    const regex =
+      new RegExp(
+        `\\b${escaped}\\b`,
+        "giu"
+      );
+
+    result =
+      result.replace(
+        regex,
+        match =>
+          "*".repeat(match.length)
+      );
   }
 
   return result;
 }
 
-async function checkFloodProtection(env, userId) {
-  const now = Math.floor(Date.now() / 1000);
+/*
+ * =====================================================
+ * FLOOD-/SPAMSCHUTZ
+ * =====================================================
+ */
+async function checkFloodProtection(
+  env,
+  userId
+) {
+  const now =
+    Math.floor(Date.now() / 1000);
 
-  // Maximal 5 Nachrichten innerhalb von 10 Sekunden.
-  const result = await env.DB.prepare(`
-    SELECT COUNT(*) AS amount
-    FROM chat_messages
-    WHERE user_id = ?
-      AND created_at >= ?
-      AND deleted_at IS NULL
-  `)
-    .bind(userId, now - 10)
-    .first();
+  /*
+   * Maximal 5 Nachrichten in 10 Sekunden.
+   */
+  const result =
+    await env.DB.prepare(`
+      SELECT COUNT(*) AS amount
+      FROM chat_messages
+      WHERE user_id = ?
+        AND created_at >= ?
+        AND deleted_at IS NULL
+    `)
+      .bind(
+        userId,
+        now - 10
+      )
+      .first();
 
-  if (Number(result?.amount || 0) >= 5) {
+  if (
+    Number(result?.amount || 0) >= 5
+  ) {
     return {
       allowed: false,
-      error: "Du schreibst zu schnell. Bitte warte einen Moment."
+      error:
+        "Du schreibst zu schnell. Bitte warte einen Moment."
     };
   }
 
-  // Verhindert mehrfaches direktes Spammen derselben Nachricht.
-  const lastMessage = await env.DB.prepare(`
-    SELECT original_message
-    FROM chat_messages
-    WHERE user_id = ?
-      AND deleted_at IS NULL
-    ORDER BY created_at DESC, id DESC
-    LIMIT 1
-  `)
-    .bind(userId)
-    .first();
+  /*
+   * Direktes mehrfaches Senden derselben
+   * Nachricht verhindern.
+   */
+  const lastMessage =
+    await env.DB.prepare(`
+      SELECT original_message
+      FROM chat_messages
+      WHERE user_id = ?
+        AND deleted_at IS NULL
+      ORDER BY
+        created_at DESC,
+        id DESC
+      LIMIT 1
+    `)
+      .bind(userId)
+      .first();
 
   return {
     allowed: true,
-    lastMessage: lastMessage?.original_message || null
+    lastMessage:
+      lastMessage?.original_message ||
+      null
   };
 }
 
-async function getMessageById(env, messageId) {
+async function getMessageById(
+  env,
+  messageId
+) {
   return await env.DB.prepare(`
     SELECT
-      chat_messages.id,
-      chat_messages.user_id,
-      chat_messages.room_type,
-      chat_messages.server,
-      chat_messages.message,
-      chat_messages.original_message,
-      chat_messages.reply_to,
-      chat_messages.created_at,
-      chat_messages.deleted_at,
-      users.username,
-      users.server AS user_server,
-      users.role
-    FROM chat_messages
-    JOIN users ON users.id = chat_messages.user_id
-    WHERE chat_messages.id = ?
+      m.id,
+      m.user_id,
+      m.room_type,
+      m.server,
+      m.message,
+      m.original_message,
+      m.reply_to,
+      m.created_at,
+      m.deleted_at,
+
+      u.username,
+      u.server AS user_server,
+      u.role
+
+    FROM chat_messages m
+
+    JOIN users u
+      ON u.id = m.user_id
+
+    WHERE m.id = ?
+
     LIMIT 1
   `)
     .bind(messageId)
     .first();
 }
 
+/*
+ * =====================================================
+ * GET
+ * =====================================================
+ */
 export async function onRequestGet(context) {
   try {
-    const { request, env } = context;
+    const { request, env } =
+      context;
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(
+        request,
+        env
+      );
 
     if (!user) {
       return json({
         ok: false,
-        error: "Du musst eingeloggt sein."
+        error:
+          "Du musst eingeloggt sein."
       }, 401);
     }
 
-    await cleanExpiredBans(env, user.id);
+    /*
+     * Für Admins werden zwar eventuell vorhandene
+     * alte Bans bereinigt, sie werden aber niemals
+     * angewendet.
+     */
+    await cleanExpiredBans(
+      env,
+      user.id
+    );
 
-    const ban = await getActiveBan(env, user.id);
+    const ban =
+      await getActiveBan(
+        env,
+        user
+      );
 
-    const url = new URL(request.url);
+    const url =
+      new URL(request.url);
 
-    const roomType = url.searchParams.get("room") || "global";
-    const requestedServer = url.searchParams.get("server");
+    const roomType =
+      (
+        url.searchParams.get("room") ||
+        "global"
+      )
+        .trim()
+        .toLowerCase();
 
-    const room = validateRoom(user, roomType, requestedServer);
+    const requestedServer =
+      url.searchParams.get(
+        "server"
+      );
+
+    const room =
+      validateRoom(
+        user,
+        roomType,
+        requestedServer
+      );
 
     if (!room.ok) {
       return json({
         ok: false,
-        error: room.error
+        error:
+          room.error
       }, 400);
     }
 
-    const limitRaw = Number(url.searchParams.get("limit") || 100);
-    const limit = Math.max(1, Math.min(limitRaw, 200));
+    const limitRaw =
+      Number(
+        url.searchParams.get(
+          "limit"
+        ) || 100
+      );
+
+    const limit =
+      Number.isFinite(limitRaw)
+        ? Math.max(
+            1,
+            Math.min(
+              Math.floor(limitRaw),
+              200
+            )
+          )
+        : 100;
 
     let query;
     let bindings;
 
+    /*
+     * =================================================
+     * GLOBALCHAT
+     * =================================================
+     */
     if (room.roomType === "global") {
       query = `
         SELECT
@@ -314,7 +501,8 @@ export async function onRequestGet(context) {
 
           r.id AS reply_id,
           r.message AS reply_message,
-          ru.username AS reply_username
+          ru.username AS reply_username,
+          ru.role AS reply_role
 
         FROM chat_messages m
 
@@ -331,19 +519,36 @@ export async function onRequestGet(context) {
         WHERE m.room_type = 'global'
           AND m.deleted_at IS NULL
 
-          AND NOT EXISTS (
-            SELECT 1
-            FROM chat_blocks b
-            WHERE b.blocker_id = ?
-              AND b.blocked_id = m.user_id
+          AND (
+            u.role = 'admin'
+
+            OR NOT EXISTS (
+              SELECT 1
+              FROM chat_blocks b
+              WHERE b.blocker_id = ?
+                AND b.blocked_id = m.user_id
+            )
           )
 
-        ORDER BY m.created_at DESC, m.id DESC
+        ORDER BY
+          m.created_at DESC,
+          m.id DESC
+
         LIMIT ?
       `;
 
-      bindings = [user.id, limit];
-    } else {
+      bindings = [
+        user.id,
+        limit
+      ];
+    }
+
+    /*
+     * =================================================
+     * SERVERCHAT
+     * =================================================
+     */
+    else {
       query = `
         SELECT
           m.id,
@@ -360,7 +565,8 @@ export async function onRequestGet(context) {
 
           r.id AS reply_id,
           r.message AS reply_message,
-          ru.username AS reply_username
+          ru.username AS reply_username,
+          ru.role AS reply_role
 
         FROM chat_messages m
 
@@ -378,190 +584,368 @@ export async function onRequestGet(context) {
           AND m.server = ?
           AND m.deleted_at IS NULL
 
-          AND NOT EXISTS (
-            SELECT 1
-            FROM chat_blocks b
-            WHERE b.blocker_id = ?
-              AND b.blocked_id = m.user_id
+          AND (
+            u.role = 'admin'
+
+            OR NOT EXISTS (
+              SELECT 1
+              FROM chat_blocks b
+              WHERE b.blocker_id = ?
+                AND b.blocked_id = m.user_id
+            )
           )
 
-        ORDER BY m.created_at DESC, m.id DESC
+        ORDER BY
+          m.created_at DESC,
+          m.id DESC
+
         LIMIT ?
       `;
 
-      bindings = [room.server, user.id, limit];
+      bindings = [
+        room.server,
+        user.id,
+        limit
+      ];
     }
 
-    const result = await env.DB.prepare(query)
-      .bind(...bindings)
-      .all();
+    const result =
+      await env.DB
+        .prepare(query)
+        .bind(...bindings)
+        .all();
 
-    const messages = (result.results || [])
-      .reverse()
-      .map(message => ({
-        id: message.id,
+    const messages =
+      (result.results || [])
+        .reverse()
+        .map(message => ({
+          id:
+            message.id,
 
-        user: {
-          id: message.user_id,
-          username: message.username,
-          server: message.user_server,
-          server_code: getServerCode(message.user_server),
-          role: message.role,
-          is_admin: message.role === "admin"
-        },
+          user: {
+            id:
+              message.user_id,
 
-        room: {
-          type: message.room_type,
-          server: message.server,
-          server_code: message.server
-            ? getServerCode(message.server)
-            : null
-        },
+            username:
+              message.username,
 
-        message: message.message,
+            server:
+              message.user_server,
 
-        reply_to: message.reply_id
-          ? {
-              id: message.reply_id,
-              username: message.reply_username,
-              message: message.reply_message
-            }
-          : null,
+            server_code:
+              getServerCode(
+                message.user_server
+              ),
 
-        created_at: message.created_at
-      }));
+            role:
+              message.role,
+
+            is_admin:
+              message.role ===
+              "admin"
+          },
+
+          room: {
+            type:
+              message.room_type,
+
+            server:
+              message.server,
+
+            server_code:
+              message.server
+                ? getServerCode(
+                    message.server
+                  )
+                : null
+          },
+
+          /*
+           * Aktuell weiterhin die gefilterte
+           * sichtbare Nachricht.
+           *
+           * original_message wird bewusst noch
+           * nicht pauschal an alle Clients
+           * ausgeliefert.
+           */
+          message:
+            message.message,
+
+          reply_to:
+            message.reply_id
+              ? {
+                  id:
+                    message.reply_id,
+
+                  username:
+                    message.reply_username,
+
+                  message:
+                    message.reply_message,
+
+                  is_admin:
+                    message.reply_role ===
+                    "admin"
+                }
+              : null,
+
+          created_at:
+            message.created_at
+        }));
 
     return json({
       ok: true,
 
       current_user: {
-        id: user.id,
-        username: user.username,
-        server: user.server,
-        server_code: getServerCode(user.server),
-        role: user.role,
-        is_admin: isAdmin(user)
+        id:
+          user.id,
+
+        username:
+          user.username,
+
+        server:
+          user.server,
+
+        server_code:
+          getServerCode(
+            user.server
+          ),
+
+        role:
+          user.role,
+
+        is_admin:
+          isAdmin(user)
       },
 
       room: {
-        type: room.roomType,
-        server: room.server,
-        server_code: room.server
-          ? getServerCode(room.server)
-          : null,
-
-        default_language: getRoomLanguage(
+        type:
           room.roomType,
+
+        server:
+          room.server,
+
+        server_code:
           room.server
-        )
+            ? getServerCode(
+                room.server
+              )
+            : null,
+
+        default_language:
+          getRoomLanguage(
+            room.roomType,
+            room.server
+          )
       },
 
-      banned: Boolean(ban),
+      /*
+       * GET darf weiterhin geladen werden, damit
+       * ein gebannter Nutzer seine Ban-Information
+       * erhalten kann.
+       *
+       * Senden bleibt unten vollständig gesperrt.
+       */
+      banned:
+        Boolean(ban),
 
-      ban: ban
-        ? {
-            reason: ban.reason || null,
-            banned_at: ban.banned_at,
-            expires_at: ban.expires_at,
-            permanent: ban.expires_at === null
-          }
-        : null,
+      ban:
+        ban
+          ? {
+              reason:
+                ban.reason || null,
+
+              banned_at:
+                ban.banned_at,
+
+              expires_at:
+                ban.expires_at,
+
+              permanent:
+                ban.expires_at ===
+                null
+            }
+          : null,
 
       messages
     });
+
   } catch (error) {
-    console.error(error);
+    console.error(
+      "GET /api/chat/messages error:",
+      error
+    );
 
     return json({
       ok: false,
-      error: "Chat konnte nicht geladen werden."
+      error:
+        "Chat konnte nicht geladen werden."
     }, 500);
   }
 }
 
+/*
+ * =====================================================
+ * POST
+ * =====================================================
+ */
 export async function onRequestPost(context) {
   try {
-    const { request, env } = context;
+    const { request, env } =
+      context;
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(
+        request,
+        env
+      );
 
     if (!user) {
       return json({
         ok: false,
-        error: "Du musst eingeloggt sein."
+        error:
+          "Du musst eingeloggt sein."
       }, 401);
     }
 
-    await cleanExpiredBans(env, user.id);
+    await cleanExpiredBans(
+      env,
+      user.id
+    );
 
-    const ban = await getActiveBan(env, user.id);
+    /*
+     * Admin ist hier durch getActiveBan()
+     * automatisch immun.
+     */
+    const ban =
+      await getActiveBan(
+        env,
+        user
+      );
 
     if (ban) {
       return json({
         ok: false,
-        error: "Du bist derzeit vom Chat ausgeschlossen.",
+
+        error:
+          "Du bist derzeit vom Chat ausgeschlossen.",
+
         ban: {
-          reason: ban.reason || null,
-          expires_at: ban.expires_at,
-          permanent: ban.expires_at === null
+          reason:
+            ban.reason || null,
+
+          banned_at:
+            ban.banned_at,
+
+          expires_at:
+            ban.expires_at,
+
+          permanent:
+            ban.expires_at ===
+            null
         }
       }, 403);
     }
 
-    const body = await request.json();
+    let body;
 
-    const roomType = body.room || "global";
-    const requestedServer = body.server || null;
+    try {
+      body =
+        await request.json();
+    } catch {
+      return json({
+        ok: false,
+        error:
+          "Ungültige Anfrage."
+      }, 400);
+    }
 
-    const room = validateRoom(
-      user,
-      roomType,
-      requestedServer
-    );
+    const roomType =
+      typeof body.room === "string"
+        ? body.room
+            .trim()
+            .toLowerCase()
+        : "global";
+
+    const requestedServer =
+      typeof body.server === "string"
+        ? body.server.trim()
+        : null;
+
+    const room =
+      validateRoom(
+        user,
+        roomType,
+        requestedServer
+      );
 
     if (!room.ok) {
       return json({
         ok: false,
-        error: room.error
+        error:
+          room.error
       }, 400);
     }
 
-    const originalMessage = normalizeMessage(body.message);
+    const originalMessage =
+      normalizeMessage(
+        body.message
+      );
 
     if (!originalMessage) {
       return json({
         ok: false,
-        error: "Die Nachricht darf nicht leer sein."
+        error:
+          "Die Nachricht darf nicht leer sein."
       }, 400);
     }
 
-    if (originalMessage.length > 500) {
+    if (
+      originalMessage.length >
+      500
+    ) {
       return json({
         ok: false,
-        error: "Eine Nachricht darf maximal 500 Zeichen enthalten."
+        error:
+          "Eine Nachricht darf maximal 500 Zeichen enthalten."
       }, 400);
     }
 
-    const flood = await checkFloodProtection(env, user.id);
+    const flood =
+      await checkFloodProtection(
+        env,
+        user.id
+      );
 
     if (!flood.allowed) {
       return json({
         ok: false,
-        error: flood.error
+        error:
+          flood.error
       }, 429);
     }
 
     if (
       flood.lastMessage &&
-      flood.lastMessage.trim().toLowerCase() ===
-        originalMessage.trim().toLowerCase()
+      flood.lastMessage
+        .trim()
+        .toLowerCase() ===
+        originalMessage
+          .trim()
+          .toLowerCase()
     ) {
       return json({
         ok: false,
-        error: "Bitte sende nicht mehrfach dieselbe Nachricht."
+        error:
+          "Bitte sende nicht mehrfach dieselbe Nachricht."
       }, 429);
     }
 
+    /*
+     * =================================================
+     * REPLY
+     * =================================================
+     */
     let replyTo = null;
 
     if (
@@ -569,165 +953,302 @@ export async function onRequestPost(context) {
       body.reply_to !== undefined &&
       body.reply_to !== ""
     ) {
-      const replyId = Number(body.reply_to);
+      const replyId =
+        Number(body.reply_to);
 
-      if (!Number.isInteger(replyId) || replyId <= 0) {
+      if (
+        !Number.isInteger(
+          replyId
+        ) ||
+        replyId <= 0
+      ) {
         return json({
           ok: false,
-          error: "Ungültige Antwort-Nachricht."
+          error:
+            "Ungültige Antwort-Nachricht."
         }, 400);
       }
 
-      const replyMessage = await getMessageById(
-        env,
-        replyId
-      );
+      const replyMessage =
+        await getMessageById(
+          env,
+          replyId
+        );
 
-      if (!replyMessage || replyMessage.deleted_at) {
+      if (
+        !replyMessage ||
+        replyMessage.deleted_at
+      ) {
         return json({
           ok: false,
-          error: "Die Nachricht, auf die du antworten möchtest, existiert nicht mehr."
+          error:
+            "Die Nachricht, auf die du antworten möchtest, existiert nicht mehr."
         }, 404);
       }
 
-      if (replyMessage.room_type !== room.roomType) {
+      if (
+        replyMessage.room_type !==
+        room.roomType
+      ) {
         return json({
           ok: false,
-          error: "Du kannst nur auf Nachrichten aus demselben Chat antworten."
+          error:
+            "Du kannst nur auf Nachrichten aus demselben Chat antworten."
         }, 400);
       }
 
       if (
-        room.roomType === "server" &&
-        replyMessage.server !== room.server
+        room.roomType ===
+          "server" &&
+        replyMessage.server !==
+          room.server
       ) {
         return json({
           ok: false,
-          error: "Du kannst nur auf Nachrichten aus diesem Serverchat antworten."
+          error:
+            "Du kannst nur auf Nachrichten aus diesem Serverchat antworten."
         }, 400);
       }
 
-      replyTo = replyId;
+      /*
+       * Wenn der Spieler den Autor der Zielnachricht
+       * blockiert hat, soll auch keine versteckte
+       * Nachricht als Reply-Ziel benutzt werden.
+       *
+       * Admin-Nachrichten sind davon ausgenommen.
+       */
+      if (
+        replyMessage.role !==
+        "admin"
+      ) {
+        const blocked =
+          await env.DB.prepare(`
+            SELECT 1
+            FROM chat_blocks
+            WHERE blocker_id = ?
+              AND blocked_id = ?
+            LIMIT 1
+          `)
+            .bind(
+              user.id,
+              replyMessage.user_id
+            )
+            .first();
+
+        if (blocked) {
+          return json({
+            ok: false,
+            error:
+              "Auf diese Nachricht kannst du nicht antworten."
+          }, 403);
+        }
+      }
+
+      replyTo =
+        replyId;
     }
 
-    const censoredMessage = censorMessage(originalMessage);
-    const now = Math.floor(Date.now() / 1000);
+    const censoredMessage =
+      censorMessage(
+        originalMessage
+      );
 
-    const insert = await env.DB.prepare(`
-      INSERT INTO chat_messages (
-        user_id,
-        room_type,
-        server,
-        message,
-        original_message,
-        reply_to,
-        created_at
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `)
-      .bind(
-        user.id,
-        room.roomType,
-        room.server,
-        censoredMessage,
-        originalMessage,
-        replyTo,
-        now
-      )
-      .run();
+    const now =
+      Math.floor(
+        Date.now() / 1000
+      );
 
-    const messageId = insert.meta.last_row_id;
+    const insert =
+      await env.DB.prepare(`
+        INSERT INTO chat_messages (
+          user_id,
+          room_type,
+          server,
+          message,
+          original_message,
+          reply_to,
+          created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `)
+        .bind(
+          user.id,
+          room.roomType,
+          room.server,
+          censoredMessage,
+          originalMessage,
+          replyTo,
+          now
+        )
+        .run();
+
+    const messageId =
+      insert.meta.last_row_id;
 
     return json({
       ok: true,
 
       message: {
-        id: messageId,
+        id:
+          messageId,
 
         user: {
-          id: user.id,
-          username: user.username,
-          server: user.server,
-          server_code: getServerCode(user.server),
-          role: user.role,
-          is_admin: isAdmin(user)
+          id:
+            user.id,
+
+          username:
+            user.username,
+
+          server:
+            user.server,
+
+          server_code:
+            getServerCode(
+              user.server
+            ),
+
+          role:
+            user.role,
+
+          is_admin:
+            isAdmin(user)
         },
 
         room: {
-          type: room.roomType,
-          server: room.server,
-          server_code: room.server
-            ? getServerCode(room.server)
-            : null,
-
-          default_language: getRoomLanguage(
+          type:
             room.roomType,
+
+          server:
+            room.server,
+
+          server_code:
             room.server
-          )
+              ? getServerCode(
+                  room.server
+                )
+              : null,
+
+          default_language:
+            getRoomLanguage(
+              room.roomType,
+              room.server
+            )
         },
 
-        message: censoredMessage,
-        reply_to: replyTo,
-        created_at: now
+        message:
+          censoredMessage,
+
+        reply_to:
+          replyTo,
+
+        created_at:
+          now
       }
     }, 201);
+
   } catch (error) {
-    console.error(error);
+    console.error(
+      "POST /api/chat/messages error:",
+      error
+    );
 
     return json({
       ok: false,
-      error: "Nachricht konnte nicht gesendet werden."
+      error:
+        "Nachricht konnte nicht gesendet werden."
     }, 500);
   }
 }
 
+/*
+ * =====================================================
+ * DELETE
+ * =====================================================
+ *
+ * Nur Admin darf öffentliche Chatnachrichten löschen.
+ *
+ * Normale Spieler können ihre eigenen Nachrichten
+ * weder löschen noch bearbeiten.
+ */
 export async function onRequestDelete(context) {
   try {
-    const { request, env } = context;
+    const { request, env } =
+      context;
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(
+        request,
+        env
+      );
 
     if (!user) {
       return json({
         ok: false,
-        error: "Du musst eingeloggt sein."
+        error:
+          "Du musst eingeloggt sein."
       }, 401);
     }
 
     if (!isAdmin(user)) {
       return json({
         ok: false,
-        error: "Nur der Administrator darf Chatnachrichten löschen."
+        error:
+          "Nur der Administrator darf Chatnachrichten löschen."
       }, 403);
     }
 
-    const url = new URL(request.url);
-    const id = Number(url.searchParams.get("id"));
+    const url =
+      new URL(request.url);
 
-    if (!Number.isInteger(id) || id <= 0) {
+    const id =
+      Number(
+        url.searchParams.get(
+          "id"
+        )
+      );
+
+    if (
+      !Number.isInteger(id) ||
+      id <= 0
+    ) {
       return json({
         ok: false,
-        error: "Ungültige Nachrichten-ID."
+        error:
+          "Ungültige Nachrichten-ID."
       }, 400);
     }
 
-    const target = await getMessageById(env, id);
+    const target =
+      await getMessageById(
+        env,
+        id
+      );
 
-    if (!target || target.deleted_at) {
+    if (
+      !target ||
+      target.deleted_at
+    ) {
       return json({
         ok: false,
-        error: "Nachricht nicht gefunden."
+        error:
+          "Nachricht nicht gefunden."
       }, 404);
     }
 
-    const now = Math.floor(Date.now() / 1000);
+    const now =
+      Math.floor(
+        Date.now() / 1000
+      );
 
     await env.DB.prepare(`
       UPDATE chat_messages
       SET deleted_at = ?
       WHERE id = ?
     `)
-      .bind(now, id)
+      .bind(
+        now,
+        id
+      )
       .run();
 
     await env.DB.prepare(`
@@ -745,10 +1266,17 @@ export async function onRequestDelete(context) {
         target.user_id,
         "delete_message",
         JSON.stringify({
-          message_id: target.id,
-          room_type: target.room_type,
-          server: target.server,
-          original_message: target.original_message
+          message_id:
+            target.id,
+
+          room_type:
+            target.room_type,
+
+          server:
+            target.server,
+
+          original_message:
+            target.original_message
         }),
         now
       )
@@ -756,14 +1284,37 @@ export async function onRequestDelete(context) {
 
     return json({
       ok: true,
-      message: "Nachricht wurde gelöscht."
+      message:
+        "Nachricht wurde gelöscht."
     });
+
   } catch (error) {
-    console.error(error);
+    console.error(
+      "DELETE /api/chat/messages error:",
+      error
+    );
 
     return json({
       ok: false,
-      error: "Nachricht konnte nicht gelöscht werden."
+      error:
+        "Nachricht konnte nicht gelöscht werden."
     }, 500);
   }
+}
+
+/*
+ * =====================================================
+ * PUT
+ * =====================================================
+ *
+ * Chatnachrichten können nicht bearbeitet werden.
+ *
+ * Das gilt auch für Admins.
+ */
+export async function onRequestPut() {
+  return json({
+    ok: false,
+    error:
+      "Chatnachrichten können nicht bearbeitet werden."
+  }, 405);
 }
