@@ -404,6 +404,17 @@ export async function onRequestPost(context) {
     }
 
     /*
+     * Gelöschte Nachrichten können nicht neu gemeldet werden.
+     */
+    if (message.deleted_at) {
+      return json({
+        ok: false,
+        error:
+          "Diese Nachricht wurde bereits gelöscht."
+      }, 400);
+    }
+
+    /*
      * Der Melder muss wirklich Mitglied
      * dieses privaten Chats sein.
      *
@@ -1031,6 +1042,415 @@ export async function onRequestPut(context) {
       ok: false,
       error:
         "Die Whisper-Meldung konnte nicht aktualisiert werden."
+    }, 500);
+  }
+}
+
+/*
+ * =====================================================
+ * DELETE
+ * =====================================================
+ *
+ * Nur Admin.
+ *
+ * Löscht ausschließlich die Whisper-Nachricht,
+ * die mit einer konkreten Whisper-Meldung
+ * verknüpft ist.
+ *
+ * Der Admin kann dadurch NICHT frei durch private
+ * Whisper-Räume navigieren oder beliebige Nachrichten
+ * anhand einer message_id löschen.
+ *
+ * Body:
+ *
+ * {
+ *   "report_id": 7
+ * }
+ */
+export async function onRequestDelete(context) {
+  try {
+    const { request, env } = context;
+
+    const admin =
+      await getCurrentUser(
+        request,
+        env
+      );
+
+    if (!admin) {
+      return json({
+        ok: false,
+        error:
+          "Du musst eingeloggt sein."
+      }, 401);
+    }
+
+    if (!isAdmin(admin)) {
+      return json({
+        ok: false,
+        error:
+          "Nur der Administrator darf gemeldete Whisper-Nachrichten löschen."
+      }, 403);
+    }
+
+    let body;
+
+    try {
+      body =
+        await request.json();
+    } catch {
+      return json({
+        ok: false,
+        error:
+          "Ungültige Anfrage."
+      }, 400);
+    }
+
+    const reportId =
+      Number(body.report_id);
+
+    if (
+      !Number.isInteger(reportId) ||
+      reportId <= 0
+    ) {
+      return json({
+        ok: false,
+        error:
+          "Ungültige Meldung."
+      }, 400);
+    }
+
+    /*
+     * Wir laden die Nachricht ausschließlich über
+     * eine existierende Whisper-Meldung.
+     *
+     * Es wird absichtlich keine vom Client gelieferte
+     * whisper_message_id verwendet.
+     */
+    const report =
+      await env.DB.prepare(`
+        SELECT
+          r.id,
+          r.reporter_id,
+          r.reported_user_id,
+          r.whisper_message_id,
+          r.reason,
+          r.status,
+          r.created_at
+            AS report_created_at,
+
+          target.username
+            AS target_username,
+
+          target.server
+            AS target_server,
+
+          target.role
+            AS target_role,
+
+          wm.id
+            AS message_id,
+
+          wm.room_id,
+
+          wm.user_id
+            AS message_user_id,
+
+          wm.message,
+          wm.original_message,
+
+          wm.created_at
+            AS message_created_at,
+
+          wm.deleted_at
+
+        FROM chat_reports r
+
+        JOIN users target
+          ON target.id =
+            r.reported_user_id
+
+        JOIN whisper_messages wm
+          ON wm.id =
+            r.whisper_message_id
+
+        WHERE r.id = ?
+          AND r.report_type =
+            'whisper'
+
+        LIMIT 1
+      `)
+        .bind(reportId)
+        .first();
+
+    if (!report) {
+      return json({
+        ok: false,
+        error:
+          "Whisper-Meldung wurde nicht gefunden."
+      }, 404);
+    }
+
+    /*
+     * ============================================
+     * ADMIN-IMMUNITÄT
+     * ============================================
+     *
+     * Auch manipulierte oder historische
+     * Datenbankeinträge dürfen niemals dazu führen,
+     * dass eine Admin-Nachricht moderiert wird.
+     */
+    if (
+      report.target_role ===
+      "admin"
+    ) {
+      return json({
+        ok: false,
+        error:
+          "Nachrichten des Administrators können nicht über eine Meldung moderiert werden."
+      }, 403);
+    }
+
+    /*
+     * Zusätzliche Integritätsprüfung:
+     *
+     * Der tatsächliche Autor der Nachricht muss
+     * dem reported_user_id entsprechen.
+     */
+    if (
+      Number(report.message_user_id) !==
+      Number(report.reported_user_id)
+    ) {
+      return json({
+        ok: false,
+        error:
+          "Die Meldung enthält inkonsistente Daten."
+      }, 409);
+    }
+
+    /*
+     * ============================================
+     * BEREITS GELÖSCHT
+     * ============================================
+     *
+     * Der Endpoint verhält sich idempotent.
+     *
+     * Ein zweiter Löschversuch erzeugt also keinen
+     * unnötigen Fehler.
+     */
+    if (report.deleted_at) {
+      if (
+        report.status !==
+        "closed"
+      ) {
+        await env.DB.prepare(`
+          UPDATE chat_reports
+          SET status = 'closed'
+          WHERE id = ?
+            AND report_type =
+              'whisper'
+        `)
+          .bind(report.id)
+          .run();
+      }
+
+      return json({
+        ok: true,
+
+        already_deleted:
+          true,
+
+        report: {
+          id:
+            report.id,
+
+          status:
+            "closed"
+        },
+
+        message: {
+          id:
+            report.message_id,
+
+          deleted:
+            true,
+
+          deleted_at:
+            report.deleted_at
+        },
+
+        info:
+          "Die Whisper-Nachricht war bereits gelöscht."
+      });
+    }
+
+    const now =
+      Math.floor(
+        Date.now() / 1000
+      );
+
+    /*
+     * ============================================
+     * SOFT DELETE
+     * ============================================
+     *
+     * Wir löschen nicht physisch aus der Datenbank.
+     *
+     * Dadurch bleiben Reports, Reply-Verknüpfungen
+     * und Moderationsnachweise technisch konsistent.
+     */
+    const deleteResult =
+      await env.DB.prepare(`
+        UPDATE whisper_messages
+        SET deleted_at = ?
+        WHERE id = ?
+          AND deleted_at IS NULL
+      `)
+        .bind(
+          now,
+          report.message_id
+        )
+        .run();
+
+    /*
+     * Schutz gegen Race Conditions:
+     *
+     * Falls die Nachricht zwischen SELECT und UPDATE
+     * bereits gelöscht wurde, prüfen wir den aktuellen
+     * Zustand noch einmal.
+     */
+    if (
+      Number(
+        deleteResult.meta?.changes || 0
+      ) === 0
+    ) {
+      const currentMessage =
+        await env.DB.prepare(`
+          SELECT
+            deleted_at
+          FROM whisper_messages
+          WHERE id = ?
+          LIMIT 1
+        `)
+          .bind(
+            report.message_id
+          )
+          .first();
+
+      if (
+        !currentMessage ||
+        !currentMessage.deleted_at
+      ) {
+        return json({
+          ok: false,
+          error:
+            "Die Whisper-Nachricht konnte nicht gelöscht werden."
+        }, 500);
+      }
+    }
+
+    /*
+     * Die konkrete Meldung wird nach erfolgreicher
+     * Moderation automatisch geschlossen.
+     */
+    await env.DB.prepare(`
+      UPDATE chat_reports
+      SET status = 'closed'
+      WHERE id = ?
+        AND report_type =
+          'whisper'
+    `)
+      .bind(
+        report.id
+      )
+      .run();
+
+    /*
+     * ============================================
+     * MODERATIONSLOG
+     * ============================================
+     *
+     * Der Originaltext wird nur im internen
+     * Admin-Moderationslog dokumentiert.
+     */
+    await addModerationLog(
+      env,
+      admin.id,
+      report.reported_user_id,
+      "whisper_message_delete",
+      {
+        report_id:
+          report.id,
+
+        whisper_message_id:
+          report.message_id,
+
+        room_id:
+          report.room_id,
+
+        username:
+          report.target_username,
+
+        server:
+          report.target_server,
+
+        report_reason:
+          report.reason,
+
+        message:
+          report.original_message ||
+          report.message,
+
+        message_created_at:
+          report.message_created_at,
+
+        deleted_at:
+          now
+      }
+    );
+
+    return json({
+      ok: true,
+
+      already_deleted:
+        false,
+
+      report: {
+        id:
+          report.id,
+
+        status:
+          "closed"
+      },
+
+      message: {
+        id:
+          report.message_id,
+
+        room_id:
+          report.room_id,
+
+        deleted:
+          true,
+
+        deleted_at:
+          now
+      },
+
+      info:
+        "Die gemeldete Whisper-Nachricht wurde gelöscht."
+    });
+
+  } catch (error) {
+    console.error(
+      "DELETE /api/chat/whisper-reports error:",
+      error
+    );
+
+    return json({
+      ok: false,
+      error:
+        "Die gemeldete Whisper-Nachricht konnte nicht gelöscht werden."
     }, 500);
   }
 }
