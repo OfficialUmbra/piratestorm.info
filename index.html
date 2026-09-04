@@ -80,7 +80,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 .forum-compose{display:none;margin:12px 0;padding:13px;border:1px solid var(--line);border-radius:12px;background:#08151e}.forum-compose.open{display:grid;gap:9px}
 .forum-post{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;background:#091720}
 .forum-user{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:12px}.forum-avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#183245;border:1px solid #315b70;font-weight:900;color:#d8edf5;overflow:hidden}.forum-avatar img{width:100%;height:100%;object-fit:cover}
-.forum-post h3{margin:9px 0 6px}.forum-meta{font-size:11px;color:var(--muted)}.forum-post p{white-space:pre-wrap}
+.forum-post h3{margin:9px 0 6px}.forum-meta{font-size:11px;color:var(--muted)}.admin-badge{display:inline-block;margin-left:6px;padding:2px 6px;border:1px solid #8aa7b7;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.04em;color:#dff4ff;background:#17384a}.admin-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.admin-actions button{font-size:11px;padding:5px 8px}.forum-post p{white-space:pre-wrap}
 .forum-reactions{display:flex;gap:8px;align-items:center;margin-top:10px}.like-btn{border:1px solid var(--line);background:#0c202c;color:var(--text);border-radius:8px;padding:6px 9px;cursor:pointer}.like-btn.liked{border-color:#5c8aa0;background:#17384a}
 .forum-comments{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)}.forum-comment{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}.comment-row{display:flex;gap:7px;margin-top:9px}.comment-row input{flex:1;background:#07131b;border:1px solid var(--line);color:var(--text);padding:9px;border-radius:8px}
 .profile-box{text-align:center}.profile-avatar{width:84px;height:84px;border-radius:50%;margin:0 auto 10px;display:grid;place-items:center;background:#183245;border:2px solid #315b70;font-size:27px;font-weight:900;overflow:hidden}.profile-avatar img{width:100%;height:100%;object-fit:cover}.avatar-maker{display:grid;gap:8px;margin-top:12px}.avatar-preview{width:72px;height:72px;border-radius:50%;margin:auto;display:grid;place-items:center;font-size:25px;font-weight:900;border:2px solid rgba(255,255,255,.18)}
@@ -216,7 +216,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 </main>
 </div>
 
-<footer id="footerText">Unofficial community project. Pirate Storm and related trademarks/assets belong to Bigpoint. Die Live-Besucherzahl nutzt /api/online und benötigt auf Cloudflare Pages eine kleine Worker/Function-Anbindung. Live values are based on in-game screenshots from August 2026; historical references are marked separately. · Build V17</footer>
+<footer id="footerText">Unofficial community project. Pirate Storm and related trademarks/assets belong to Bigpoint. Die Live-Besucherzahl nutzt /api/online und benötigt auf Cloudflare Pages eine kleine Worker/Function-Anbindung. Live values are based on in-game screenshots from August 2026; historical references are marked separately. · Build V18</footer>
 
 <script>
 const t={
@@ -339,7 +339,7 @@ const upgrades=[
 {group:'Event',name:'Eisenbiss',normal:'250.000 Gold',premium:'187.500 Gold mit 25% Gildenrabatt',effect:'Gold-Belohnungen +8%; Bonus-HP bei Restaurierung +8%',status:'verified'},
 {group:'Event',name:'Meeresklaue',normal:'7.500 💎',premium:'7.275 💎',effect:'Gold-Belohnungen +10%; Chance auf Deckrettung 25%',status:'verified'},
 {group:'Event',name:'Gravierte Schiffsglocke',normal:'15.000 💎',premium:'14.550 💎',effect:'K.T.-Chance +5%; K.T.-Ausweichchance +5%',status:'verified'},
-{group:'Event',name:'Himmelsglocke',normal:'6 Event-Orden',premium:null,effect:'K.T.-Chance +8%; K.T.-Ausweichchance +8%',status:'verified'},
+{group:'Event',name:'Himmelsglocke',normal:'6 Adler-Orden',premium:null,effect:'K.T.-Chance +8%; K.T.-Ausweichchance +8%',status:'verified'},
 {group:'Event',name:'Anansi-Segel',normal:'6.500 💎',premium:'6.305 💎',effect:'Tempo-Bonus 9,2 Knoten',status:'verified'},
 {group:'Sturmtag',name:'Kleines Sturmschott',normal:'Sturmtag',premium:null,effect:'Max. Trefferpunkte +4.000; zusätzlich zu normalen Bugschotten ausrüstbar.',unlock:'Jeden 1. des Monats',status:'verified'},
 {group:'Sturmtag',name:'Großes Sturmschott',normal:'Großer Sturmtag',premium:null,effect:'Große Sturmtag-Verbesserung.',unlock:'Nur am 1. August',status:'verified'}
@@ -380,6 +380,12 @@ const sets=[
 // Im Konfigurator werden weiterhin die originalen Setteile verwendet, damit nichts doppelt auswählbar ist.
 const eventSetUpgrades = sets.flatMap(set => set.pieces.filter(p=>!/deck/i.test(p[0])).map(p=>({group:`Event · ${set.name}`,name:p[0],effect:p[1],normal:p[2]||'—',premium:p[3]||null,source:`Set: ${set.name}`,status:'verified',displayOnlySetPiece:true})));
 upgrades.push(...eventSetUpgrades);
+// Jeder Verbesserungsgegenstand erscheint genau einmal. Bei Set-Teilen gewinnt der gruppierte Event-Eintrag.
+{
+  const lastByName=new Map(); upgrades.forEach((u,i)=>lastByName.set(u.name,i));
+  const unique=upgrades.filter((u,i)=>lastByName.get(u.name)===i);
+  upgrades.splice(0,upgrades.length,...unique);
+}
 const cannons=[
 {group:'Bonusmap',name:'Die Bombastische',source:'Voodoo-Schädel',level:1,damage:19,spread:30,destroy:'Nein',status:'verified'},
 {group:'Bonusmap',name:'Die Bombastische',source:'Voodoo-Schädel',level:3,damage:21,spread:30,destroy:'Nein',status:'verified'},
@@ -391,7 +397,7 @@ const cannons=[
 {group:'Event',name:'Schallbrecher',level:1,damage:17,spread:40,destroy:'Nein',price:'9.000 💎 normal · 8.730 💎 mit Premium',status:'verified'},
 {group:'Event',name:'Pantherzahn',level:1,damage:15,spread:50,destroy:'Ja',price:'1.500.000 Gold (angezeigter Preis)',status:'verified'},
 {group:'Arena',name:'Dampfhammer',level:1,damage:12,spread:60,destroy:'Ja',source:'Arena 2vs2 · 300 Arena-Punkte',price:'1.000.000 Gold normal · 750.000 Gold mit 25% Gildenrabatt',status:'verified'},
-{group:'Arena',name:'Bestienschrei',level:1,damage:17,spread:45,destroy:'Nein',source:'Arena 1vs1 · 900 Arena-Punkte',price:'9.000 💎 (historischer Forumspreis)',status:'verified'},
+{group:'Arena',name:'Bestienschrei',level:1,damage:17,spread:45,destroy:'Nein',source:'Arena 1vs1 · 900 Arena-Punkte',price:'9.000 💎 (Preis)',status:'verified'},
 {group:'Bonusmap',name:'Lochmacher',source:'Schwarzer Rum',level:1,damage:16,spread:60,destroy:'Nein',status:'verified'},
 {group:'Bonusmap',name:'Eisenhagel',source:'Blutiger Haken',level:1,damage:12,spread:40,destroy:'Nein',status:'verified'},
 {group:'Bonusmap',name:'Friedensstifter',source:'Schützenfest',level:1,damage:16,spread:35,destroy:'Nein',status:'verified'},
@@ -421,10 +427,16 @@ const harpoonlaunchers=[
 
 ];
 
+
+// Auf der Website werden bei Kanonen und Harpunenwerfern ausschließlich Grund-/Level-1-Versionen geführt.
+for(let i=cannons.length-1;i>=0;i--) if(Number(cannons[i].level)!==1) cannons.splice(i,1);
+for(let i=harpoonlaunchers.length-1;i>=0;i--) if(Number(harpoonlaunchers[i].level)!==1) harpoonlaunchers.splice(i,1);
+
 const ammo=[
 {group:'Kanonenkugeln · Standard',name:'1.000× Steinkanonenkugeln',effect:'Basis-Schaden 1; K.T.-Chance 5%; K.T.-Bonusschaden 2%',price:'10.000 Gold normal · 7.500 Gold mit 25% Gildenrabatt',source:'Händler'},
 {group:'Kanonenkugeln · Standard',name:'1.000× Eisenkanonenkugeln',effect:'Basis-Schaden 2; K.T.-Chance 10%; K.T.-Bonusschaden 2%',price:'30.000 Gold normal · 22.500 Gold mit 25% Gildenrabatt',source:'Händler'},
 {group:'Kanonenkugeln · Standard',name:'1.000× Stahlkanonenkugeln',effect:'Basis-Schaden 10; K.T.-Chance 15%; K.T.-Bonusschaden 10%',price:'1.000 💎 normal · 970 💎 mit Premium',source:'Händler; Blutiger Haken; Voodoo-Schädel'},
+{group:'Kanonenkugeln · Event',name:'1.000× Quartzkugeln',effect:'Basis-Schaden 9; Schiffs-Schaden 100%; K.T.-Chance 20%; K.T.-Bonusschaden 13%',price:'500 💀 Schädel',source:'Nur am Tag der schwarzen Flagge erhältlich'},
 {group:'Kanonenkugeln · Event',name:'1.000× Blutbeißer',effect:'Basis-Schaden 10; Schiffs-Schaden 100%; K.T.-Chance 16%; K.T.-Bonusschaden 12%; doppelter Schaden auf Haus-Kirus-Schlachtfeldern',price:'2.000 💎 normal · 1.940 💎 mit Premium',source:'Event'},
 {group:'Kanonenkugeln · Event',name:'1.000× Giftkugel',effect:'Basis-Schaden 10; Schiffs-Schaden 100%; K.T.-Chance 16%; K.T.-Bonusschaden 12%; doppelter Schaden auf Haus-Buthu-Schlachtfeldern',price:'2.000 💎 normal · 1.940 💎 mit Premium',source:'Event'},
 {group:'Kanonenkugeln · Event',name:'1.000× Pantherbiss',effect:'Basis-Schaden 10; Schiffs-Schaden 100%; K.T.-Chance 16%; K.T.-Bonusschaden 12%; doppelter Schaden auf Haus-Pentar-Schlachtfeldern',price:'2.000 💎 normal · 1.940 💎 mit Premium',source:'Event'},
@@ -464,6 +476,7 @@ const items=[
 {group:'Arena',name:'Phiole der Absorption',normal:'5.000 💎',premium:'4.850 💎',effect:'Phiole der Absorption; Dauer 6 s; Abklingzeit 10 min',unlock:'2.000 Arena-Punkte'},
 {group:'Gilde',name:'Gildenversicherung',normal:'10.000 Gold',premium:'7.500 Gold',effect:'24 h Echtzeit; in der Gildenzone kein Verlust von Decks, Kanonen oder Harpunenwerfern'},
 {group:'Gilde',name:'Rum · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'Ab Level 20; Zeit-Reduzierung 50%; Piraten arbeiten auf der Gildeninsel doppelt so schnell'},
+{group:'Tag der schwarzen Flagge',name:'Geraubtes Blut · 10×',normal:'2.500 💀 Schädel',premium:null,effect:'Max. Trefferpunkte +3.500; Sofortreparatur +3.500; Dauer 6 Stunden Echtzeit; Abklingzeit 6 Stunden Echtzeit',unlock:'Nur am Tag der schwarzen Flagge erhältlich'},
 {group:'Event',name:'Schock-Rakete · 10×',normal:'8.000 💎',premium:'7.760 💎',effect:'Effektradius 160; Außer Gefecht; Dauer 3 s; Abklingzeit 10 min'},
 {group:'Event',name:'Rauhaut · 10×',normal:'5.000 💎',premium:'4.850 💎',effect:'Spiegel-Schaden 10%; Dauer 1 min; Abklingzeit 2 min'},
 {group:'Event',name:'Gieriger Talisman · 10×',normal:'5.000 💎',premium:'4.850 💎',effect:'Gold-Belohnungen +100%; Spieler-XP +150%; Dauer 1 h; Abklingzeit 30 min'},
@@ -472,7 +485,7 @@ const items=[
 {group:'Event',name:'Weltmeerversicherung',normal:'250 💎',premium:'243 💎',effect:'Dauer Echtzeit 24 h'},
 {group:'Event',name:'Schnelles Nachladen · 10×',normal:'4.000 💎',premium:'3.880 💎',effect:'Kanonen-Nachladen −15%; Dauer 1 min; Abklingzeit 5 min'},
 {group:'Event',name:'Reißer-Rakete · 10×',normal:'400.000 Gold',premium:'300.000 Gold mit 25% Gildenrabatt',effect:'Min. Schaden 500; Max. Schaden 700; Fehlerquote 10%; aktuelles Tempo −22%; Dauer 1 min; Abklingzeit 30 s'},
-{group:'Event',name:'Kanonenüberladung',normal:'1 Event-Orden',premium:null,effect:'Schiffs-Schaden +5%; Spiegel-Schaden 50%; Dauer 1 min; Abklingzeit 15 min'},
+{group:'Event',name:'Kanonenüberladung',normal:'1 Adler-Orden',premium:null,effect:'Schiffs-Schaden +5%; Spiegel-Schaden 50%; Dauer 1 min; Abklingzeit 15 min'},
 {group:'Event',name:'Mastbrecher-Rakete · 10×',normal:'2.000 💎',premium:'1.940 💎',effect:'aktuelles Tempo −30%; Dauer 20 s; Abklingzeit 1 min'},
 {group:'Event',name:'Ausweichmanöver · 10×',normal:'3.000 💎',premium:'2.910 💎',effect:'K.T.-Ausweichchance +10%; Dauer 1 h; Abklingzeit 1 h'},
 {group:'Event',name:'Hai-Haut · 10×',normal:'3.000 💎',premium:'2.910 💎',effect:'K.T.-Ausweichchance +15%; Dauer 5 min; Abklingzeit 6 min'},
@@ -572,7 +585,7 @@ const EN_REPL=[
 [/Reparatur/g,'Repair'],[/Sofortreparatur/g,'Instant repair'],[/Chance auf Deckrettung/g,'Deck save chance'],[/Bonus-HP bei Restaurierung/g,'Restoration HP bonus'],[/Gold-Belohnungen/g,'Gold rewards'],[/Schiffs-Schaden/g,'Ship damage'],[/Erhaltener Schaden/g,'Damage received'],
 [/Dauer/g,'Duration'],[/Abklingzeit/g,'Cooldown'],[/Fehlerquote/g,'Failure rate'],[/Min\. Schaden/g,'Min. damage'],[/Max\. Schaden/g,'Max. damage'],[/aktuelles Tempo/g,'current speed'],[/bis Versenkung\/Logout/g,'until sinking/logout'],
 [/Unversenkbar/g,'Indestructible'],[/Freischaltung/g,'Unlock'],[/Arena-Punkte/g,'Arena points'],[/Kriegsrang/g,'War rank'],[/Rang/g,'Rank'],[/Schädel/g,'Skulls'],[/mit Premium/g,'with Premium'],[/mit 25% Gildenrabatt/g,'with 25% guild discount'],[/normal/g,'normal'],
-[/Händler/g,'Merchant'],[/Standardausrüstung/g,'standard equipment'],[/Bonusmaps/g,'bonus maps'],[/Bonusmap/g,'bonus map'],[/historischer Forumspreis/g,'historical forum price'],[/Quelle/g,'Source'],
+[/Händler/g,'Merchant'],[/Standardausrüstung/g,'standard equipment'],[/Bonusmaps/g,'bonus maps'],[/Bonusmap/g,'bonus map'],[/Preis/g,'Price'],[/Preis/g,'price'],[/Quelle/g,'Source'],
 [/Jeden 1\. des Monats/g,'Every 1st of the month'],[/Nur am 1\. August/g,'Only on August 1'],[/zusätzlich zu normalen Bugschotten ausrüstbar/g,'can be equipped in addition to normal bow bulkheads'],[/erhöht beim Erwerb auch die momentanen Trefferpunkte/g,'also increases current HP when acquired'],
 [/Spieler-XP/g,'Player XP'],[/Gilden-XP/g,'Guild XP'],[/Gilden-Gold-Bonus/g,'Guild gold bonus'],[/Spieler-Gold/g,'Player gold'],[/Ab Level/g,'From level'],[/Mitglieder/g,'members'],[/aktive Quest/g,'active quest'],[/aktive Quests/g,'active quests'],[/Gilden-Hauptquartier/g,'Guild headquarters'],[/Gold-Händlerrabatt/g,'Gold merchant discount'],[/Diamantenrabatt beim Erneuern/g,'Diamond renewal discount'],
 [/Grundausbildung – kurz/g,'Basic training – short'],[/Grundausbildung – lang/g,'Basic training – long'],[/Fortgeschrittene Ausbildung – kurz/g,'Advanced training – short'],[/Fortgeschrittene Ausbildung – lang/g,'Advanced training – long'],[/Tiefsee-Taucher/g,'Deep-sea diver'],[/einige Event-Bonusmaps/g,'some event bonus maps'],[/mögliche Belohnung/g,'possible reward'],
@@ -718,6 +731,8 @@ let forumPosts=[];
 let forumLoading=false;
 const forumLikedPosts=new Set();
 const forumLikedComments=new Set();
+const isForumAdmin=()=>forumCurrentUser?.username==='Umbra' && (forumCurrentUser?.role==='admin'||forumCurrentUser?.is_admin===true||forumCurrentUser?.username==='Umbra');
+const adminBadge=u=>u?.username==='Umbra'?'<span class="admin-badge">Admin</span>':'';
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const forumDate=unix=>new Date(Number(unix)*1000).toLocaleString(lang==='de'?'de-DE':'en-GB');
 function avatarHtml(u){
@@ -738,7 +753,7 @@ function renderForumProfile(){
   const out=document.getElementById('loggedOutBox'), inn=document.getElementById('loggedInBox');if(!out||!inn)return;
   out.style.display=forumCurrentUser?'none':'block';inn.style.display=forumCurrentUser?'block':'none';
   if(forumCurrentUser){
-    profileName.textContent=forumCurrentUser.username;profileServer.textContent=forumCurrentUser.server;
+    profileName.innerHTML=esc(forumCurrentUser.username)+(forumCurrentUser.username==='Umbra'?' <span class="admin-badge">Admin</span>':'');profileServer.textContent=forumCurrentUser.server;
     profileAvatar.textContent=forumCurrentUser.avatar_symbol||'⚓';profileAvatar.style.background=forumCurrentUser.avatar_color||'#183245';
   }
 }
@@ -774,12 +789,12 @@ function renderForum(){
   posts.forEach(p=>{
     const comments=p.commentList||[];
     const commentsHtml=comments.map(c=>`<div class="forum-comment">
-      <div class="forum-user">${avatarHtml(c)}<div><b>${esc(c.username)}</b> · ${esc(c.server)}<div class="forum-meta">${forumDate(c.created_at)}</div></div></div>
+      <div class="forum-user">${avatarHtml(c)}<div><b>${esc(c.username)}</b>${adminBadge(c)} · ${esc(c.server)}<div class="forum-meta">${forumDate(c.created_at)}</div></div></div>
       <div style="margin-top:6px;white-space:pre-wrap">${esc(c.content)}</div>
       <button class="like-btn ${forumLikedComments.has(Number(c.id))?'liked':''}" data-comment-like="${c.id}">👍 ${Number(c.likes||0)}</button>
     </div>`).join('');
     const el=document.createElement('article');el.className='forum-post';
-    el.innerHTML=`<div class="forum-user">${avatarHtml(p)}<div><b>${esc(p.username)}</b> · ${esc(p.server)}<div class="forum-meta">${forumDate(p.created_at)} · ${esc(tr(p.category))}</div></div></div>
+    el.innerHTML=`<div class="forum-user">${avatarHtml(p)}<div><b>${esc(p.username)}</b>${adminBadge(p)} · ${esc(p.server)}<div class="forum-meta">${forumDate(p.created_at)} · ${esc(tr(p.category))}</div></div></div>
       <h3>${esc(p.title)}</h3><p>${esc(p.content)}</p>
       <div class="forum-reactions"><button class="like-btn ${forumLikedPosts.has(Number(p.id))?'liked':''}" data-post-like="${p.id}">👍 ${Number(p.likes||0)}</button><span>💬 ${Number(p.comments||comments.length||0)}</span></div>
       <div class="forum-comments">${commentsHtml}${forumCurrentUser?`<div class="comment-row"><input maxlength="5000" data-comment-input="${p.id}" placeholder="${lang==='de'?'Kommentar schreiben …':'Write a comment …'}"><button class="forum-action" data-comment-send="${p.id}">${lang==='de'?'Senden':'Send'}</button></div>`:''}</div>`;
@@ -856,21 +871,21 @@ const calendarEvents = [
   {id:'sep-pvp',de:'PvP-Saison 1 · 01.–30.09.',en:'PVP Season 1 · Sep 1–30',date:'2026-09-01'},
   {id:'sep01-storm',de:'Sturmtag',en:'Storm Day',date:'2026-09-01'},
   {id:'sep01-smuggler-ships',de:'Schmugglerbucht · Schiffsauktion',en:"Smuggler's Bay · Ship Auction",date:'2026-09-01'},
-  {id:'sep02-upgrades',de:'Verbesserungen · Voll beladen',en:'Improvements · Fully Loaded',date:'2026-09-02'},
+  {id:'sep02-upgrades',de:'Verbesserungen · Volle Lager',en:'Improvements · Fully Loaded',date:'2026-09-02'},
   {id:'sep03-bargains',de:'Angebote des Kapitäns',en:"Captain's Bargains",date:'2026-09-03'},
   {id:'sep04-monster',de:'Monsterjagd',en:'Monster Hunt',date:'2026-09-04'}, {id:'sep04-skull',de:'Totenkopf-&-Knochen-Tag',en:'Skull & Crossbones Day',date:'2026-09-04'},
   {id:'sep05-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-05'},
-  {id:'sep06-items',de:'Gebrauchsgegenstände · Voll beladen',en:'Used Items · Fully Loaded',date:'2026-09-06'},
+  {id:'sep06-items',de:'Gebrauchsgegenstände · Volle Lager',en:'Used Items · Fully Loaded',date:'2026-09-06'},
   {id:'sep07-pirate',de:'Piratenfest',en:'Pirate Fest',date:'2026-09-07'},
-  ...Array.from({length:8},(_,i)=>i+7).map(d=>({id:'thunder-'+d,de:'Schlachtfeldwoche · Thunderball',en:'Battlefield Week · Thunderball',date:`2026-09-${String(d).padStart(2,'0')}`})),
+  ...Array.from({length:8},(_,i)=>i+7).map(d=>({id:'thunder-'+d,de:'Schlachtfeldwoche · Donnerball',en:'Battlefield Week · Thunderball',date:`2026-09-${String(d).padStart(2,'0')}`})),
   ...Array.from({length:5},(_,i)=>i+7).map(d=>({id:'overboard-'+d,de:'Überbordpreise',en:'Overboard Prices',date:`2026-09-${String(d).padStart(2,'0')}`})),
-  {id:'sep08-seals',de:'Siegel · Voll beladen',en:'Seals · Fully Loaded',date:'2026-09-08'}, {id:'sep09-ammo',de:'Munition · Voll beladen',en:'Ammo · Fully Loaded',date:'2026-09-09'}, {id:'sep10-ships',de:'Schiffe · Voll beladen',en:'Ships · Fully Loaded',date:'2026-09-10'}, {id:'sep11-items',de:'Gebrauchsgegenstände · Voll beladen',en:'Used Items · Fully Loaded',date:'2026-09-11'}, {id:'sep12-upgrades',de:'Verbesserungen · Voll beladen',en:'Improvements · Fully Loaded',date:'2026-09-12'}, {id:'sep13-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-13'}, {id:'sep14-upgrades',de:'Verbesserungen · Voll beladen',en:'Improvements · Fully Loaded',date:'2026-09-14'},
+  {id:'sep08-seals',de:'Siegel · Volle Lager',en:'Seals · Fully Loaded',date:'2026-09-08'}, {id:'sep09-ammo',de:'Munition · Volle Lager',en:'Ammo · Fully Loaded',date:'2026-09-09'}, {id:'sep10-ships',de:'Schiffe · Volle Lager',en:'Ships · Fully Loaded',date:'2026-09-10'}, {id:'sep11-items',de:'Gebrauchsgegenstände · Volle Lager',en:'Used Items · Fully Loaded',date:'2026-09-11'}, {id:'sep12-upgrades',de:'Verbesserungen · Volle Lager',en:'Improvements · Fully Loaded',date:'2026-09-12'}, {id:'sep13-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-13'}, {id:'sep14-upgrades',de:'Verbesserungen · Volle Lager',en:'Improvements · Fully Loaded',date:'2026-09-14'},
   {id:'sep15-smuggler-bg',de:'Schmugglerbucht · Schlachtfeldauktion',en:"Smuggler's Bay · Battlefield Auction",date:'2026-09-15'}, {id:'sep15-skull',de:'Totenkopf-&-Knochen-Tag',en:'Skull & Crossbones Day',date:'2026-09-15'},
-  {id:'sep16-pirate',de:'Piratenfest',en:'Pirate Fest',date:'2026-09-16'}, {id:'sep16-weapons',de:'Kanonen & Harpunenwerfer · Voll beladen',en:'Cannons & Harpoon Launchers · Fully Loaded',date:'2026-09-16'},
+  {id:'sep16-pirate',de:'Piratenfest',en:'Pirate Fest',date:'2026-09-16'}, {id:'sep16-weapons',de:'Kanonen & Harpunenwerfer · Volle Lager',en:'Cannons & Harpoon Launchers · Fully Loaded',date:'2026-09-16'},
   {id:'sep17-smuggler-bg',de:'Schmugglerbucht · Schlachtfeldauktion',en:"Smuggler's Bay · Battlefield Auction",date:'2026-09-17'},
-  {id:'sep18-monster',de:'Monsterjagd',en:'Monster Hunt',date:'2026-09-18'}, {id:'sep18-ships',de:'Schiffe · Voll beladen',en:'Ships · Fully Loaded',date:'2026-09-18'},
+  {id:'sep18-monster',de:'Monsterjagd',en:'Monster Hunt',date:'2026-09-18'}, {id:'sep18-ships',de:'Schiffe · Volle Lager',en:'Ships · Fully Loaded',date:'2026-09-18'},
   {id:'sep19-treasure',de:'Tag des versunkenen Schatzes',en:'Day of Sunken Treasure',date:'2026-09-19'}, {id:'sep20-smuggler-set',de:'Schmugglerbucht · Setgegenstände',en:"Smuggler's Bay · Set Items",date:'2026-09-20'},
-  ...Array.from({length:8},(_,i)=>i+21).map(d=>({id:'spider-'+d,de:'Schlachtfeldwoche · Spider Bay',en:'Battlefield Week · Spider Bay',date:`2026-09-${String(d).padStart(2,'0')}`})),
+  ...Array.from({length:8},(_,i)=>i+21).map(d=>({id:'spider-'+d,de:'Schlachtfeldwoche · Spinnenbucht',en:'Battlefield Week · Spider Bay',date:`2026-09-${String(d).padStart(2,'0')}`})),
   {id:'sep26-fullmoon',de:'Vollmond-Event',en:'Full Moon Event',date:'2026-09-26'}
 ];
 
@@ -973,7 +988,7 @@ function translate(){
   heroText.textContent=t[lang].heroText;
   brandSub.textContent=lang==='de'?'Inoffizielles Community-Projekt':'Unofficial community project';
   search.placeholder=lang==='de'?'Schiffe, Decks, Sets, Kanonen, Items … durchsuchen':'Search ships, decks, sets, cannons, items …';
-  footerText.textContent=lang==='de'?'Inoffizielles Community-Projekt. Pirate Storm sowie zugehörige Marken und Inhalte gehören Bigpoint. Live-Werte basieren auf Ingame-Screenshots vom August 2026; historische Referenzen sind separat markiert. · Build V17':'Unofficial community project. Pirate Storm and related trademarks/content belong to Bigpoint. Live values are based on in-game screenshots from August 2026; historical references are marked separately. · Build V17';
+  footerText.textContent=lang==='de'?'Inoffizielles Community-Projekt. Pirate Storm sowie zugehörige Marken und Inhalte gehören Bigpoint. Live-Werte basieren auf Ingame-Screenshots vom August 2026; historische Referenzen sind separat markiert. · Build V18':'Unofficial community project. Pirate Storm and related trademarks/content belong to Bigpoint. Live values are based on in-game screenshots from August 2026; historical references are marked separately. · Build V18';
   if(document.getElementById('forumSub')) forumSub.textContent=lang==='de'?'PirateStorm Community – echte Beiträge, Kommentare und Likes für alle Spieler.':'PirateStorm community – shared posts, comments and likes for all players.';
   if(document.getElementById('loginTitle')) loginTitle.textContent=lang==='de'?'Anmelden / Registrieren':'Sign in / Register';
   if(document.getElementById('forumRegister')) forumRegister.textContent=lang==='de'?'Registrieren':'Register';
