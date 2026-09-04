@@ -11,6 +11,20 @@ const SERVERS = [
 
 const MAX_ACCOUNTS_PER_IP = 2;
 
+/*
+ * Rate Limit:
+ * maximal 10 Registrierungsversuche
+ * innerhalb von 15 Minuten.
+ */
+const RATE_LIMIT_MAX_ATTEMPTS = 10;
+const RATE_LIMIT_WINDOW_SECONDS = 15 * 60;
+
+/*
+ * Alte Rate-Limit-Einträge werden nach
+ * 24 Stunden nicht mehr benötigt.
+ */
+const ATTEMPT_RETENTION_SECONDS = 24 * 60 * 60;
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -25,13 +39,6 @@ function json(data, status = 200) {
  * =====================================================
  * PASSWORT-HASH
  * =====================================================
- *
- * Bestehendes Verfahren bleibt erhalten:
- *
- * PBKDF2
- * SHA-256
- * 100.000 Iterationen
- * zufälliger Salt
  */
 async function hashPassword(password, salt) {
   const encoder = new TextEncoder();
@@ -66,13 +73,13 @@ async function hashPassword(password, salt) {
 
 /*
  * =====================================================
- * IP ERMITTELN
+ * CLIENT-IP
  * =====================================================
  *
- * Cloudflare setzt CF-Connecting-IP auf die
- * ursprüngliche Client-IP.
+ * Cloudflare liefert die ursprüngliche Client-IP
+ * über CF-Connecting-IP.
  *
- * Wir speichern diese IP NICHT in D1.
+ * Die echte IP wird NICHT in D1 gespeichert.
  */
 function getClientIp(request) {
   const ip =
@@ -92,11 +99,7 @@ function getClientIp(request) {
  * IP-HASH
  * =====================================================
  *
- * HMAC-SHA-256 mit dem geheimen
- * IP_HASH_SECRET aus Cloudflare.
- *
- * Dadurch wird nicht einfach SHA-256(IP)
- * gespeichert.
+ * HMAC-SHA-256 mit IP_HASH_SECRET.
  */
 async function hashIp(ip, secret) {
   const encoder =
@@ -137,7 +140,93 @@ async function hashIp(ip, secret) {
 
 /*
  * =====================================================
- * REGISTRIERUNG
+ * ALTE RATE-LIMIT-EINTRÄGE LÖSCHEN
+ * =====================================================
+ */
+async function cleanupOldAttempts(env, now) {
+  const cutoff =
+    now -
+    ATTEMPT_RETENTION_SECONDS;
+
+  await env.DB
+    .prepare(`
+      DELETE FROM registration_attempts
+      WHERE attempted_at < ?
+    `)
+    .bind(cutoff)
+    .run();
+}
+
+/*
+ * =====================================================
+ * RATE LIMIT PRÜFEN
+ * =====================================================
+ */
+async function checkRateLimit(
+  env,
+  ipHash,
+  now
+) {
+  const windowStart =
+    now -
+    RATE_LIMIT_WINDOW_SECONDS;
+
+  const result =
+    await env.DB
+      .prepare(`
+        SELECT COUNT(*) AS count
+        FROM registration_attempts
+        WHERE ip_hash = ?
+          AND attempted_at >= ?
+      `)
+      .bind(
+        ipHash,
+        windowStart
+      )
+      .first();
+
+  const count =
+    Number(
+      result?.count || 0
+    );
+
+  return {
+    allowed:
+      count <
+      RATE_LIMIT_MAX_ATTEMPTS,
+
+    count
+  };
+}
+
+/*
+ * =====================================================
+ * REGISTRIERUNGSVERSUCH SPEICHERN
+ * =====================================================
+ */
+async function recordAttempt(
+  env,
+  ipHash,
+  now
+) {
+  await env.DB
+    .prepare(`
+      INSERT INTO registration_attempts (
+        ip_hash,
+        attempted_at
+      )
+      VALUES (?, ?)
+    `)
+    .bind(
+      ipHash,
+      now
+    )
+    .run();
+}
+
+/*
+ * =====================================================
+ * POST /api/register
  * =====================================================
  */
 export async function onRequestPost(context) {
@@ -146,11 +235,9 @@ export async function onRequestPost(context) {
       context;
 
     /*
-     * Secret muss existieren.
-     *
-     * Falls die Cloudflare-Konfiguration fehlt,
-     * registrieren wir NICHT einfach ohne
-     * IP-Schutz weiter.
+     * -------------------------------------------------
+     * SECRET PRÜFEN
+     * -------------------------------------------------
      */
     if (
       !env.IP_HASH_SECRET ||
@@ -169,10 +256,9 @@ export async function onRequestPost(context) {
     }
 
     /*
-     * Client-IP holen.
-     *
-     * Wenn Cloudflare keine IP liefert, wird die
-     * Registrierung sicherheitshalber abgelehnt.
+     * -------------------------------------------------
+     * IP ERMITTELN
+     * -------------------------------------------------
      */
     const clientIp =
       getClientIp(request);
@@ -195,9 +281,62 @@ export async function onRequestPost(context) {
         env.IP_HASH_SECRET
       );
 
+    const now =
+      Math.floor(
+        Date.now() / 1000
+      );
+
     /*
      * -------------------------------------------------
-     * JSON lesen
+     * ALTE RATE-LIMIT-DATEN AUFRÄUMEN
+     * -------------------------------------------------
+     *
+     * Für ein kleines Community-Projekt reicht diese
+     * einfache Bereinigung beim Registrierungsaufruf.
+     */
+    await cleanupOldAttempts(
+      env,
+      now
+    );
+
+    /*
+     * -------------------------------------------------
+     * RATE LIMIT PRÜFEN
+     * -------------------------------------------------
+     *
+     * Wichtig:
+     * Wir prüfen VOR dem Speichern des neuen Versuchs.
+     *
+     * Versuch 1-10 sind erlaubt.
+     * Versuch 11 wird blockiert.
+     */
+    const rateLimit =
+      await checkRateLimit(
+        env,
+        registrationIpHash,
+        now
+      );
+
+    if (!rateLimit.allowed) {
+      return json({
+        success: false,
+        error:
+          "Zu viele Registrierungsversuche. Bitte versuche es in einigen Minuten erneut."
+      }, 429);
+    }
+
+    /*
+     * Den aktuellen Versuch speichern.
+     */
+    await recordAttempt(
+      env,
+      registrationIpHash,
+      now
+    );
+
+    /*
+     * -------------------------------------------------
+     * JSON LESEN
      * -------------------------------------------------
      */
     let body;
@@ -230,7 +369,7 @@ export async function onRequestPost(context) {
 
     /*
      * -------------------------------------------------
-     * Eingaben prüfen
+     * EINGABEN PRÜFEN
      * -------------------------------------------------
      */
     if (
@@ -265,11 +404,8 @@ export async function onRequestPost(context) {
 
     /*
      * -------------------------------------------------
-     * Spielername prüfen
+     * SPIELERNAME PRÜFEN
      * -------------------------------------------------
-     *
-     * Derselbe Spielername darf auf unterschiedlichen
-     * Servern weiterhin existieren.
      */
     const existing =
       await env.DB
@@ -296,7 +432,7 @@ export async function onRequestPost(context) {
 
     /*
      * -------------------------------------------------
-     * 2-ACCOUNT-IP-LIMIT
+     * MAXIMAL 2 ACCOUNTS PRO IP
      * -------------------------------------------------
      */
     const ipCountResult =
@@ -329,7 +465,7 @@ export async function onRequestPost(context) {
 
     /*
      * -------------------------------------------------
-     * PASSWORT ERSTELLEN
+     * PASSWORT HASHEN
      * -------------------------------------------------
      */
     const salt =
@@ -355,10 +491,8 @@ export async function onRequestPost(context) {
 
     /*
      * -------------------------------------------------
-     * ACCOUNT SPEICHERN
+     * ACCOUNT ERSTELLEN
      * -------------------------------------------------
-     *
-     * Keine echte IP wird gespeichert.
      */
     const result =
       await env.DB
@@ -410,8 +544,9 @@ export async function onRequestPost(context) {
 }
 
 /*
- * Andere HTTP-Methoden sind für die
- * Registrierung nicht vorgesehen.
+ * =====================================================
+ * ANDERE METHODEN
+ * =====================================================
  */
 export async function onRequestGet() {
   return json({
