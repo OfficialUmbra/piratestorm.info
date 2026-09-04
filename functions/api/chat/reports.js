@@ -93,7 +93,9 @@ async function getChatMessage(env, messageId) {
       u.role
 
     FROM chat_messages m
-    JOIN users u ON u.id = m.user_id
+
+    JOIN users u
+      ON u.id = m.user_id
 
     WHERE m.id = ?
     LIMIT 1
@@ -102,6 +104,18 @@ async function getChatMessage(env, messageId) {
     .first();
 }
 
+/*
+ * Prüft, ob der aktuelle Nutzer die Nachricht überhaupt
+ * sehen darf.
+ *
+ * Normale Nutzer:
+ * - Globalchat
+ * - eigener Serverchat
+ *
+ * Admin:
+ * - Globalchat
+ * - alle Serverchats
+ */
 function canUserSeeMessage(user, message) {
   if (!user || !message) {
     return false;
@@ -125,17 +139,19 @@ function canUserSeeMessage(user, message) {
   return false;
 }
 
+/*
+ * Holt für Umbra den Kontext einer gemeldeten Nachricht:
+ *
+ * 5 Nachrichten davor
+ * + gemeldete Nachricht
+ * + 5 Nachrichten danach
+ *
+ * Immer nur innerhalb desselben Chatraums.
+ */
 async function getContextMessages(env, message) {
   if (!message) {
     return [];
   }
-
-  /*
-   * Wir holen Nachrichten desselben Raums rund um die
-   * gemeldete Nachricht.
-   *
-   * 5 davor + gemeldete Nachricht + 5 danach.
-   */
 
   let beforeQuery;
   let afterQuery;
@@ -151,17 +167,29 @@ async function getContextMessages(env, message) {
         m.original_message,
         m.created_at,
         m.deleted_at,
+
         u.username,
         u.server AS user_server,
         u.role
+
       FROM chat_messages m
-      JOIN users u ON u.id = m.user_id
+
+      JOIN users u
+        ON u.id = m.user_id
+
       WHERE m.room_type = 'global'
         AND (
           m.created_at < ?
-          OR (m.created_at = ? AND m.id < ?)
+          OR (
+            m.created_at = ?
+            AND m.id < ?
+          )
         )
-      ORDER BY m.created_at DESC, m.id DESC
+
+      ORDER BY
+        m.created_at DESC,
+        m.id DESC
+
       LIMIT 5
     `;
 
@@ -173,17 +201,29 @@ async function getContextMessages(env, message) {
         m.original_message,
         m.created_at,
         m.deleted_at,
+
         u.username,
         u.server AS user_server,
         u.role
+
       FROM chat_messages m
-      JOIN users u ON u.id = m.user_id
+
+      JOIN users u
+        ON u.id = m.user_id
+
       WHERE m.room_type = 'global'
         AND (
           m.created_at > ?
-          OR (m.created_at = ? AND m.id > ?)
+          OR (
+            m.created_at = ?
+            AND m.id > ?
+          )
         )
-      ORDER BY m.created_at ASC, m.id ASC
+
+      ORDER BY
+        m.created_at ASC,
+        m.id ASC
+
       LIMIT 5
     `;
 
@@ -207,18 +247,30 @@ async function getContextMessages(env, message) {
         m.original_message,
         m.created_at,
         m.deleted_at,
+
         u.username,
         u.server AS user_server,
         u.role
+
       FROM chat_messages m
-      JOIN users u ON u.id = m.user_id
+
+      JOIN users u
+        ON u.id = m.user_id
+
       WHERE m.room_type = 'server'
         AND m.server = ?
         AND (
           m.created_at < ?
-          OR (m.created_at = ? AND m.id < ?)
+          OR (
+            m.created_at = ?
+            AND m.id < ?
+          )
         )
-      ORDER BY m.created_at DESC, m.id DESC
+
+      ORDER BY
+        m.created_at DESC,
+        m.id DESC
+
       LIMIT 5
     `;
 
@@ -230,18 +282,30 @@ async function getContextMessages(env, message) {
         m.original_message,
         m.created_at,
         m.deleted_at,
+
         u.username,
         u.server AS user_server,
         u.role
+
       FROM chat_messages m
-      JOIN users u ON u.id = m.user_id
+
+      JOIN users u
+        ON u.id = m.user_id
+
       WHERE m.room_type = 'server'
         AND m.server = ?
         AND (
           m.created_at > ?
-          OR (m.created_at = ? AND m.id > ?)
+          OR (
+            m.created_at = ?
+            AND m.id > ?
+          )
         )
-      ORDER BY m.created_at ASC, m.id ASC
+
+      ORDER BY
+        m.created_at ASC,
+        m.id ASC
+
       LIMIT 5
     `;
 
@@ -270,7 +334,8 @@ async function getContextMessages(env, message) {
     .bind(...afterBindings)
     .all();
 
-  const before = (beforeResult.results || []).reverse();
+  const before =
+    (beforeResult.results || []).reverse();
 
   const reportedMessage = {
     id: message.id,
@@ -284,46 +349,66 @@ async function getContextMessages(env, message) {
     role: message.role
   };
 
-  const after = afterResult.results || [];
+  const after =
+    afterResult.results || [];
 
-  return [...before, reportedMessage, ...after].map(item => ({
+  return [
+    ...before,
+    reportedMessage,
+    ...after
+  ].map(item => ({
     id: item.id,
 
     user: {
       id: item.user_id,
       username: item.username,
       server: item.user_server,
-      server_code: getServerCode(item.user_server),
+      server_code:
+        getServerCode(item.user_server),
       role: item.role,
-      is_admin: item.role === "admin"
+      is_admin:
+        item.role === "admin"
     },
 
     message: item.message,
 
     /*
-     * Nur der Admin bekommt hier zusätzlich den echten
-     * unzensierten Originaltext.
+     * Nur Umbra kann diese API abrufen.
+     * Deshalb darf hier auch der tatsächliche
+     * Originaltext für die Moderation enthalten sein.
      */
-    original_message: item.original_message,
+    original_message:
+      item.original_message,
 
-    created_at: item.created_at,
+    created_at:
+      item.created_at,
 
-    deleted: Boolean(item.deleted_at),
+    deleted:
+      Boolean(item.deleted_at),
 
-    is_reported_message: item.id === message.id
+    is_reported_message:
+      item.id === message.id
   }));
 }
 
 /*
+ * =====================================================
  * POST
+ * =====================================================
  *
- * Spieler meldet eine Nachricht.
+ * Ein normaler eingeloggter Spieler meldet eine
+ * Chatnachricht.
+ *
+ * WICHTIG:
+ * Nachrichten eines Admin-Accounts können niemals
+ * gemeldet werden.
  */
 export async function onRequestPost(context) {
   try {
     const { request, env } = context;
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(request, env);
 
     if (!user) {
       return json({
@@ -343,16 +428,24 @@ export async function onRequestPost(context) {
       }, 400);
     }
 
-    const messageId = Number(body.message_id);
+    const messageId =
+      Number(body.message_id);
 
-    if (!Number.isInteger(messageId) || messageId <= 0) {
+    if (
+      !Number.isInteger(messageId) ||
+      messageId <= 0
+    ) {
       return json({
         ok: false,
         error: "Ungültige Nachrichten-ID."
       }, 400);
     }
 
-    const message = await getChatMessage(env, messageId);
+    const message =
+      await getChatMessage(
+        env,
+        messageId
+      );
 
     if (!message) {
       return json({
@@ -361,133 +454,207 @@ export async function onRequestPost(context) {
       }, 404);
     }
 
-    if (!canUserSeeMessage(user, message)) {
+    /*
+     * Sicherheitsprüfung:
+     * Man darf nur Nachrichten melden,
+     * die man selbst sehen dürfte.
+     */
+    if (
+      !canUserSeeMessage(
+        user,
+        message
+      )
+    ) {
       return json({
         ok: false,
-        error: "Du darfst diese Nachricht nicht melden."
+        error:
+          "Du darfst diese Nachricht nicht melden."
       }, 403);
     }
 
     /*
-     * Niemand kann sich selbst melden.
+     * =================================================
+     * ADMIN-SCHUTZ
+     * =================================================
+     *
+     * Umbra bzw. jeder Account mit role = admin
+     * kann NICHT gemeldet werden.
+     *
+     * Entscheidend ist NICHT der Spielername,
+     * sondern ausschließlich die serverseitige Rolle.
+     */
+    if (message.role === "admin") {
+      return json({
+        ok: false,
+        error:
+          "Der Administrator kann nicht gemeldet werden."
+      }, 403);
+    }
+
+    /*
+     * Niemand kann seine eigene Nachricht melden.
      */
     if (message.user_id === user.id) {
       return json({
         ok: false,
-        error: "Du kannst deine eigene Nachricht nicht melden."
+        error:
+          "Du kannst deine eigene Nachricht nicht melden."
       }, 400);
     }
 
-    const reason = normalizeReason(body.reason);
+    const reason =
+      normalizeReason(body.reason);
 
     if (reason.length > 500) {
       return json({
         ok: false,
-        error: "Der Meldegrund darf maximal 500 Zeichen enthalten."
+        error:
+          "Der Meldegrund darf maximal 500 Zeichen enthalten."
       }, 400);
     }
 
     /*
-     * Verhindert, dass derselbe Spieler dieselbe Nachricht
-     * ständig erneut meldet.
+     * Dieselbe Nachricht kann vom selben Nutzer
+     * nicht mehrfach offen gemeldet werden.
      */
-    const existing = await env.DB.prepare(`
-      SELECT id
-      FROM chat_reports
-      WHERE reporter_id = ?
-        AND message_id = ?
-        AND status IN ('open', 'reviewed')
-      LIMIT 1
-    `)
-      .bind(user.id, messageId)
-      .first();
+    const existing =
+      await env.DB.prepare(`
+        SELECT id
+        FROM chat_reports
+        WHERE reporter_id = ?
+          AND message_id = ?
+          AND status IN (
+            'open',
+            'reviewed'
+          )
+        LIMIT 1
+      `)
+        .bind(
+          user.id,
+          messageId
+        )
+        .first();
 
     if (existing) {
       return json({
         ok: false,
-        error: "Du hast diese Nachricht bereits gemeldet."
+        error:
+          "Du hast diese Nachricht bereits gemeldet."
       }, 409);
     }
 
-    const now = Math.floor(Date.now() / 1000);
+    const now =
+      Math.floor(Date.now() / 1000);
 
-    const result = await env.DB.prepare(`
-      INSERT INTO chat_reports (
-        reporter_id,
-        reported_user_id,
-        message_id,
-        reason,
-        status,
-        created_at
-      )
-      VALUES (?, ?, ?, ?, 'open', ?)
-    `)
-      .bind(
-        user.id,
-        message.user_id,
-        messageId,
-        reason || null,
-        now
-      )
-      .run();
+    const result =
+      await env.DB.prepare(`
+        INSERT INTO chat_reports (
+          reporter_id,
+          reported_user_id,
+          message_id,
+          reason,
+          status,
+          created_at
+        )
+        VALUES (
+          ?,
+          ?,
+          ?,
+          ?,
+          'open',
+          ?
+        )
+      `)
+        .bind(
+          user.id,
+          message.user_id,
+          messageId,
+          reason || null,
+          now
+        )
+        .run();
 
     return json({
       ok: true,
+
       report: {
-        id: result.meta.last_row_id,
-        message_id: messageId,
-        status: "open",
-        created_at: now
+        id:
+          result.meta.last_row_id,
+
+        message_id:
+          messageId,
+
+        status:
+          "open",
+
+        created_at:
+          now
       },
-      message: "Die Nachricht wurde gemeldet."
+
+      message:
+        "Die Nachricht wurde gemeldet."
     }, 201);
+
   } catch (error) {
-    console.error("POST /api/chat/reports error:", error);
+    console.error(
+      "POST /api/chat/reports error:",
+      error
+    );
 
     return json({
       ok: false,
-      error: "Die Meldung konnte nicht erstellt werden."
+      error:
+        "Die Meldung konnte nicht erstellt werden."
     }, 500);
   }
 }
 
 /*
+ * =====================================================
  * GET
+ * =====================================================
  *
- * Nur Admin.
+ * Ausschließlich Admin.
  *
- * Zeigt Meldungen inklusive:
- * - meldender Spieler
- * - gemeldeter Spieler
- * - gemeldete Nachricht
+ * Umbra bekommt:
+ * - Meldung
+ * - meldenden Spieler
+ * - gemeldeten Spieler
+ * - Originalnachricht
+ * - Raum
  * - Server
- * - Grund
- * - Status
- * - Chatverlauf davor und danach
+ * - 5 Nachrichten davor
+ * - 5 Nachrichten danach
  */
 export async function onRequestGet(context) {
   try {
     const { request, env } = context;
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(request, env);
 
     if (!user) {
       return json({
         ok: false,
-        error: "Du musst eingeloggt sein."
+        error:
+          "Du musst eingeloggt sein."
       }, 401);
     }
 
     if (!isAdmin(user)) {
       return json({
         ok: false,
-        error: "Nur der Administrator darf Meldungen einsehen."
+        error:
+          "Nur der Administrator darf Meldungen einsehen."
       }, 403);
     }
 
-    const url = new URL(request.url);
+    const url =
+      new URL(request.url);
 
-    const status = url.searchParams.get("status") || "open";
+    const status =
+      url.searchParams.get("status") ||
+      "open";
 
     const allowedStatuses = [
       "open",
@@ -496,60 +663,88 @@ export async function onRequestGet(context) {
       "all"
     ];
 
-    if (!allowedStatuses.includes(status)) {
+    if (
+      !allowedStatuses.includes(status)
+    ) {
       return json({
         ok: false,
-        error: "Ungültiger Meldestatus."
+        error:
+          "Ungültiger Meldestatus."
       }, 400);
     }
 
-    const limitRaw = Number(
-      url.searchParams.get("limit") || 50
-    );
+    const limitRaw =
+      Number(
+        url.searchParams.get("limit") ||
+        50
+      );
 
-    const limit = Math.max(
-      1,
-      Math.min(limitRaw, 100)
-    );
+    const limit =
+      Math.max(
+        1,
+        Math.min(limitRaw, 100)
+      );
 
     let query;
     let bindings;
 
+    const baseQuery = `
+      SELECT
+        r.id,
+        r.reporter_id,
+        r.reported_user_id,
+        r.message_id,
+        r.reason,
+        r.status,
+        r.created_at,
+
+        reporter.username
+          AS reporter_username,
+
+        reporter.server
+          AS reporter_server,
+
+        reported.username
+          AS reported_username,
+
+        reported.server
+          AS reported_server,
+
+        reported.role
+          AS reported_role,
+
+        m.room_type,
+        m.server
+          AS room_server,
+
+        m.message,
+
+        m.original_message,
+
+        m.created_at
+          AS message_created_at,
+
+        m.deleted_at
+          AS message_deleted_at
+
+      FROM chat_reports r
+
+      JOIN users reporter
+        ON reporter.id =
+          r.reporter_id
+
+      JOIN users reported
+        ON reported.id =
+          r.reported_user_id
+
+      LEFT JOIN chat_messages m
+        ON m.id =
+          r.message_id
+    `;
+
     if (status === "all") {
       query = `
-        SELECT
-          r.id,
-          r.reporter_id,
-          r.reported_user_id,
-          r.message_id,
-          r.reason,
-          r.status,
-          r.created_at,
-
-          reporter.username AS reporter_username,
-          reporter.server AS reporter_server,
-
-          reported.username AS reported_username,
-          reported.server AS reported_server,
-          reported.role AS reported_role,
-
-          m.room_type,
-          m.server AS room_server,
-          m.message,
-          m.original_message,
-          m.created_at AS message_created_at,
-          m.deleted_at AS message_deleted_at
-
-        FROM chat_reports r
-
-        JOIN users reporter
-          ON reporter.id = r.reporter_id
-
-        JOIN users reported
-          ON reported.id = r.reported_user_id
-
-        LEFT JOIN chat_messages m
-          ON m.id = r.message_id
+        ${baseQuery}
 
         ORDER BY
           CASE r.status
@@ -566,133 +761,143 @@ export async function onRequestGet(context) {
       bindings = [limit];
     } else {
       query = `
-        SELECT
-          r.id,
-          r.reporter_id,
-          r.reported_user_id,
-          r.message_id,
-          r.reason,
-          r.status,
-          r.created_at,
-
-          reporter.username AS reporter_username,
-          reporter.server AS reporter_server,
-
-          reported.username AS reported_username,
-          reported.server AS reported_server,
-          reported.role AS reported_role,
-
-          m.room_type,
-          m.server AS room_server,
-          m.message,
-          m.original_message,
-          m.created_at AS message_created_at,
-          m.deleted_at AS message_deleted_at
-
-        FROM chat_reports r
-
-        JOIN users reporter
-          ON reporter.id = r.reporter_id
-
-        JOIN users reported
-          ON reported.id = r.reported_user_id
-
-        LEFT JOIN chat_messages m
-          ON m.id = r.message_id
+        ${baseQuery}
 
         WHERE r.status = ?
 
-        ORDER BY r.created_at DESC
+        ORDER BY
+          r.created_at DESC
 
         LIMIT ?
       `;
 
-      bindings = [status, limit];
+      bindings = [
+        status,
+        limit
+      ];
     }
 
-    const result = await env.DB
-      .prepare(query)
-      .bind(...bindings)
-      .all();
+    const result =
+      await env.DB
+        .prepare(query)
+        .bind(...bindings)
+        .all();
 
     const reports = [];
 
-    for (const report of result.results || []) {
+    for (
+      const report
+      of result.results || []
+    ) {
       let contextMessages = [];
 
       if (report.message_id) {
-        const originalMessage = await getChatMessage(
-          env,
-          report.message_id
-        );
+        const originalMessage =
+          await getChatMessage(
+            env,
+            report.message_id
+          );
 
         if (originalMessage) {
-          contextMessages = await getContextMessages(
-            env,
-            originalMessage
-          );
+          contextMessages =
+            await getContextMessages(
+              env,
+              originalMessage
+            );
         }
       }
 
       reports.push({
-        id: report.id,
+        id:
+          report.id,
 
-        status: report.status,
+        status:
+          report.status,
 
-        reason: report.reason,
+        reason:
+          report.reason,
 
-        created_at: report.created_at,
+        created_at:
+          report.created_at,
 
         reporter: {
-          id: report.reporter_id,
-          username: report.reporter_username,
-          server: report.reporter_server,
-          server_code: getServerCode(
-            report.reporter_server
-          )
+          id:
+            report.reporter_id,
+
+          username:
+            report.reporter_username,
+
+          server:
+            report.reporter_server,
+
+          server_code:
+            getServerCode(
+              report.reporter_server
+            )
         },
 
         reported_user: {
-          id: report.reported_user_id,
-          username: report.reported_username,
-          server: report.reported_server,
-          server_code: getServerCode(
-            report.reported_server
-          ),
-          role: report.reported_role,
-          is_admin: report.reported_role === "admin"
+          id:
+            report.reported_user_id,
+
+          username:
+            report.reported_username,
+
+          server:
+            report.reported_server,
+
+          server_code:
+            getServerCode(
+              report.reported_server
+            ),
+
+          role:
+            report.reported_role,
+
+          is_admin:
+            report.reported_role ===
+            "admin"
         },
 
         room: {
-          type: report.room_type,
-          server: report.room_server,
-          server_code: report.room_server
-            ? getServerCode(report.room_server)
-            : null
+          type:
+            report.room_type,
+
+          server:
+            report.room_server,
+
+          server_code:
+            report.room_server
+              ? getServerCode(
+                  report.room_server
+                )
+              : null
         },
 
-        reported_message: report.message_id
-          ? {
-              id: report.message_id,
+        reported_message:
+          report.message_id
+            ? {
+                id:
+                  report.message_id,
 
-              visible_message: report.message,
+                visible_message:
+                  report.message,
 
-              /*
-               * Für Umbra sichtbar:
-               * tatsächlicher Text vor der Zensur.
-               */
-              original_message:
-                report.original_message,
+                original_message:
+                  report.original_message,
 
-              created_at:
-                report.message_created_at,
+                created_at:
+                  report.message_created_at,
 
-              deleted:
-                Boolean(report.message_deleted_at)
-            }
-          : null,
+                deleted:
+                  Boolean(
+                    report.message_deleted_at
+                  )
+              }
+            : null,
 
-        context: contextMessages
+        context:
+          contextMessages
       });
     }
 
@@ -700,73 +905,98 @@ export async function onRequestGet(context) {
       ok: true,
 
       current_user: {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-        is_admin: true
+        id:
+          user.id,
+
+        username:
+          user.username,
+
+        role:
+          user.role,
+
+        is_admin:
+          true
       },
 
-      filter: status,
+      filter:
+        status,
 
       reports
     });
+
   } catch (error) {
-    console.error("GET /api/chat/reports error:", error);
+    console.error(
+      "GET /api/chat/reports error:",
+      error
+    );
 
     return json({
       ok: false,
-      error: "Die Meldungen konnten nicht geladen werden."
+      error:
+        "Die Meldungen konnten nicht geladen werden."
     }, 500);
   }
 }
 
 /*
+ * =====================================================
  * PUT
+ * =====================================================
  *
  * Nur Admin.
  *
- * Status ändern:
- * open
- * reviewed
- * closed
+ * Meldestatus:
+ * - open
+ * - reviewed
+ * - closed
  */
 export async function onRequestPut(context) {
   try {
     const { request, env } = context;
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(request, env);
 
     if (!user) {
       return json({
         ok: false,
-        error: "Du musst eingeloggt sein."
+        error:
+          "Du musst eingeloggt sein."
       }, 401);
     }
 
     if (!isAdmin(user)) {
       return json({
         ok: false,
-        error: "Nur der Administrator darf Meldungen bearbeiten."
+        error:
+          "Nur der Administrator darf Meldungen bearbeiten."
       }, 403);
     }
 
     let body;
 
     try {
-      body = await request.json();
+      body =
+        await request.json();
     } catch {
       return json({
         ok: false,
-        error: "Ungültige Anfrage."
+        error:
+          "Ungültige Anfrage."
       }, 400);
     }
 
-    const reportId = Number(body.id);
+    const reportId =
+      Number(body.id);
 
-    if (!Number.isInteger(reportId) || reportId <= 0) {
+    if (
+      !Number.isInteger(reportId) ||
+      reportId <= 0
+    ) {
       return json({
         ok: false,
-        error: "Ungültige Meldungs-ID."
+        error:
+          "Ungültige Meldungs-ID."
       }, 400);
     }
 
@@ -776,31 +1006,70 @@ export async function onRequestPut(context) {
       "closed"
     ];
 
-    if (!allowedStatuses.includes(body.status)) {
+    if (
+      !allowedStatuses.includes(
+        body.status
+      )
+    ) {
       return json({
         ok: false,
-        error: "Ungültiger Meldestatus."
+        error:
+          "Ungültiger Meldestatus."
       }, 400);
     }
 
-    const report = await env.DB.prepare(`
-      SELECT
-        id,
-        reported_user_id,
-        message_id,
-        status
-      FROM chat_reports
-      WHERE id = ?
-      LIMIT 1
-    `)
-      .bind(reportId)
-      .first();
+    const report =
+      await env.DB.prepare(`
+        SELECT
+          id,
+          reported_user_id,
+          message_id,
+          status
+        FROM chat_reports
+        WHERE id = ?
+        LIMIT 1
+      `)
+        .bind(reportId)
+        .first();
 
     if (!report) {
       return json({
         ok: false,
-        error: "Meldung wurde nicht gefunden."
+        error:
+          "Meldung wurde nicht gefunden."
       }, 404);
+    }
+
+    /*
+     * Zusätzlicher Schutz:
+     * Falls irgendwann durch alte Daten eine Meldung
+     * gegen einen Admin existieren sollte, darf sie
+     * nicht als normale Moderationsmeldung verwendet
+     * werden.
+     */
+    const reportedUser =
+      await env.DB.prepare(`
+        SELECT
+          id,
+          role
+        FROM users
+        WHERE id = ?
+        LIMIT 1
+      `)
+        .bind(
+          report.reported_user_id
+        )
+        .first();
+
+    if (
+      reportedUser &&
+      reportedUser.role === "admin"
+    ) {
+      return json({
+        ok: false,
+        error:
+          "Administratoren können nicht moderiert werden."
+      }, 403);
     }
 
     await env.DB.prepare(`
@@ -808,10 +1077,14 @@ export async function onRequestPut(context) {
       SET status = ?
       WHERE id = ?
     `)
-      .bind(body.status, reportId)
+      .bind(
+        body.status,
+        reportId
+      )
       .run();
 
-    const now = Math.floor(Date.now() / 1000);
+    const now =
+      Math.floor(Date.now() / 1000);
 
     await env.DB.prepare(`
       INSERT INTO chat_moderation_log (
@@ -828,10 +1101,17 @@ export async function onRequestPut(context) {
         report.reported_user_id,
         "update_report",
         JSON.stringify({
-          report_id: reportId,
-          message_id: report.message_id,
-          old_status: report.status,
-          new_status: body.status
+          report_id:
+            reportId,
+
+          message_id:
+            report.message_id,
+
+          old_status:
+            report.status,
+
+          new_status:
+            body.status
         }),
         now
       )
@@ -841,18 +1121,27 @@ export async function onRequestPut(context) {
       ok: true,
 
       report: {
-        id: reportId,
-        status: body.status
+        id:
+          reportId,
+
+        status:
+          body.status
       },
 
-      message: "Meldungsstatus wurde aktualisiert."
+      message:
+        "Meldungsstatus wurde aktualisiert."
     });
+
   } catch (error) {
-    console.error("PUT /api/chat/reports error:", error);
+    console.error(
+      "PUT /api/chat/reports error:",
+      error
+    );
 
     return json({
       ok: false,
-      error: "Die Meldung konnte nicht aktualisiert werden."
+      error:
+        "Die Meldung konnte nicht aktualisiert werden."
     }, 500);
   }
 }
