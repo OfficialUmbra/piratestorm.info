@@ -38,7 +38,11 @@ async function getCurrentUser(request, env) {
 
   return await env.DB
     .prepare(`
-      SELECT users.id, users.username, users.server
+      SELECT
+        users.id,
+        users.username,
+        users.server,
+        users.role
       FROM sessions
       JOIN users ON users.id = sessions.user_id
       WHERE sessions.id = ?
@@ -57,6 +61,8 @@ async function getCurrentUser(request, env) {
 export async function onRequestGet(context) {
   try {
     const { request, env } = context;
+
+    const currentUser = await getCurrentUser(request, env);
 
     const url = new URL(request.url);
     const postId = Number(url.searchParams.get("post_id"));
@@ -95,6 +101,7 @@ export async function onRequestGet(context) {
           users.id AS user_id,
           users.username,
           users.server,
+          users.role,
           users.avatar_symbol,
           users.avatar_color,
 
@@ -118,6 +125,7 @@ export async function onRequestGet(context) {
 
     return json({
       success: true,
+      is_admin: currentUser?.role === "admin",
       comments: result.results
     });
 
@@ -211,6 +219,7 @@ export async function onRequestPost(context) {
         user_id: user.id,
         username: user.username,
         server: user.server,
+        role: user.role,
         content
       }
     }, 201);
@@ -221,6 +230,183 @@ export async function onRequestPost(context) {
     return json({
       success: false,
       error: "Der Kommentar konnte nicht erstellt werden."
+    }, 500);
+  }
+}
+
+
+// ----------------------------------------------------
+// PUT /api/comments
+// Kommentar bearbeiten
+// Nur Admin
+// ----------------------------------------------------
+
+export async function onRequestPut(context) {
+  try {
+    const { request, env } = context;
+
+    const user = await getCurrentUser(request, env);
+
+    if (!user) {
+      return json({
+        success: false,
+        error: "Du musst angemeldet sein."
+      }, 401);
+    }
+
+    if (user.role !== "admin") {
+      return json({
+        success: false,
+        error: "Keine Admin-Berechtigung."
+      }, 403);
+    }
+
+    const body = await request.json();
+
+    const commentId = Number(body.id);
+
+    const content =
+      typeof body.content === "string"
+        ? body.content.trim()
+        : "";
+
+    if (!Number.isInteger(commentId) || commentId < 1) {
+      return json({
+        success: false,
+        error: "Ungültige Kommentar-ID."
+      }, 400);
+    }
+
+    if (content.length < 1 || content.length > 5000) {
+      return json({
+        success: false,
+        error: "Der Kommentar darf maximal 5.000 Zeichen enthalten."
+      }, 400);
+    }
+
+    const existingComment = await env.DB
+      .prepare(`
+        SELECT id
+        FROM comments
+        WHERE id = ?
+      `)
+      .bind(commentId)
+      .first();
+
+    if (!existingComment) {
+      return json({
+        success: false,
+        error: "Kommentar nicht gefunden."
+      }, 404);
+    }
+
+    await env.DB
+      .prepare(`
+        UPDATE comments
+        SET content = ?
+        WHERE id = ?
+      `)
+      .bind(content, commentId)
+      .run();
+
+    return json({
+      success: true,
+      message: "Kommentar erfolgreich bearbeitet."
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return json({
+      success: false,
+      error: "Der Kommentar konnte nicht bearbeitet werden."
+    }, 500);
+  }
+}
+
+
+// ----------------------------------------------------
+// DELETE /api/comments
+// Kommentar löschen
+// Nur Admin
+// ----------------------------------------------------
+
+export async function onRequestDelete(context) {
+  try {
+    const { request, env } = context;
+
+    const user = await getCurrentUser(request, env);
+
+    if (!user) {
+      return json({
+        success: false,
+        error: "Du musst angemeldet sein."
+      }, 401);
+    }
+
+    if (user.role !== "admin") {
+      return json({
+        success: false,
+        error: "Keine Admin-Berechtigung."
+      }, 403);
+    }
+
+    const body = await request.json();
+
+    const commentId = Number(body.id);
+
+    if (!Number.isInteger(commentId) || commentId < 1) {
+      return json({
+        success: false,
+        error: "Ungültige Kommentar-ID."
+      }, 400);
+    }
+
+    const existingComment = await env.DB
+      .prepare(`
+        SELECT id
+        FROM comments
+        WHERE id = ?
+      `)
+      .bind(commentId)
+      .first();
+
+    if (!existingComment) {
+      return json({
+        success: false,
+        error: "Kommentar nicht gefunden."
+      }, 404);
+    }
+
+    // Erst Likes des Kommentars löschen
+    await env.DB
+      .prepare(`
+        DELETE FROM comment_likes
+        WHERE comment_id = ?
+      `)
+      .bind(commentId)
+      .run();
+
+    // Danach Kommentar löschen
+    await env.DB
+      .prepare(`
+        DELETE FROM comments
+        WHERE id = ?
+      `)
+      .bind(commentId)
+      .run();
+
+    return json({
+      success: true,
+      message: "Kommentar erfolgreich gelöscht."
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return json({
+      success: false,
+      error: "Der Kommentar konnte nicht gelöscht werden."
     }, 500);
   }
 }
