@@ -9,14 +9,9 @@ function json(data, status = 200) {
 
 function getCookie(request, name) {
   const cookieHeader = request.headers.get("Cookie");
+  if (!cookieHeader) return null;
 
-  if (!cookieHeader) {
-    return null;
-  }
-
-  const cookies = cookieHeader.split(";");
-
-  for (const cookie of cookies) {
+  for (const cookie of cookieHeader.split(";")) {
     const [key, ...valueParts] = cookie.trim().split("=");
 
     if (key === name) {
@@ -29,10 +24,7 @@ function getCookie(request, name) {
 
 async function getCurrentUser(request, env) {
   const sessionId = getCookie(request, "ps_session");
-
-  if (!sessionId) {
-    return null;
-  }
+  if (!sessionId) return null;
 
   const now = Math.floor(Date.now() / 1000);
 
@@ -55,17 +47,18 @@ async function getCurrentUser(request, env) {
 
 // ----------------------------------------------------
 // GET /api/comments?post_id=1
-// Kommentare eines Beitrags laden
 // ----------------------------------------------------
 
 export async function onRequestGet(context) {
   try {
     const { request, env } = context;
 
-    const currentUser = await getCurrentUser(request, env);
+    const currentUser =
+      await getCurrentUser(request, env);
 
     const url = new URL(request.url);
-    const postId = Number(url.searchParams.get("post_id"));
+    const postId =
+      Number(url.searchParams.get("post_id"));
 
     if (!Number.isInteger(postId) || postId < 1) {
       return json({
@@ -142,14 +135,15 @@ export async function onRequestGet(context) {
 
 // ----------------------------------------------------
 // POST /api/comments
-// Neuen Kommentar erstellen
+// Jeder eingeloggte Benutzer darf antworten
 // ----------------------------------------------------
 
 export async function onRequestPost(context) {
   try {
     const { request, env } = context;
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(request, env);
 
     if (!user) {
       return json({
@@ -237,15 +231,15 @@ export async function onRequestPost(context) {
 
 // ----------------------------------------------------
 // PUT /api/comments
-// Kommentar bearbeiten
-// Nur Admin
+// Kommentar bearbeiten – NUR ADMIN
 // ----------------------------------------------------
 
 export async function onRequestPut(context) {
   try {
     const { request, env } = context;
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(request, env);
 
     if (!user) {
       return json({
@@ -327,15 +321,15 @@ export async function onRequestPut(context) {
 
 // ----------------------------------------------------
 // DELETE /api/comments
-// Kommentar löschen
-// Nur Admin
+// Kommentar löschen – NUR ADMIN
 // ----------------------------------------------------
 
 export async function onRequestDelete(context) {
   try {
     const { request, env } = context;
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(request, env);
 
     if (!user) {
       return json({
@@ -378,7 +372,6 @@ export async function onRequestDelete(context) {
       }, 404);
     }
 
-    // Erst Likes des Kommentars löschen
     await env.DB
       .prepare(`
         DELETE FROM comment_likes
@@ -387,7 +380,6 @@ export async function onRequestDelete(context) {
       .bind(commentId)
       .run();
 
-    // Danach Kommentar löschen
     await env.DB
       .prepare(`
         DELETE FROM comments
