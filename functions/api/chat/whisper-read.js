@@ -36,29 +36,21 @@ async function getCurrentUser(request, env) {
       users.server,
       users.role
     FROM sessions
-    JOIN users
-      ON users.id = sessions.user_id
+    JOIN users ON users.id = sessions.user_id
     WHERE sessions.token = ?
       AND sessions.expires_at > ?
     LIMIT 1
   `)
-    .bind(
-      token,
-      Math.floor(Date.now() / 1000)
-    )
+    .bind(token, Math.floor(Date.now() / 1000))
     .first();
 }
 
 function isAdmin(user) {
-  return Boolean(
-    user &&
-    user.role === "admin"
-  );
+  return Boolean(user && user.role === "admin");
 }
 
 async function cleanupExpiredBans(env) {
-  const now =
-    Math.floor(Date.now() / 1000);
+  const now = Math.floor(Date.now() / 1000);
 
   await env.DB.prepare(`
     UPDATE chat_bans
@@ -78,8 +70,7 @@ async function getActiveBan(env, user) {
 
   await cleanupExpiredBans(env);
 
-  const now =
-    Math.floor(Date.now() / 1000);
+  const now = Math.floor(Date.now() / 1000);
 
   return await env.DB.prepare(`
     SELECT
@@ -94,86 +85,51 @@ async function getActiveBan(env, user) {
         expires_at IS NULL
         OR expires_at > ?
       )
-    ORDER BY
-      banned_at DESC,
-      id DESC
+    ORDER BY banned_at DESC, id DESC
     LIMIT 1
   `)
-    .bind(
-      user.id,
-      now
-    )
+    .bind(user.id, now)
     .first();
 }
 
 async function ensureNotBanned(env, user) {
-  const ban =
-    await getActiveBan(
-      env,
-      user
-    );
+  const ban = await getActiveBan(env, user);
 
   if (!ban) {
-    return {
-      ok: true
-    };
+    return { ok: true };
   }
 
   return {
     ok: false,
-
     response: json({
       ok: false,
-
-      error:
-        "Du bist derzeit vom Chat ausgeschlossen.",
-
+      error: "Du bist derzeit vom Chat ausgeschlossen.",
       ban: {
-        id:
-          ban.id,
-
-        reason:
-          ban.reason || null,
-
-        banned_at:
-          ban.banned_at,
-
-        expires_at:
-          ban.expires_at,
-
-        permanent:
-          ban.expires_at === null
+        id: ban.id,
+        reason: ban.reason || null,
+        banned_at: ban.banned_at,
+        expires_at: ban.expires_at,
+        permanent: ban.expires_at === null
       }
     }, 403)
   };
 }
 
-async function isRoomMember(
-  env,
-  roomId,
-  userId
-) {
-  const row =
-    await env.DB.prepare(`
-      SELECT 1 AS found
-      FROM whisper_members
-      WHERE room_id = ?
-        AND user_id = ?
-      LIMIT 1
-    `)
-      .bind(
-        roomId,
-        userId
-      )
-      .first();
+async function isRoomMember(env, roomId, userId) {
+  const member = await env.DB.prepare(`
+    SELECT 1 AS found
+    FROM whisper_members
+    WHERE room_id = ?
+      AND user_id = ?
+    LIMIT 1
+  `)
+    .bind(roomId, userId)
+    .first();
 
-  return Boolean(row);
+  return Boolean(member);
 }
 
-async function getRoom(
-  env,
-  roomId
-) {
+async function getRoom(env, roomId) {
   return await env.DB.prepare(`
     SELECT
       id,
@@ -188,129 +144,89 @@ async function getRoom(
     .first();
 }
 
-async function getLatestMessageId(
-  env,
-  roomId
-) {
-  const row =
-    await env.DB.prepare(`
-      SELECT id
-      FROM whisper_messages
-      WHERE room_id = ?
-        AND deleted_at IS NULL
-      ORDER BY
-        created_at DESC,
-        id DESC
-      LIMIT 1
-    `)
-      .bind(roomId)
-      .first();
-
-  return row
-    ? Number(row.id)
-    : null;
-}
-
 /*
  * =====================================================
  * GET
  * =====================================================
  *
- * Liefert den aktuellen Read-State
- * des eingeloggten Nutzers für einen Raum.
+ * Ohne room_id:
+ * Liefert die Unread-Zähler ALLER eigenen Whisper-Räume.
  *
- * Beispiel:
+ * GET /api/chat/whisper-read
  *
- * /api/chat/whisper-read?room_id=5
+ *
+ * Mit room_id:
+ * Liefert den Read-State eines einzelnen eigenen Raums.
+ *
+ * GET /api/chat/whisper-read?room_id=5
  */
 export async function onRequestGet(context) {
   try {
-    const { request, env } =
-      context;
+    const { request, env } = context;
 
-    const user =
-      await getCurrentUser(
-        request,
-        env
-      );
+    const user = await getCurrentUser(request, env);
 
     if (!user) {
       return json({
         ok: false,
-        error:
-          "Du musst eingeloggt sein."
+        error: "Du musst eingeloggt sein."
       }, 401);
     }
 
-    const banCheck =
-      await ensureNotBanned(
-        env,
-        user
-      );
+    const banCheck = await ensureNotBanned(env, user);
 
     if (!banCheck.ok) {
       return banCheck.response;
     }
 
-    const url =
-      new URL(request.url);
-
-    const roomId =
-      Number(
-        url.searchParams.get(
-          "room_id"
-        )
-      );
-
-    if (
-      !Number.isInteger(roomId) ||
-      roomId <= 0
-    ) {
-      return json({
-        ok: false,
-        error:
-          "Ungültiger Whisper-Raum."
-      }, 400);
-    }
-
-    const room =
-      await getRoom(
-        env,
-        roomId
-      );
-
-    if (!room) {
-      return json({
-        ok: false,
-        error:
-          "Whisper-Raum wurde nicht gefunden."
-      }, 404);
-    }
+    const url = new URL(request.url);
+    const roomIdRaw = url.searchParams.get("room_id");
 
     /*
-     * WICHTIG:
-     * Kein Admin-Bypass.
-     *
-     * Auch Admin darf Read-State eines privaten
-     * Whisper-Raums nur lesen, wenn er Mitglied ist.
+     * =================================================
+     * EINZELNER RAUM
+     * =================================================
      */
-    const member =
-      await isRoomMember(
+    if (roomIdRaw !== null) {
+      const roomId = Number(roomIdRaw);
+
+      if (!Number.isInteger(roomId) || roomId <= 0) {
+        return json({
+          ok: false,
+          error: "Ungültiger Whisper-Raum."
+        }, 400);
+      }
+
+      const room = await getRoom(env, roomId);
+
+      if (!room) {
+        return json({
+          ok: false,
+          error: "Whisper-Raum wurde nicht gefunden."
+        }, 404);
+      }
+
+      /*
+       * Kein Admin-Bypass.
+       *
+       * Auch Admin darf einen privaten Whisper-Raum
+       * nur auslesen, wenn er wirklich Mitglied ist.
+       */
+      const member = await isRoomMember(
         env,
         roomId,
         user.id
       );
 
-    if (!member) {
-      return json({
-        ok: false,
-        error:
-          "Du hast keinen Zugriff auf diesen Whisper-Chat."
-      }, 403);
-    }
+      if (!member) {
+        return json({
+          ok: false,
+          error:
+            "Du hast keinen Zugriff auf diesen Whisper-Chat."
+        }, 403);
+      }
 
-    const state =
-      await env.DB.prepare(`
+      const state = await env.DB.prepare(`
         SELECT
           last_read_message_id,
           updated_at
@@ -319,36 +235,147 @@ export async function onRequestGet(context) {
           AND user_id = ?
         LIMIT 1
       `)
+        .bind(roomId, user.id)
+        .first();
+
+      /*
+       * Nur Nachrichten ANDERER Spieler zählen.
+       *
+       * Gelöschte Nachrichten zählen nicht.
+       */
+      const unreadRow = await env.DB.prepare(`
+        SELECT COUNT(*) AS total
+        FROM whisper_messages wm
+        WHERE wm.room_id = ?
+          AND wm.user_id != ?
+          AND wm.deleted_at IS NULL
+          AND wm.id > COALESCE(?, 0)
+      `)
         .bind(
           roomId,
-          user.id
+          user.id,
+          state?.last_read_message_id ?? null
         )
         .first();
 
-    const latestMessageId =
-      await getLatestMessageId(
-        env,
-        roomId
-      );
+      const latestRow = await env.DB.prepare(`
+        SELECT id
+        FROM whisper_messages
+        WHERE room_id = ?
+          AND deleted_at IS NULL
+        ORDER BY id DESC
+        LIMIT 1
+      `)
+        .bind(roomId)
+        .first();
+
+      return json({
+        ok: true,
+
+        room_id: roomId,
+
+        last_read_message_id:
+          state?.last_read_message_id ?? null,
+
+        updated_at:
+          state?.updated_at ?? null,
+
+        latest_message_id:
+          latestRow?.id ?? null,
+
+        unread:
+          Number(unreadRow?.total || 0)
+      });
+    }
+
+    /*
+     * =================================================
+     * ALLE EIGENEN WHISPER-RÄUME
+     * =================================================
+     *
+     * Eine Query reicht für alle Zähler.
+     *
+     * Wichtig:
+     * - nur eigene Räume
+     * - eigene Nachrichten zählen nicht
+     * - gelöschte Nachrichten zählen nicht
+     * - Nachrichten nach last_read_message_id zählen
+     */
+    const result = await env.DB.prepare(`
+      SELECT
+        wr.id AS room_id,
+        wr.name AS room_name,
+
+        wrs.last_read_message_id,
+        wrs.updated_at,
+
+        (
+          SELECT MAX(wm_latest.id)
+          FROM whisper_messages wm_latest
+          WHERE wm_latest.room_id = wr.id
+            AND wm_latest.deleted_at IS NULL
+        ) AS latest_message_id,
+
+        (
+          SELECT COUNT(*)
+          FROM whisper_messages wm_unread
+          WHERE wm_unread.room_id = wr.id
+            AND wm_unread.user_id != ?
+            AND wm_unread.deleted_at IS NULL
+            AND wm_unread.id >
+              COALESCE(
+                wrs.last_read_message_id,
+                0
+              )
+        ) AS unread
+
+      FROM whisper_rooms wr
+
+      JOIN whisper_members member
+        ON member.room_id = wr.id
+       AND member.user_id = ?
+
+      LEFT JOIN whisper_read_state wrs
+        ON wrs.room_id = wr.id
+       AND wrs.user_id = ?
+
+      ORDER BY wr.created_at DESC
+    `)
+      .bind(
+        user.id,
+        user.id,
+        user.id
+      )
+      .all();
+
+    const rooms = (result.results || []).map(row => ({
+      room_id: row.room_id,
+      room_name: row.room_name || null,
+
+      last_read_message_id:
+        row.last_read_message_id ?? null,
+
+      latest_message_id:
+        row.latest_message_id ?? null,
+
+      updated_at:
+        row.updated_at ?? null,
+
+      unread:
+        Number(row.unread || 0)
+    }));
+
+    const totalUnread = rooms.reduce(
+      (sum, room) => sum + room.unread,
+      0
+    );
 
     return json({
       ok: true,
 
-      room_id:
-        roomId,
+      total_unread: totalUnread,
 
-      last_read_message_id:
-        state
-          ? state.last_read_message_id
-          : null,
-
-      updated_at:
-        state
-          ? state.updated_at
-          : null,
-
-      latest_message_id:
-        latestMessageId
+      rooms
     });
 
   } catch (error) {
@@ -360,7 +387,7 @@ export async function onRequestGet(context) {
     return json({
       ok: false,
       error:
-        "Der Lesestatus konnte nicht geladen werden."
+        "Die ungelesenen Whisper-Nachrichten konnten nicht geladen werden."
     }, 500);
   }
 }
@@ -370,47 +397,31 @@ export async function onRequestGet(context) {
  * POST
  * =====================================================
  *
- * Markiert einen Whisper-Raum als gelesen.
+ * Markiert einen Whisper-Raum bis zur aktuell
+ * letzten Nachricht als gelesen.
  *
- * Das Frontend ruft diesen Endpoint auf,
- * wenn der Spieler den Raum tatsächlich öffnet.
- *
- * Body:
+ * POST /api/chat/whisper-read
  *
  * {
  *   "room_id": 5
  * }
  *
- * Es wird immer bis zur aktuell letzten
- * existierenden Nachricht markiert.
- *
- * Der Client darf NICHT selbst irgendeine
- * fremde message_id bestimmen.
+ * Der Client bestimmt NICHT selbst die message_id.
  */
 export async function onRequestPost(context) {
   try {
-    const { request, env } =
-      context;
+    const { request, env } = context;
 
-    const user =
-      await getCurrentUser(
-        request,
-        env
-      );
+    const user = await getCurrentUser(request, env);
 
     if (!user) {
       return json({
         ok: false,
-        error:
-          "Du musst eingeloggt sein."
+        error: "Du musst eingeloggt sein."
       }, 401);
     }
 
-    const banCheck =
-      await ensureNotBanned(
-        env,
-        user
-      );
+    const banCheck = await ensureNotBanned(env, user);
 
     if (!banCheck.ok) {
       return banCheck.response;
@@ -419,55 +430,40 @@ export async function onRequestPost(context) {
     let body;
 
     try {
-      body =
-        await request.json();
+      body = await request.json();
     } catch {
       return json({
         ok: false,
-        error:
-          "Ungültige Anfrage."
+        error: "Ungültige Anfrage."
       }, 400);
     }
 
-    const roomId =
-      Number(
-        body.room_id
-      );
+    const roomId = Number(body.room_id);
 
-    if (
-      !Number.isInteger(roomId) ||
-      roomId <= 0
-    ) {
+    if (!Number.isInteger(roomId) || roomId <= 0) {
       return json({
         ok: false,
-        error:
-          "Ungültiger Whisper-Raum."
+        error: "Ungültiger Whisper-Raum."
       }, 400);
     }
 
-    const room =
-      await getRoom(
-        env,
-        roomId
-      );
+    const room = await getRoom(env, roomId);
 
     if (!room) {
       return json({
         ok: false,
-        error:
-          "Whisper-Raum wurde nicht gefunden."
+        error: "Whisper-Raum wurde nicht gefunden."
       }, 404);
     }
 
     /*
-     * Wieder keinerlei Admin-Sonderrecht.
+     * Auch hier KEIN Admin-Bypass.
      */
-    const member =
-      await isRoomMember(
-        env,
-        roomId,
-        user.id
-      );
+    const member = await isRoomMember(
+      env,
+      roomId,
+      user.id
+    );
 
     if (!member) {
       return json({
@@ -477,19 +473,30 @@ export async function onRequestPost(context) {
       }, 403);
     }
 
+    /*
+     * Wir nehmen absichtlich die letzte Nachricht
+     * des Servers.
+     *
+     * Der Browser darf keine beliebige message_id
+     * als "gelesen" setzen.
+     */
+    const latestRow = await env.DB.prepare(`
+      SELECT id
+      FROM whisper_messages
+      WHERE room_id = ?
+        AND deleted_at IS NULL
+      ORDER BY id DESC
+      LIMIT 1
+    `)
+      .bind(roomId)
+      .first();
+
     const latestMessageId =
-      await getLatestMessageId(
-        env,
-        roomId
-      );
+      latestRow?.id ?? null;
 
     const now =
       Math.floor(Date.now() / 1000);
 
-    /*
-     * Auch ein komplett leerer Raum bekommt einen
-     * Read-State. last_read_message_id ist dann NULL.
-     */
     await env.DB.prepare(`
       INSERT INTO whisper_read_state (
         room_id,
@@ -503,7 +510,6 @@ export async function onRequestPost(context) {
       DO UPDATE SET
         last_read_message_id =
           excluded.last_read_message_id,
-
         updated_at =
           excluded.updated_at
     `)
@@ -545,17 +551,6 @@ export async function onRequestPost(context) {
   }
 }
 
-/*
- * =====================================================
- * PUT / DELETE
- * =====================================================
- *
- * Nicht benötigt.
- *
- * Der Read-State wird ausschließlich vom
- * eingeloggten Nutzer für eigene Whisper-Räume
- * per POST aktualisiert.
- */
 export async function onRequestPut() {
   return json({
     ok: false,
