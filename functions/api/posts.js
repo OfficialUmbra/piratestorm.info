@@ -1,14 +1,3 @@
-const CATEGORIES = [
-  "Allgemein",
-  "Fragen & Hilfe",
-  "Guides",
-  "Arena",
-  "PvP",
-  "Schiffe & Builds",
-  "Gilden",
-  "Screenshots"
-];
-
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -20,14 +9,9 @@ function json(data, status = 200) {
 
 function getCookie(request, name) {
   const cookieHeader = request.headers.get("Cookie");
+  if (!cookieHeader) return null;
 
-  if (!cookieHeader) {
-    return null;
-  }
-
-  const cookies = cookieHeader.split(";");
-
-  for (const cookie of cookies) {
+  for (const cookie of cookieHeader.split(";")) {
     const [key, ...valueParts] = cookie.trim().split("=");
 
     if (key === name) {
@@ -40,10 +24,7 @@ function getCookie(request, name) {
 
 async function getCurrentUser(request, env) {
   const sessionId = getCookie(request, "ps_session");
-
-  if (!sessionId) {
-    return null;
-  }
+  if (!sessionId) return null;
 
   const now = Math.floor(Date.now() / 1000);
 
@@ -63,10 +44,20 @@ async function getCurrentUser(request, env) {
     .first();
 }
 
+async function categoryExists(env, category) {
+  return await env.DB
+    .prepare(`
+      SELECT id
+      FROM categories
+      WHERE name = ?
+    `)
+    .bind(category)
+    .first();
+}
+
 
 // ----------------------------------------------------
 // GET /api/posts
-// Alle Beiträge abrufen
 // ----------------------------------------------------
 
 export async function onRequestGet(context) {
@@ -131,7 +122,7 @@ export async function onRequestGet(context) {
 
 // ----------------------------------------------------
 // POST /api/posts
-// Neuen Beitrag erstellen
+// Eingeloggte Benutzer dürfen Threads erstellen
 // ----------------------------------------------------
 
 export async function onRequestPost(context) {
@@ -164,10 +155,13 @@ export async function onRequestPost(context) {
         ? body.content.trim()
         : "";
 
-    if (!CATEGORIES.includes(category)) {
+    const existingCategory =
+      await categoryExists(env, category);
+
+    if (!existingCategory) {
       return json({
         success: false,
-        error: "Ungültige Kategorie."
+        error: "Dieses Überthema existiert nicht."
       }, 400);
     }
 
@@ -227,8 +221,7 @@ export async function onRequestPost(context) {
 
 // ----------------------------------------------------
 // PUT /api/posts
-// Beitrag bearbeiten
-// Nur Admin
+// Thread bearbeiten – NUR ADMIN
 // ----------------------------------------------------
 
 export async function onRequestPut(context) {
@@ -270,17 +263,20 @@ export async function onRequestPut(context) {
         ? body.content.trim()
         : "";
 
-    if (!Number.isInteger(postId) || postId <= 0) {
+    if (!Number.isInteger(postId) || postId < 1) {
       return json({
         success: false,
         error: "Ungültige Beitrags-ID."
       }, 400);
     }
 
-    if (!CATEGORIES.includes(category)) {
+    const existingCategory =
+      await categoryExists(env, category);
+
+    if (!existingCategory) {
       return json({
         success: false,
-        error: "Ungültige Kategorie."
+        error: "Dieses Überthema existiert nicht."
       }, 400);
     }
 
@@ -346,8 +342,7 @@ export async function onRequestPut(context) {
 
 // ----------------------------------------------------
 // DELETE /api/posts
-// Beitrag löschen
-// Nur Admin
+// Thread löschen – NUR ADMIN
 // ----------------------------------------------------
 
 export async function onRequestDelete(context) {
@@ -373,7 +368,7 @@ export async function onRequestDelete(context) {
     const body = await request.json();
     const postId = Number(body.id);
 
-    if (!Number.isInteger(postId) || postId <= 0) {
+    if (!Number.isInteger(postId) || postId < 1) {
       return json({
         success: false,
         error: "Ungültige Beitrags-ID."
@@ -395,11 +390,6 @@ export async function onRequestDelete(context) {
         error: "Beitrag nicht gefunden."
       }, 404);
     }
-
-    /*
-      Zuerst Likes der Kommentare entfernen,
-      danach Kommentare, Post-Likes und zuletzt den Beitrag.
-    */
 
     await env.DB
       .prepare(`
