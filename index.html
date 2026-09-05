@@ -126,6 +126,31 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 @media(max-width:700px){.site-online{justify-content:flex-start}.tools-stack{gap:14px}}
 
 </style>
+
+<style>
+/* V26 – Public release / privacy & legal */
+.legal-links{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.legal-links button{border:0;background:transparent;color:#9eb7c4;padding:0;cursor:pointer;text-decoration:underline}
+.legal-page{max-width:1000px}
+.legal-card{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:18px;margin:12px 0}
+.legal-card h3{margin-top:0}
+.legal-card p,.legal-card li{line-height:1.65;color:#c9d7de}
+.legal-warning{border-color:#6b5526;background:#241d0d}
+.account-tools{display:grid;gap:7px;margin-top:12px}
+.account-tools button{width:100%}
+.admin-users-list{display:grid;gap:7px;margin-top:10px}
+.admin-user-row{display:grid;grid-template-columns:minmax(0,1fr) 90px 150px;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:#08151e;font-size:12px;align-items:center}
+.admin-user-row b{overflow:hidden;text-overflow:ellipsis}
+.privacy-data{white-space:pre-wrap;word-break:break-word;background:#03080b;border:1px solid var(--line);border-radius:10px;padding:12px;max-height:55vh;overflow:auto;font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
+.danger-btn{border-color:#7a3434!important;background:#2c1111!important;color:#ffd2d2!important}
+.legal-form{display:grid;gap:9px}
+.legal-form input,.legal-form select,.legal-form textarea{width:100%;box-sizing:border-box;background:#07131b;border:1px solid var(--line);color:var(--text);padding:10px;border-radius:9px}
+.legal-form label{font-size:12px;color:#c7d7df}
+.legal-form .checkline{display:flex;gap:8px;align-items:flex-start}
+.legal-form .checkline input{width:auto;margin-top:3px}
+@media(max-width:700px){.admin-user-row{grid-template-columns:1fr 70px}.admin-user-row span:last-child{grid-column:1/-1}}
+</style>
+
 </head>
 <body>
 <header>
@@ -156,6 +181,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 <button data-sec="guild">♜ <span data-t="navGuild">Gilden</span></button>
 <button data-sec="tools">∑ <span data-t="navTools">Rechner</span></button>
 <button data-sec="shop">€ <span data-t="navShop">Shop</span></button>
+<button data-sec="legal">⚖ <span>Rechtliches</span></button>
 </nav></aside>
 
 <main>
@@ -193,6 +219,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
             <option value="Arabien 1">Arabien 1</option><option value="Deutschland 1">Deutschland 1</option><option value="Europa 1">Europa 1</option><option value="Europa 2">Europa 2</option><option value="Europa 3">Europa 3</option><option value="Europa 4">Europa 4</option><option value="Lateinamerika 1">Lateinamerika 1</option><option value="USA 1">USA 1</option>
           </select>
           <button class="forum-action primary" id="forumRegister">Registrieren</button>
+<div class="forum-note">Mit der Registrierung akzeptierst du die Nutzungsbedingungen und bestätigst, die Datenschutzerklärung zur Kenntnis genommen zu haben.</div>
           <button class="forum-action" id="forumLogin">Anmelden</button>
         </div>
       </div>
@@ -201,6 +228,11 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
         <h3 id="profileName">Spieler</h3><div id="profileRole"></div><div class="sub" id="profileServer"></div>
         <div class="avatar-maker">
           <button class="forum-action" id="forumLogout">Abmelden</button>
+        </div>
+        <div class="account-tools" id="v26AccountTools">
+          <button class="forum-action" id="myDataBtn">Meine Daten</button>
+          <button class="forum-action" id="adminUsersBtn" style="display:none">Registrierte Spieler</button>
+          <button class="forum-action danger-btn" id="deleteAccountBtn">Account löschen</button>
         </div>
       </div>
       <div class="forum-note" id="forumBackendNote">Live-Forum: Konten, Beiträge, Kommentare und Likes werden zentral in Cloudflare D1 gespeichert. Bilder sind derzeit bewusst deaktiviert.</div>
@@ -228,6 +260,83 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
       <button class="forum-action" id="chatRulesBtn" style="width:100%;margin-top:12px">Chatregeln</button><button class="forum-action" id="blockedPlayersBtn" style="width:100%;margin-top:7px">Blockierte Spieler</button>
       <div class="chat-admin-panel" id="chatAdminPanel" style="display:none"><b id="moderationTitle">Moderation</b><button class="forum-action" id="reportsBtn"><span id="reportsLabel">🚩 Meldungen</span><span id="reportsBadge" class="chat-badge report-badge-hidden">0</span></button><button class="forum-action" id="bansBtn">⛔ Banns</button><button class="forum-action" id="modLogBtn">📜 Moderationsprotokoll</button><button class="forum-action" id="announceBtn">📢 Ankündigung</button></div>
     </aside>
+  </div>
+</section>
+
+
+<section id="legal">
+  <div class="section-head"><div><h2>⚖ Rechtliches & Datenschutz</h2><div class="sub">Informationen zum Betrieb von PirateStorm.info und zu deinen Rechten.</div></div></div>
+  <div class="legal-page">
+    <div class="legal-card legal-warning">
+      <b>Wichtig vor der öffentlichen Veröffentlichung</b>
+      <p>Die Betreiberangaben unten enthalten bewusst Platzhalter. Ersetze sie vor der öffentlichen Nutzung durch die tatsächlich erforderlichen Angaben. Diese Texte sind eine auf die Funktionen dieser Community-Seite zugeschnittene Vorlage und keine individuelle Rechtsberatung.</p>
+    </div>
+
+    <div class="legal-card" id="impressum">
+      <h3>Impressum / Anbieterangaben</h3>
+      <p><b>[VORNAME NACHNAME]</b><br>[LADUNGSFÄHIGE ANSCHRIFT]<br>[PLZ ORT]<br>Deutschland</p>
+      <p>E-Mail: <b>[KONTAKT-E-MAIL]</b></p>
+      <p>PirateStorm.info ist ein inoffizielles Community-Projekt. Die Seite wird nicht von Bigpoint betrieben, unterstützt oder autorisiert. Pirate Storm sowie zugehörige Namen, Marken und Inhalte gehören den jeweiligen Rechteinhabern.</p>
+    </div>
+
+    <div class="legal-card" id="privacy">
+      <h3>Datenschutzerklärung</h3>
+      <p><b>Verantwortlicher:</b><br>[VORNAME NACHNAME], [LADUNGSFÄHIGE ANSCHRIFT], [PLZ ORT], Deutschland<br>E-Mail: [KONTAKT-E-MAIL]</p>
+      <p>Wir verarbeiten nur Daten, die für Betrieb, Sicherheit und Community-Funktionen von PirateStorm.info benötigt werden. Dazu können insbesondere Spielername, gewählter Spielserver, Account- und Sitzungsdaten, Beiträge, Kommentare, Likes, Chat- und Flüsterinhalte, Einstellungen, Meldungen sowie Moderationsinformationen gehören.</p>
+      <p><b>Registrierung und Account:</b> Bei der Registrierung werden die für das Nutzerkonto benötigten Angaben verarbeitet. Das Passwort wird nicht im Klartext angezeigt oder über die Selbstauskunft ausgegeben. Sitzungsdaten dienen der Anmeldung und Zugriffskontrolle.</p>
+      <p><b>Forum und Chat:</b> Von dir veröffentlichte Beiträge und Nachrichten werden gespeichert, damit die Community-Funktionen bereitgestellt werden können. Private Flüsterchats sind nur für die jeweiligen Teilnehmer bestimmt; gemeldete Inhalte können im notwendigen Kontext durch die Moderation geprüft werden.</p>
+      <p><b>Moderation und Missbrauchsschutz:</b> Meldungen, Sperren, Kicks und interne Moderationsinformationen können verarbeitet werden, soweit dies zur Durchsetzung der Community-Regeln, zur Sicherheit oder zur Bearbeitung von Beschwerden erforderlich ist.</p>
+      <p><b>Online-Status:</b> Für die Anzeige der aktuellen Besucherzahl verwendet die Seite eine zufällige, temporäre Kennung für die jeweils geöffnete Seite. Diese Kennung wird nicht dauerhaft in localStorage oder sessionStorage gespeichert. Veraltete Presence-Einträge werden kurzfristig entfernt. Für diese Funktion speichern wir selbst keine IP-Adresse in der D1-Datenbank.</p>
+      <p><b>Hosting:</b> PirateStorm.info nutzt Cloudflare-Infrastruktur einschließlich Pages und D1. Bei der technischen Bereitstellung können durch den Infrastrukturbetreiber Verbindungs- und Sicherheitsdaten verarbeitet werden. Die konkreten Bedingungen des eingesetzten Hostinganbieters gelten ergänzend.</p>
+      <p><b>Speicherdauer:</b> Daten werden nicht länger als für ihren jeweiligen Zweck erforderlich gespeichert. Kurzfristige Online-Presence wird nach wenigen Minuten verworfen. Accounts werden bis zur Löschung geführt. Bei einer Accountlöschung werden Accountdaten soweit möglich anonymisiert; Beiträge können als Bestandteil bestehender Unterhaltungen anonymisiert erhalten bleiben. Moderations- und Rechtsmeldedaten können länger aufbewahrt werden, soweit dies für Missbrauchsschutz, Bearbeitung oder Rechtsansprüche erforderlich ist.</p>
+      <p><b>Deine Rechte:</b> Je nach Voraussetzungen bestehen insbesondere Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Widerspruch und Datenübertragbarkeit sowie das Recht auf Beschwerde bei einer zuständigen Datenschutzaufsichtsbehörde. Für eine formelle Datenschutzanfrage: [KONTAKT-E-MAIL].</p>
+    </div>
+
+    <div class="legal-card" id="terms">
+      <h3>Nutzungsbedingungen</h3>
+      <ul>
+        <li>PirateStorm.info ist ein kostenloses, inoffizielles Fan- und Community-Projekt.</li>
+        <li>Bei der Registrierung sind ein eigener Spielername und der zutreffende Spielserver zu verwenden. Die Zugangsdaten dürfen nicht missbräuchlich verwendet werden.</li>
+        <li>Nutzer sind für die von ihnen veröffentlichten Inhalte verantwortlich und dürfen keine rechtswidrigen Inhalte oder Inhalte einstellen, an denen ihnen die erforderlichen Rechte fehlen.</li>
+        <li>Spam, automatisierter Missbrauch, Belästigung, Drohungen, diskriminierende oder menschenverachtende Inhalte, Identitätsmissbrauch sowie die Veröffentlichung privater Daten anderer Personen sind untersagt.</li>
+        <li>Die Moderation darf Inhalte entfernen oder einschränken und Nutzer aus Chat-/Community-Funktionen ausschließen, wenn dies zur Durchsetzung der Regeln, Sicherheit oder Bearbeitung von Beschwerden erforderlich ist.</li>
+        <li>Es besteht kein Anspruch auf dauerhafte Verfügbarkeit der Seite oder einzelner Community-Funktionen.</li>
+        <li>Spielinformationen und Rechner können unvollständig oder fehlerhaft sein und stellen keine offiziellen Bigpoint-Angaben dar.</li>
+      </ul>
+    </div>
+
+    <div class="legal-card" id="communityRules">
+      <h3>Community- & Chatregeln</h3>
+      <ul>
+        <li>Behandle andere Spieler respektvoll.</li>
+        <li>Keine Beleidigungen, Drohungen, gezielte Belästigung oder diskriminierenden Inhalte.</li>
+        <li>Kein Spam, Flooding, wiederholtes Posten identischer Nachrichten oder störende Werbung.</li>
+        <li>Keine Veröffentlichung personenbezogener Daten anderer Personen ohne Berechtigung.</li>
+        <li>Keine rechtswidrigen Inhalte und keine Aufforderungen zu rechtswidrigem Verhalten.</li>
+        <li>Keine Bots, Cheats, Automatisierungsangebote oder sonstige Inhalte, die auf eine unerlaubte Beeinflussung des Spiels abzielen.</li>
+        <li>Normale Spielermeldungen können über die Meldefunktion erfolgen. Mutmaßlich rechtswidrige Inhalte können über das gesonderte Formular unten gemeldet werden.</li>
+      </ul>
+    </div>
+
+    <div class="legal-card" id="illegalReport">
+      <h3>Mutmaßlich rechtswidrigen Inhalt melden</h3>
+      <p>Dieses Formular ist für konkrete Hinweise auf möglicherweise rechtswidrige Inhalte gedacht und ist von der normalen Community-Meldefunktion getrennt.</p>
+      <div class="legal-form">
+        <label>Name<input id="legalReporterName" maxlength="150"></label>
+        <label>E-Mail<input id="legalReporterEmail" type="email" maxlength="254"></label>
+        <label>Art des Inhalts
+          <select id="legalContentType">
+            <option value="forum">Forum</option><option value="chat">Chat</option><option value="whisper">Flüsterchat</option><option value="profile">Profil</option><option value="other">Sonstiges</option>
+          </select>
+        </label>
+        <label>Genaue Fundstelle / Link<input id="legalContentLocation" maxlength="1000" placeholder="Wo befindet sich der Inhalt?"></label>
+        <label>Optionale Referenz<input id="legalContentReference" maxlength="500" placeholder="z. B. Beitrags- oder Nachrichten-ID"></label>
+        <label>Warum hältst du den Inhalt für rechtswidrig?<textarea id="legalReason" rows="6" maxlength="5000"></textarea></label>
+        <label class="checkline"><input id="legalGoodFaith" type="checkbox"><span>Ich bestätige, dass ich diese Meldung nach bestem Wissen und Gewissen abgebe.</span></label>
+        <button class="forum-action primary" id="legalSubmitBtn">Meldung absenden</button>
+        <div class="forum-note" id="legalStatus"></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -286,7 +395,15 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 </main>
 </div>
 
-<footer id="footerText">Unofficial community project. Pirate Storm and related trademarks/assets belong to Bigpoint. Die Live-Besucherzahlen nutzen /api/site-status und erfassen Gäste sowie eingeloggte Mitglieder anonymisiert per Presence-Heartbeat. Live values are based on in-game screenshots from August 2026; historical references are marked separately.</footer>
+<footer id="footerText">
+<div class="legal-links">
+  <button data-legal-jump="impressum">Impressum</button>
+  <button data-legal-jump="privacy">Datenschutz</button>
+  <button data-legal-jump="terms">Nutzungsbedingungen</button>
+  <button data-legal-jump="communityRules">Community-Richtlinien</button>
+  <button data-legal-jump="illegalReport">Rechtswidrigen Inhalt melden</button>
+</div>
+Unofficial community project. Pirate Storm and related trademarks/assets belong to Bigpoint. Die Live-Besucherzahlen nutzen /api/site-status und erfassen Gäste sowie eingeloggte Mitglieder anonymisiert per Presence-Heartbeat. Live values are based on in-game screenshots from August 2026; historical references are marked separately.</footer>
 
 <script>
 const t={
@@ -1246,6 +1363,201 @@ function getSiteVisitorId(){if(siteVisitorId)return siteVisitorId;try{siteVisito
 function renderSiteStatus(j){const e=document.getElementById('onlineCount');if(!e)return;const online=Number(j.online||0),guests=Number(j.guests||0),members=Number(j.members||0),registered=Number(j.registered||0);e.innerHTML=lang==='de'?`<span class="site-online-main">🟢 Online: ${online}</span><span class="site-online-detail">· ${guests} Gäste · ${members} Member · 👥 Registriert: ${registered}</span>`:`<span class="site-online-main">🟢 Online: ${online}</span><span class="site-online-detail">· ${guests} guests · ${members} members · 👥 Registered: ${registered}</span>`}
 async function updateOnline(){try{const r=await fetch('/api/site-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitor_id:getSiteVisitorId()}),cache:'no-store'});if(!r.ok)throw 0;renderSiteStatus(await r.json())}catch(e){const el=document.getElementById('onlineCount');if(el)el.innerHTML=lang==='de'?'<span class="site-online-main">🟢 Online: –</span>':'<span class="site-online-main">🟢 Online: –</span>'}}
 updateOnline(); setInterval(updateOnline,30000);
+
+
+/* =========================
+   V26 PUBLIC RELEASE ADDITIONS
+   ========================= */
+(() => {
+  const $v26 = id => document.getElementById(id);
+  const escapeV26 = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[ch]));
+
+  // Temporary page-only presence ID: deliberately not stored in local/session storage.
+  const v26SiteVisitorId = "page_" + (
+    globalThis.crypto?.randomUUID
+      ? crypto.randomUUID().replaceAll("-", "_")
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}`
+  );
+
+  async function v26SiteHeartbeat(){
+    try{
+      const r = await fetch("/api/site-status", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({visitor_id:v26SiteVisitorId}),
+        cache:"no-store"
+      });
+      const d = await r.json();
+      if(!r.ok || !d.ok) return;
+      const el = $v26("onlineCount");
+      if(el){
+        el.textContent = `🟢 Online: ${d.online ?? 0} · ${d.guests ?? 0} Gäste · ${d.members ?? 0} Member · 👥 Registriert: ${d.registered ?? 0}`;
+        el.style.cursor = (window.forumUser?.role === "admin") ? "pointer" : "default";
+      }
+    }catch(_){}
+  }
+
+  // Remove obsolete persistent V25 visitor ID.
+  try{ localStorage.removeItem("ps_site_visitor_id"); }catch(_){}
+
+  v26SiteHeartbeat();
+  setInterval(v26SiteHeartbeat, 30000);
+
+  addEventListener("pagehide", () => {
+    try{
+      fetch("/api/site-status", {
+        method:"DELETE",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({visitor_id:v26SiteVisitorId}),
+        keepalive:true
+      });
+    }catch(_){}
+  });
+
+  function openV26Modal(content){
+    const modal = $v26("chatModal");
+    const body = $v26("chatModalBody");
+    if(!modal || !body) return;
+    body.innerHTML = content;
+    modal.classList.add("open");
+  }
+
+  async function openAdminUsers(){
+    if(window.forumUser?.role !== "admin") return;
+    openV26Modal(`
+      <h3>👥 Registrierte Spieler</h3>
+      <div class="comment-row">
+        <input id="v26UserSearch" maxlength="100" placeholder="Spieler suchen …">
+        <button class="forum-action" id="v26UserSearchBtn">Suchen</button>
+      </div>
+      <div class="forum-note">Nur für Administratoren sichtbar.</div>
+      <div id="v26UserList" class="admin-users-list">Lade …</div>
+    `);
+
+    async function load(q=""){
+      const list = $v26("v26UserList");
+      if(!list) return;
+      list.textContent = "Lade …";
+      try{
+        const r = await fetch(`/api/admin/users?limit=200&sort=newest&q=${encodeURIComponent(q)}`, {cache:"no-store"});
+        const d = await r.json();
+        if(!r.ok || !d.ok) throw new Error(d.error || "Fehler");
+        const formatDate = value => {
+          if(value === null || value === undefined || value === "") return "–";
+          const n = Number(value);
+          const date = Number.isFinite(n) ? new Date(n < 1e12 ? n*1000 : n) : new Date(value);
+          return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString("de-DE");
+        };
+        list.innerHTML = `<div class="forum-note">${d.pagination?.total ?? d.users.length} registrierte Accounts</div>` +
+          d.users.map(u => `<div class="admin-user-row"><b>${escapeV26(u.username)}</b><span>${escapeV26(u.server || "–")}</span><span>${formatDate(u.registered_at)}</span></div>`).join("");
+      }catch(e){
+        list.textContent = `Fehler: ${e.message}`;
+      }
+    }
+    $v26("v26UserSearchBtn")?.addEventListener("click", () => load($v26("v26UserSearch")?.value || ""));
+    $v26("v26UserSearch")?.addEventListener("keydown", e => { if(e.key === "Enter") load(e.currentTarget.value); });
+    load();
+  }
+
+  $v26("onlineCount")?.addEventListener("click", () => {
+    if(window.forumUser?.role === "admin") openAdminUsers();
+  });
+  $v26("adminUsersBtn")?.addEventListener("click", openAdminUsers);
+
+  $v26("myDataBtn")?.addEventListener("click", async () => {
+    openV26Modal(`<h3>Meine Daten</h3><div class="privacy-data" id="v26DataBox">Lade …</div><p class="forum-note">Diese Self-Service-Ansicht ersetzt nicht zwingend eine formelle Datenschutzanfrage.</p>`);
+    try{
+      const r = await fetch("/api/account/data", {cache:"no-store"});
+      const d = await r.json();
+      if(!r.ok || !d.ok) throw new Error(d.error || "Fehler");
+      $v26("v26DataBox").textContent = JSON.stringify(d, null, 2);
+    }catch(e){
+      $v26("v26DataBox").textContent = `Fehler: ${e.message}`;
+    }
+  });
+
+  $v26("deleteAccountBtn")?.addEventListener("click", () => {
+    if(window.forumUser?.role === "admin"){
+      alert("Der Administrator-Account kann über diese Funktion nicht gelöscht werden.");
+      return;
+    }
+    openV26Modal(`
+      <h3>Account dauerhaft löschen</h3>
+      <p>Dein Account wird deaktiviert und soweit möglich anonymisiert. Bestehende Beiträge können anonymisiert als Teil von Unterhaltungen erhalten bleiben.</p>
+      <p><b>Dieser Vorgang kann nicht über die Oberfläche rückgängig gemacht werden.</b></p>
+      <label>Zur Bestätigung <b>DELETE</b> eingeben:</label>
+      <input id="v26DeleteConfirm" autocomplete="off">
+      <button class="forum-action danger-btn" id="v26DeleteNow">Account löschen</button>
+      <div class="forum-note" id="v26DeleteStatus"></div>
+    `);
+    $v26("v26DeleteNow")?.addEventListener("click", async () => {
+      const status = $v26("v26DeleteStatus");
+      const confirmation = $v26("v26DeleteConfirm")?.value.trim() || "";
+      if(confirmation !== "DELETE"){ status.textContent = 'Bitte exakt "DELETE" eingeben.'; return; }
+      if(!confirm("Account wirklich dauerhaft löschen?")) return;
+      try{
+        const r = await fetch("/api/account/delete", {
+          method:"DELETE",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({confirmation:"DELETE", username:window.forumUser?.username})
+        });
+        const d = await r.json();
+        if(!r.ok || !d.ok) throw new Error(d.error || "Fehler");
+        alert("Dein Account wurde gelöscht und anonymisiert.");
+        location.reload();
+      }catch(e){ status.textContent = `Fehler: ${e.message}`; }
+    });
+  });
+
+  $v26("legalSubmitBtn")?.addEventListener("click", async () => {
+    const status = $v26("legalStatus");
+    status.textContent = "Wird gesendet …";
+    const payload = {
+      reporter_name:$v26("legalReporterName")?.value.trim(),
+      reporter_email:$v26("legalReporterEmail")?.value.trim(),
+      content_type:$v26("legalContentType")?.value,
+      content_location:$v26("legalContentLocation")?.value.trim(),
+      content_reference:$v26("legalContentReference")?.value.trim(),
+      reason:$v26("legalReason")?.value.trim(),
+      good_faith:Boolean($v26("legalGoodFaith")?.checked)
+    };
+    try{
+      const r = await fetch("/api/legal/reports", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+      const d = await r.json();
+      if(!r.ok || !d.ok) throw new Error(d.error || "Fehler");
+      status.textContent = `Meldung erfolgreich eingereicht${d.report_id ? ` (#${d.report_id})` : ""}.`;
+      ["legalContentLocation","legalContentReference","legalReason"].forEach(id => { if($v26(id)) $v26(id).value=""; });
+      if($v26("legalGoodFaith")) $v26("legalGoodFaith").checked=false;
+    }catch(e){ status.textContent = `Fehler: ${e.message}`; }
+  });
+
+  document.querySelectorAll("[data-legal-jump]").forEach(btn => btn.addEventListener("click", () => {
+    document.querySelectorAll("main > section").forEach(s => s.classList.remove("active-section"));
+    $v26("legal")?.classList.add("active-section");
+    document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("active", b.dataset.sec === "legal"));
+    setTimeout(() => $v26(btn.dataset.legalJump)?.scrollIntoView({behavior:"smooth",block:"start"}), 30);
+  }));
+
+  // Keep admin-only account button in sync with the existing login state.
+  const v26AdminObserver = new MutationObserver(() => {
+    const isAdmin = window.forumUser?.role === "admin";
+    if($v26("adminUsersBtn")) $v26("adminUsersBtn").style.display = isAdmin ? "" : "none";
+    if($v26("deleteAccountBtn")) $v26("deleteAccountBtn").style.display = window.forumUser ? "" : "none";
+  });
+  const profile = $v26("loggedInBox");
+  if(profile) v26AdminObserver.observe(profile, {attributes:true,subtree:true,childList:true});
+  setInterval(() => {
+    const isAdmin = window.forumUser?.role === "admin";
+    if($v26("adminUsersBtn")) $v26("adminUsersBtn").style.display = isAdmin ? "" : "none";
+  }, 1500);
+})();
+
 </script>
 </body>
 </html>
