@@ -112,7 +112,26 @@ async function getCurrentUser(
 function isAdmin(user) {
   return Boolean(
     user &&
-    user.role === "admin"
+    user.role ===
+    "admin"
+  );
+}
+
+function isModerator(user) {
+  return Boolean(
+    user &&
+    user.role ===
+    "moderator"
+  );
+}
+
+function canModerate(user) {
+  return Boolean(
+    user &&
+    (
+      isAdmin(user) ||
+      isModerator(user)
+    )
   );
 }
 
@@ -180,10 +199,10 @@ async function getUserById(
 
 /*
  * =====================================================
- * ADMIN AUTH
+ * MODERATOR AUTH
  * =====================================================
  */
-async function requireAdmin(
+async function requireModerator(
   request,
   env
 ) {
@@ -206,7 +225,9 @@ async function requireAdmin(
     };
   }
 
-  if (!isAdmin(user)) {
+  if (
+    !canModerate(user)
+  ) {
     return {
       ok: false,
 
@@ -214,7 +235,7 @@ async function requireAdmin(
         json({
           ok: false,
           error:
-            "Nur der Administrator darf diese Aktion ausführen."
+            "Nur Administratoren und Moderatoren dürfen diese Aktion ausführen."
         }, 403)
     };
   }
@@ -276,17 +297,6 @@ async function validateTarget(
    * =================================================
    * ADMIN-IMMUNITÄT
    * =================================================
-   *
-   * Ausschließlich role === "admin" entscheidet.
-   *
-   * Ein Admin kann nicht:
-   *
-   * - gekickt
-   * - gebannt
-   * - entbannt
-   * - anderweitig moderiert
-   *
-   * werden.
    */
   if (
     target.role ===
@@ -300,6 +310,26 @@ async function validateTarget(
           ok: false,
           error:
             "Der Administrator kann nicht moderiert werden."
+        }, 403)
+    };
+  }
+
+  /*
+   * Moderator darf keinen Moderator moderieren.
+   */
+  if (
+    isModerator(admin) &&
+    target.role ===
+    "moderator"
+  ) {
+    return {
+      ok: false,
+
+      response:
+        json({
+          ok: false,
+          error:
+            "Moderatoren können keine anderen Moderatoren moderieren."
         }, 403)
     };
   }
@@ -391,11 +421,6 @@ async function addModerationLog(
       .run();
 
   } catch (error) {
-    /*
-     * Eine Moderationsaktion soll nicht daran
-     * scheitern, dass ausschließlich das Log
-     * einen Fehler hat.
-     */
     console.error(
       "Moderation log error:",
       error
@@ -407,21 +432,6 @@ async function addModerationLog(
  * =====================================================
  * INTERNE MODERATIONSNOTIZ
  * =====================================================
- *
- * Wird ausschließlich gespeichert, wenn tatsächlich
- * Text übergeben wurde.
- *
- * Unterstützte Body-Felder:
- *
- * internal_note
- * moderation_note
- *
- * Beispiel:
- *
- * {
- *   "internal_note":
- *     "Bereits mehrfach wegen Spam aufgefallen."
- * }
  */
 async function addModerationNote(
   env,
@@ -470,31 +480,6 @@ async function addModerationNote(
  * =====================================================
  * ÖFFENTLICHE SYSTEMMELDUNG
  * =====================================================
- *
- * Wichtig:
- *
- * Hier werden bewusst NICHT gespeichert:
- *
- * - Moderationsgrund
- * - Banndauer
- * - interne Notiz
- *
- * Sichtbar ist öffentlich ausschließlich:
- *
- * "Spieler wurde aus dem Chat gekickt."
- *
- * bzw.
- *
- * "Spieler wurde aus dem Chat gebannt."
- *
- *
- * Wir erzeugen zwei Systemmeldungen:
- *
- * 1. Globalchat
- * 2. eigener Serverchat des Spielers
- *
- * Dadurch sehen Spieler die Moderationsaktion in
- * beiden relevanten öffentlichen Bereichen.
  */
 async function addPublicModerationMessages(
   env,
@@ -581,9 +566,6 @@ async function addPublicModerationMessages(
  * =====================================================
  * PRESENCE ENTFERNEN
  * =====================================================
- *
- * Kick/Bann soll unmittelbar die bestehende
- * Online-Presence entfernen.
  */
 async function removePresence(
   env,
@@ -594,7 +576,9 @@ async function removePresence(
 
     WHERE user_id = ?
   `)
-    .bind(userId)
+    .bind(
+      userId
+    )
     .run();
 }
 
@@ -603,18 +587,9 @@ async function removePresence(
  * GET
  * =====================================================
  *
- * Nur Admin.
- *
- * Standard:
- *
  * /api/chat/bans
  *
- * entspricht:
- *
  * /api/chat/bans?status=active
- *
- *
- * Verlauf:
  *
  * /api/chat/bans?status=all
  */
@@ -628,16 +603,23 @@ export async function onRequestGet(
     } = context;
 
     const auth =
-      await requireAdmin(
+      await requireModerator(
         request,
         env
       );
 
-    if (!auth.ok) {
+    if (
+      !auth.ok
+    ) {
       return auth.response;
     }
 
-    await expireOldBans(env);
+    const actor =
+      auth.user;
+
+    await expireOldBans(
+      env
+    );
 
     const url =
       new URL(
@@ -664,11 +646,14 @@ export async function onRequestGet(
       Number(
         url.searchParams.get(
           "limit"
-        ) || 100
+        ) ||
+        100
       );
 
     const limit =
-      Number.isFinite(rawLimit)
+      Number.isFinite(
+        rawLimit
+      )
         ? Math.max(
             1,
             Math.min(
@@ -680,98 +665,95 @@ export async function onRequestGet(
           )
         : 100;
 
-    let result;
+    let query = `
+      SELECT
+        b.id,
+        b.user_id,
+        b.banned_by,
+        b.reason,
+        b.banned_at,
+        b.expires_at,
+        b.active,
+
+        target.username
+          AS target_username,
+
+        target.server
+          AS target_server,
+
+        target.role
+          AS target_role,
+
+        issuer.username
+          AS issuer_username,
+
+        issuer.role
+          AS issuer_role
+
+      FROM chat_bans b
+
+      JOIN users target
+        ON target.id =
+          b.user_id
+
+      LEFT JOIN users issuer
+        ON issuer.id =
+          b.banned_by
+
+      WHERE 1 = 1
+    `;
+
+    const bindings = [];
 
     if (
-      status === "active"
+      status ===
+      "active"
     ) {
-      result =
-        await env.DB.prepare(`
-          SELECT
-            b.id,
-            b.user_id,
-            b.banned_by,
-            b.reason,
-            b.banned_at,
-            b.expires_at,
-            b.active,
+      query += `
+        AND b.active = 1
+      `;
+    }
 
-            target.username
-              AS target_username,
-
-            target.server
-              AS target_server,
-
-            target.role
-              AS target_role,
-
-            admin.username
-              AS admin_username
-
-          FROM chat_bans b
-
-          JOIN users target
-            ON target.id =
-              b.user_id
-
-          JOIN users admin
-            ON admin.id =
-              b.banned_by
-
-          WHERE b.active = 1
-
-          ORDER BY
-            b.banned_at DESC,
-            b.id DESC
-
-          LIMIT ?
-        `)
-          .bind(limit)
-          .all();
+    /*
+     * Moderator darf keine Moderator-/Admin-Banns sehen,
+     * weil er diese Accounts auch nicht moderieren darf.
+     */
+    if (
+      isModerator(
+        actor
+      )
+    ) {
+      query += `
+        AND target.role = 'user'
+      `;
 
     } else {
-      result =
-        await env.DB.prepare(`
-          SELECT
-            b.id,
-            b.user_id,
-            b.banned_by,
-            b.reason,
-            b.banned_at,
-            b.expires_at,
-            b.active,
-
-            target.username
-              AS target_username,
-
-            target.server
-              AS target_server,
-
-            target.role
-              AS target_role,
-
-            admin.username
-              AS admin_username
-
-          FROM chat_bans b
-
-          JOIN users target
-            ON target.id =
-              b.user_id
-
-          JOIN users admin
-            ON admin.id =
-              b.banned_by
-
-          ORDER BY
-            b.banned_at DESC,
-            b.id DESC
-
-          LIMIT ?
-        `)
-          .bind(limit)
-          .all();
+      query += `
+        AND target.role != 'admin'
+      `;
     }
+
+    query += `
+      ORDER BY
+        b.banned_at DESC,
+        b.id DESC
+
+      LIMIT ?
+    `;
+
+    bindings.push(
+      limit
+    );
+
+    const result =
+      await env.DB
+        .prepare(
+          query
+        )
+        .bind(
+          ...bindings
+        )
+        .all();
 
     const now =
       Math.floor(
@@ -780,86 +762,138 @@ export async function onRequestGet(
 
     const bans =
       (
-        result.results || []
-      ).map(item => {
-        const permanent =
-          item.expires_at ===
-          null;
+        result.results ||
+        []
+      ).map(
+        item => {
+          const permanent =
+            item.expires_at ===
+            null;
 
-        const stillActive =
-          Boolean(
-            item.active
-          ) &&
-          (
-            permanent ||
-            Number(
-              item.expires_at
-            ) > now
-          );
+          const stillActive =
+            Boolean(
+              item.active
+            ) &&
+            (
+              permanent ||
+              Number(
+                item.expires_at
+              ) > now
+            );
 
-        return {
-          id:
-            item.id,
-
-          user: {
+          return {
             id:
-              item.user_id,
+              item.id,
 
-            username:
-              item.target_username,
+            user: {
+              id:
+                item.user_id,
 
-            server:
-              item.target_server,
+              username:
+                item.target_username,
 
-            server_code:
-              getServerCode(
-                item.target_server
-              ),
+              server:
+                item.target_server,
 
-            role:
-              item.target_role
-          },
+              server_code:
+                getServerCode(
+                  item.target_server
+                ),
 
-          banned_by: {
-            id:
-              item.banned_by,
+              role:
+                item.target_role,
 
-            username:
-              item.admin_username
-          },
+              is_admin:
+                item.target_role ===
+                "admin",
 
-          reason:
-            item.reason || null,
+              is_moderator:
+                item.target_role ===
+                "moderator"
+            },
 
-          banned_at:
-            item.banned_at,
+            banned_by: {
+              id:
+                item.banned_by,
 
-          expires_at:
-            item.expires_at,
+              username:
+                item.issuer_username ||
+                null,
 
-          permanent,
+              role:
+                item.issuer_role ||
+                null,
 
-          active:
-            stillActive,
+              is_admin:
+                item.issuer_role ===
+                "admin",
 
-          remaining_seconds:
-            stillActive &&
-            !permanent
-              ? Math.max(
-                  0,
-                  Number(
-                    item.expires_at
-                  ) - now
-                )
-              : null
-        };
-      });
+              is_moderator:
+                item.issuer_role ===
+                "moderator"
+            },
+
+            reason:
+              item.reason ||
+              null,
+
+            banned_at:
+              item.banned_at,
+
+            expires_at:
+              item.expires_at,
+
+            permanent,
+
+            active:
+              stillActive,
+
+            remaining_seconds:
+              stillActive &&
+              !permanent
+                ? Math.max(
+                    0,
+                    Number(
+                      item.expires_at
+                    ) - now
+                  )
+                : null
+          };
+        }
+      );
 
     return json({
       ok: true,
 
       filter:
         status,
+
+      current_user: {
+        id:
+          actor.id,
+
+        username:
+          actor.username,
+
+        server:
+          actor.server,
+
+        role:
+          actor.role,
+
+        is_admin:
+          isAdmin(
+            actor
+          ),
+
+        is_moderator:
+          isModerator(
+            actor
+          )
+      },
+
+      count:
+        bans.length,
 
       bans
     });
@@ -883,9 +917,6 @@ export async function onRequestGet(
  * POST
  * =====================================================
  *
- * Nur Admin.
- *
- *
  * KICK:
  *
  * {
@@ -905,17 +936,6 @@ export async function onRequestGet(
  *   "reason": "Beleidigungen",
  *   "internal_note": "Optional"
  * }
- *
- *
- * Erlaubte Banndauern:
- *
- * 10m
- * 30m
- * 1h
- * 6h
- * 24h
- * 7d
- * permanent
  */
 export async function onRequestPost(
   context
@@ -927,12 +947,14 @@ export async function onRequestPost(
     } = context;
 
     const auth =
-      await requireAdmin(
+      await requireModerator(
         request,
         env
       );
 
-    if (!auth.ok) {
+    if (
+      !auth.ok
+    ) {
       return auth.response;
     }
 
@@ -984,7 +1006,9 @@ export async function onRequestPost(
         targetUserId
       );
 
-    if (!validation.ok) {
+    if (
+      !validation.ok
+    ) {
       return validation.response;
     }
 
@@ -1003,7 +1027,8 @@ export async function onRequestPost(
       );
 
     if (
-      reason.length > 500
+      reason.length >
+      500
     ) {
       return json({
         ok: false,
@@ -1034,7 +1059,8 @@ export async function onRequestPost(
      * =================================================
      */
     if (
-      action === "kick"
+      action ===
+      "kick"
     ) {
       const kickResult =
         await env.DB.prepare(`
@@ -1050,7 +1076,8 @@ export async function onRequestPost(
           .bind(
             target.id,
             admin.id,
-            reason || null,
+            reason ||
+            null,
             now
           )
           .run();
@@ -1060,30 +1087,20 @@ export async function onRequestPost(
           ?.last_row_id ||
         null;
 
-      /*
-       * Spieler sofort aus Online-Presence entfernen.
-       */
       await removePresence(
         env,
         target.id
       );
 
-      /*
-       * Öffentliche Systemmeldungen.
-       *
-       * Keine Dauer.
-       * Kein Grund.
-       */
       await addPublicModerationMessages(
         env,
         "kick",
         target
       );
 
-      /*
-       * Interne Notiz.
-       */
-      if (internalNote) {
+      if (
+        internalNote
+      ) {
         await addModerationNote(
           env,
           admin.id,
@@ -1103,11 +1120,16 @@ export async function onRequestPost(
           kick_id:
             kickId,
 
+          actor_role:
+            admin.role,
+
           reason:
-            reason || null,
+            reason ||
+            null,
 
           internal_note:
-            internalNote || null,
+            internalNote ||
+            null,
 
           username:
             target.username,
@@ -1134,7 +1156,8 @@ export async function onRequestPost(
             admin.id,
 
           reason:
-            reason || null,
+            reason ||
+            null,
 
           created_at:
             now
@@ -1153,7 +1176,10 @@ export async function onRequestPost(
           server_code:
             getServerCode(
               target.server
-            )
+            ),
+
+          role:
+            target.role
         },
 
         message:
@@ -1176,7 +1202,8 @@ export async function onRequestPost(
 
     if (
       !Object.prototype
-        .hasOwnProperty.call(
+        .hasOwnProperty
+        .call(
           BAN_DURATIONS,
           duration
         )
@@ -1199,10 +1226,12 @@ export async function onRequestPost(
       }, 400);
     }
 
-    await expireOldBans(env);
+    await expireOldBans(
+      env
+    );
 
     /*
-     * Parallel aktive Banns verhindern.
+     * Bereits aktiven Bann verhindern.
      */
     const existing =
       await env.DB.prepare(`
@@ -1231,7 +1260,9 @@ export async function onRequestPost(
         )
         .first();
 
-    if (existing) {
+    if (
+      existing
+    ) {
       return json({
         ok: false,
 
@@ -1258,9 +1289,11 @@ export async function onRequestPost(
       ];
 
     const expiresAt =
-      seconds === null
+      seconds ===
+      null
         ? null
-        : now + seconds;
+        : now +
+          seconds;
 
     const result =
       await env.DB.prepare(`
@@ -1285,7 +1318,8 @@ export async function onRequestPost(
         .bind(
           target.id,
           admin.id,
-          reason || null,
+          reason ||
+          null,
           now,
           expiresAt
         )
@@ -1296,35 +1330,20 @@ export async function onRequestPost(
         ?.last_row_id ||
       null;
 
-    /*
-     * Gebannter Spieler verschwindet sofort aus
-     * der Online-Anzeige.
-     */
     await removePresence(
       env,
       target.id
     );
 
-    /*
-     * Öffentliche Systemmeldung.
-     *
-     * Absichtlich nur:
-     *
-     * "X wurde aus dem Chat gebannt."
-     *
-     * Keine Dauer.
-     * Kein Grund.
-     */
     await addPublicModerationMessages(
       env,
       "ban",
       target
     );
 
-    /*
-     * Interne Admin-Notiz.
-     */
-    if (internalNote) {
+    if (
+      internalNote
+    ) {
       await addModerationNote(
         env,
         admin.id,
@@ -1344,6 +1363,9 @@ export async function onRequestPost(
         ban_id:
           banId,
 
+        actor_role:
+          admin.role,
+
         username:
           target.username,
 
@@ -1353,16 +1375,19 @@ export async function onRequestPost(
         duration,
 
         reason:
-          reason || null,
+          reason ||
+          null,
 
         internal_note:
-          internalNote || null,
+          internalNote ||
+          null,
 
         expires_at:
           expiresAt,
 
         permanent:
-          expiresAt === null
+          expiresAt ===
+          null
       }
     );
 
@@ -1389,11 +1414,15 @@ export async function onRequestPost(
           server_code:
             getServerCode(
               target.server
-            )
+            ),
+
+          role:
+            target.role
         },
 
         reason:
-          reason || null,
+          reason ||
+          null,
 
         duration,
 
@@ -1404,7 +1433,8 @@ export async function onRequestPost(
           expiresAt,
 
         permanent:
-          expiresAt === null
+          expiresAt ===
+          null
       },
 
       message:
@@ -1433,11 +1463,6 @@ export async function onRequestPost(
  * Aktiven Bann vorzeitig aufheben.
  *
  * DELETE /api/chat/bans?id=12
- *
- *
- * WICHTIG:
- *
- * Beim Unban gibt es KEINE öffentliche Systemmeldung.
  */
 export async function onRequestDelete(
   context
@@ -1449,19 +1474,23 @@ export async function onRequestDelete(
     } = context;
 
     const auth =
-      await requireAdmin(
+      await requireModerator(
         request,
         env
       );
 
-    if (!auth.ok) {
+    if (
+      !auth.ok
+    ) {
       return auth.response;
     }
 
     const admin =
       auth.user;
 
-    await expireOldBans(env);
+    await expireOldBans(
+      env
+    );
 
     const url =
       new URL(
@@ -1475,7 +1504,9 @@ export async function onRequestDelete(
         )
       );
 
-    if (!banId) {
+    if (
+      !banId
+    ) {
       return json({
         ok: false,
         error:
@@ -1512,7 +1543,9 @@ export async function onRequestDelete(
         )
         .first();
 
-    if (!ban) {
+    if (
+      !ban
+    ) {
       return json({
         ok: false,
         error:
@@ -1520,10 +1553,6 @@ export async function onRequestDelete(
       }, 404);
     }
 
-    /*
-     * Auch alte/manipulierte Daten dürfen niemals
-     * zur Moderation eines Admin-Accounts führen.
-     */
     if (
       ban.role ===
       "admin"
@@ -1532,6 +1561,20 @@ export async function onRequestDelete(
         ok: false,
         error:
           "Der Administrator kann nicht moderiert werden."
+      }, 403);
+    }
+
+    if (
+      isModerator(
+        admin
+      ) &&
+      ban.role ===
+      "moderator"
+    ) {
+      return json({
+        ok: false,
+        error:
+          "Moderatoren können keine Moderatoren entsperren."
       }, 403);
     }
 
@@ -1572,6 +1615,9 @@ export async function onRequestDelete(
         ban_id:
           ban.id,
 
+        actor_role:
+          admin.role,
+
         username:
           ban.username,
 
@@ -1608,7 +1654,10 @@ export async function onRequestDelete(
         server_code:
           getServerCode(
             ban.server
-          )
+          ),
+
+        role:
+          ban.role
       },
 
       message:
