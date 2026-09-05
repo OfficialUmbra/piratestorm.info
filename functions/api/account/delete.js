@@ -11,19 +11,28 @@ function json(data, status = 200) {
 }
 
 function getCookie(request, name) {
-  const cookieHeader = request.headers.get("Cookie") || "";
+  const cookieHeader =
+    request.headers.get("Cookie") || "";
 
   for (const part of cookieHeader.split(";")) {
     const trimmed = part.trim();
 
     if (!trimmed) continue;
 
-    const separatorIndex = trimmed.indexOf("=");
+    const separatorIndex =
+      trimmed.indexOf("=");
 
     if (separatorIndex === -1) continue;
 
-    const key = trimmed.slice(0, separatorIndex).trim();
-    const value = trimmed.slice(separatorIndex + 1).trim();
+    const key =
+      trimmed
+        .slice(0, separatorIndex)
+        .trim();
+
+    const value =
+      trimmed
+        .slice(separatorIndex + 1)
+        .trim();
 
     if (key === name) {
       try {
@@ -49,69 +58,117 @@ function expiredSessionCookie() {
 }
 
 async function getCurrentUser(request, env) {
-  const sessionId = getCookie(request, "ps_session");
+  const sessionId =
+    getCookie(
+      request,
+      "ps_session"
+    );
 
   if (!sessionId) {
     return null;
   }
 
-  const now = Math.floor(Date.now() / 1000);
+  const now =
+    Math.floor(Date.now() / 1000);
 
-  const user = await env.DB.prepare(`
-    SELECT
-      users.id,
-      users.username,
-      users.server,
-      users.role
-    FROM sessions
-    JOIN users
-      ON users.id = sessions.user_id
-    WHERE sessions.id = ?
-      AND sessions.expires_at > ?
-    LIMIT 1
-  `)
-    .bind(sessionId, now)
-    .first();
+  const user =
+    await env.DB.prepare(`
+      SELECT
+        users.id,
+        users.username,
+        users.server,
+        users.role
+      FROM sessions
+      JOIN users
+        ON users.id = sessions.user_id
+      WHERE sessions.id = ?
+        AND sessions.expires_at > ?
+        AND LOWER(TRIM(users.username))
+          NOT LIKE 'deleteduser_%'
+        AND LOWER(TRIM(users.username))
+          NOT LIKE 'deleted user%'
+        AND LOWER(TRIM(users.username))
+          NOT LIKE 'deleted_user%'
+        AND LOWER(TRIM(users.username))
+          NOT LIKE 'deleted-user%'
+      LIMIT 1
+    `)
+      .bind(
+        sessionId,
+        now
+      )
+      .first();
 
   return user || null;
 }
 
-async function tableExists(env, tableName) {
-  const row = await env.DB.prepare(`
-    SELECT name
-    FROM sqlite_master
-    WHERE type = 'table'
-      AND name = ?
-    LIMIT 1
-  `)
-    .bind(tableName)
-    .first();
+async function tableExists(
+  env,
+  tableName
+) {
+  const row =
+    await env.DB.prepare(`
+      SELECT name
+      FROM sqlite_master
+      WHERE type = 'table'
+        AND name = ?
+      LIMIT 1
+    `)
+      .bind(tableName)
+      .first();
 
   return Boolean(row);
 }
 
-async function getTableColumns(env, tableName) {
-  if (!(await tableExists(env, tableName))) {
+async function getTableColumns(
+  env,
+  tableName
+) {
+  if (
+    !(await tableExists(
+      env,
+      tableName
+    ))
+  ) {
     return [];
   }
 
-  const result = await env.DB.prepare(
-    `PRAGMA table_info(${tableName})`
-  ).all();
+  const result =
+    await env.DB.prepare(
+      `PRAGMA table_info(${tableName})`
+    ).all();
 
   return Array.isArray(result.results)
-    ? result.results.map((column) => column.name)
+    ? result.results.map(
+        column => column.name
+      )
     : [];
 }
 
-async function deleteWhereUserId(env, tableName, columnName, userId) {
-  if (!(await tableExists(env, tableName))) {
+async function deleteWhereUserId(
+  env,
+  tableName,
+  columnName,
+  userId
+) {
+  if (
+    !(await tableExists(
+      env,
+      tableName
+    ))
+  ) {
     return;
   }
 
-  const columns = await getTableColumns(env, tableName);
+  const columns =
+    await getTableColumns(
+      env,
+      tableName
+    );
 
-  if (!columns.includes(columnName)) {
+  if (
+    !columns.includes(columnName)
+  ) {
     return;
   }
 
@@ -123,7 +180,10 @@ async function deleteWhereUserId(env, tableName, columnName, userId) {
     .run();
 }
 
-async function deleteUserRelations(env, userId) {
+async function deleteUserRelations(
+  env,
+  userId
+) {
   /*
     Sessions:
     Der Account wird sofort überall ausgeloggt.
@@ -137,8 +197,9 @@ async function deleteUserRelations(env, userId) {
 
   /*
     Presence:
-    Der gelöschte Account soll weder im Chat noch in der
-    allgemeinen Online-Anzeige erscheinen.
+    Der gelöschte Account soll weder im Chat
+    noch in der allgemeinen Online-Anzeige
+    erscheinen.
   */
   await deleteWhereUserId(
     env,
@@ -192,7 +253,9 @@ async function deleteUserRelations(env, userId) {
   );
 
   /*
-    Noch offene Whisper-Einladungen des Users.
+    Offene Whisper-Einladungen:
+    sowohl als eingeladener Nutzer als
+    auch als Einladender.
   */
   await deleteWhereUserId(
     env,
@@ -200,6 +263,84 @@ async function deleteUserRelations(env, userId) {
     "invited_user_id",
     userId
   );
+
+  await deleteWhereUserId(
+    env,
+    "whisper_invites",
+    "inviter_id",
+    userId
+  );
+
+  /*
+    Whisper-Mitgliedschaften entfernen.
+
+    Die Nachrichten selbst bleiben erhalten
+    und erscheinen durch den anonymisierten
+    users-Datensatz nicht mehr unter dem
+    ursprünglichen Spielernamen.
+  */
+  await deleteWhereUserId(
+    env,
+    "whisper_members",
+    "user_id",
+    userId
+  );
+
+  /*
+    Likes entfernen.
+  */
+  await deleteWhereUserId(
+    env,
+    "post_likes",
+    "user_id",
+    userId
+  );
+
+  await deleteWhereUserId(
+    env,
+    "comment_likes",
+    "user_id",
+    userId
+  );
+
+  /*
+    Aktive Forum-Banns deaktivieren.
+    Die Historie bleibt bestehen.
+  */
+  if (
+    await tableExists(
+      env,
+      "forum_bans"
+    )
+  ) {
+    await env.DB.prepare(`
+      UPDATE forum_bans
+      SET active = 0
+      WHERE user_id = ?
+        AND active = 1
+    `)
+      .bind(userId)
+      .run();
+  }
+
+  /*
+    Aktive Chat-Banns ebenfalls deaktivieren.
+  */
+  if (
+    await tableExists(
+      env,
+      "chat_bans"
+    )
+  ) {
+    await env.DB.prepare(`
+      UPDATE chat_bans
+      SET active = 0
+      WHERE user_id = ?
+        AND active = 1
+    `)
+      .bind(userId)
+      .run();
+  }
 
   /*
     ACHTUNG:
@@ -213,19 +354,30 @@ async function deleteUserRelations(env, userId) {
     - Moderationsnotizen
     - Ban-/Kick-Historie
 
-    Öffentliche Beiträge bleiben Teil bestehender Unterhaltungen,
-    werden durch die Anonymisierung des users-Datensatzes aber
-    nicht mehr unter dem bisherigen Spielernamen angezeigt.
+    Öffentliche Beiträge bleiben Teil
+    bestehender Unterhaltungen, werden durch
+    die Anonymisierung des users-Datensatzes
+    aber nicht mehr unter dem bisherigen
+    Spielernamen angezeigt.
 
-    Moderations-/Reportdaten können außerdem für Missbrauchsschutz,
-    Nachvollziehbarkeit oder Rechtsansprüche relevant sein.
+    Moderations-/Reportdaten können außerdem
+    für Missbrauchsschutz, Nachvollziehbarkeit
+    oder Rechtsansprüche relevant sein.
   */
 }
 
-async function anonymizeUser(env, user) {
-  const anonymousUsername = `DeletedUser_${user.id}`;
+async function anonymizeUser(
+  env,
+  user
+) {
+  const anonymousUsername =
+    `DeletedUser_${user.id}`;
 
-  const columns = await getTableColumns(env, "users");
+  const columns =
+    await getTableColumns(
+      env,
+      "users"
+    );
 
   const assignments = [
     "username = ?"
@@ -236,27 +388,35 @@ async function anonymizeUser(env, user) {
   ];
 
   /*
-    Serverzuordnung entfernen, sofern die Spalte NULL erlaubt.
-    Da wir das konkrete NOT-NULL-Schema zur Laufzeit prüfen,
-    ändern wir server nur dann, wenn NULL erlaubt ist.
+    Schema der users-Tabelle laden.
   */
-  const serverInfo = await env.DB.prepare(`
-    PRAGMA table_info(users)
-  `).all();
+  const serverInfo =
+    await env.DB.prepare(`
+      PRAGMA table_info(users)
+    `).all();
 
-  const serverColumn = (serverInfo.results || []).find(
-    (column) => column.name === "server"
-  );
+  /*
+    Serverzuordnung entfernen,
+    sofern NULL erlaubt ist.
+  */
+  const serverColumn =
+    (serverInfo.results || []).find(
+      column =>
+        column.name === "server"
+    );
 
-  if (serverColumn && Number(serverColumn.notnull) === 0) {
-    assignments.push("server = NULL");
+  if (
+    serverColumn &&
+    Number(serverColumn.notnull) === 0
+  ) {
+    assignments.push(
+      "server = NULL"
+    );
   }
 
   /*
-    Falls zukünftig zusätzliche personenbezogene Felder in users
-    existieren, anonymisieren wir bekannte Felder automatisch.
+    Bekannte personenbezogene Felder.
   */
-
   const nullableSensitiveFields = [
     "email",
     "display_name",
@@ -266,101 +426,139 @@ async function anonymizeUser(env, user) {
     "bio"
   ];
 
-  for (const field of nullableSensitiveFields) {
-    if (!columns.includes(field)) {
+  for (
+    const field
+    of nullableSensitiveFields
+  ) {
+    if (
+      !columns.includes(field)
+    ) {
       continue;
     }
 
-    const info = (serverInfo.results || []).find(
-      (column) => column.name === field
-    );
+    const info =
+      (serverInfo.results || []).find(
+        column =>
+          column.name === field
+      );
 
-    if (!info || Number(info.notnull) === 0) {
-      assignments.push(`${field} = NULL`);
+    if (
+      !info ||
+      Number(info.notnull) === 0
+    ) {
+      assignments.push(
+        `${field} = NULL`
+      );
     }
   }
 
   /*
-    Falls es ein deleted_at-Feld gibt, setzen wir den Zeitpunkt
-    der Accountlöschung.
+    Löschzeitpunkt setzen,
+    falls deleted_at existiert.
   */
-  if (columns.includes("deleted_at")) {
+  if (
+    columns.includes("deleted_at")
+  ) {
     assignments.push(
       "deleted_at = strftime('%s','now')"
     );
   }
 
   /*
-    Falls es ein active-Feld gibt, deaktivieren wir den Account.
+    Account deaktivieren,
+    falls entsprechende Felder existieren.
   */
-  if (columns.includes("active")) {
-    assignments.push("active = 0");
+  if (
+    columns.includes("active")
+  ) {
+    assignments.push(
+      "active = 0"
+    );
+  }
+
+  if (
+    columns.includes("is_active")
+  ) {
+    assignments.push(
+      "is_active = 0"
+    );
   }
 
   /*
-    Falls es ein is_active-Feld gibt, ebenfalls deaktivieren.
-  */
-  if (columns.includes("is_active")) {
-    assignments.push("is_active = 0");
-  }
-
-  /*
-    Passwortdaten entfernen wir nur, wenn die Spalte NULL erlaubt.
-
-    Unabhängig davon werden alle Sessions gelöscht und der Username
-    geändert. Falls deine Loginlogik über Username + Passwort läuft,
-    ist der ursprüngliche Login damit bereits nicht mehr möglich.
+    Passwortdaten unbrauchbar machen.
   */
   const passwordFields = [
     "password",
     "password_hash"
   ];
 
-  for (const field of passwordFields) {
-    if (!columns.includes(field)) {
+  for (
+    const field
+    of passwordFields
+  ) {
+    if (
+      !columns.includes(field)
+    ) {
       continue;
     }
 
-    const info = (serverInfo.results || []).find(
-      (column) => column.name === field
-    );
+    const info =
+      (serverInfo.results || []).find(
+        column =>
+          column.name === field
+      );
 
-    if (!info || Number(info.notnull) === 0) {
-      assignments.push(`${field} = NULL`);
+    if (
+      !info ||
+      Number(info.notnull) === 0
+    ) {
+      assignments.push(
+        `${field} = NULL`
+      );
     } else {
-      /*
-        Bei NOT NULL ersetzen wir den Hash durch einen zufälligen,
-        nicht bekannten Wert.
-
-        Dadurch kann das alte Passwort nicht mehr verwendet werden.
-      */
       const randomReplacement =
         `deleted_${crypto.randomUUID()}_${crypto.randomUUID()}`;
 
-      assignments.push(`${field} = ?`);
-      bindings.push(randomReplacement);
+      assignments.push(
+        `${field} = ?`
+      );
+
+      bindings.push(
+        randomReplacement
+      );
     }
   }
 
   /*
-    Falls eine E-Mail NOT NULL sein sollte, können wir sie nicht
-    auf NULL setzen. In diesem Fall ersetzen wir sie durch eine
-    interne, nicht zustellbare Adresse.
+    Falls E-Mail NOT NULL ist,
+    durch nicht zustellbare Adresse ersetzen.
   */
-  if (columns.includes("email")) {
-    const emailInfo = (serverInfo.results || []).find(
-      (column) => column.name === "email"
-    );
+  if (
+    columns.includes("email")
+  ) {
+    const emailInfo =
+      (serverInfo.results || []).find(
+        column =>
+          column.name === "email"
+      );
 
-    if (emailInfo && Number(emailInfo.notnull) === 1) {
-      assignments.push("email = ?");
+    if (
+      emailInfo &&
+      Number(emailInfo.notnull) === 1
+    ) {
+      assignments.push(
+        "email = ?"
+      );
+
       bindings.push(
         `deleted-${user.id}-${crypto.randomUUID()}@invalid.invalid`
       );
     }
   }
 
-  bindings.push(user.id);
+  bindings.push(
+    user.id
+  );
 
   await env.DB.prepare(`
     UPDATE users
@@ -373,27 +571,46 @@ async function anonymizeUser(env, user) {
   return anonymousUsername;
 }
 
-export async function onRequestGet(context) {
-  const { request, env } = context;
+
+/*
+  GET /api/account/delete
+
+  Liefert Informationen zur Accountlöschung
+  für den aktuell eingeloggten Nutzer.
+*/
+
+export async function onRequestGet(
+  context
+) {
+  const {
+    request,
+    env
+  } = context;
 
   try {
     if (!env.DB) {
       return json(
         {
           ok: false,
-          error: "Database binding missing."
+          error:
+            "Database binding missing."
         },
         500
       );
     }
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(
+        request,
+        env
+      );
 
     if (!user) {
       return json(
         {
           ok: false,
-          error: "Not logged in."
+          error:
+            "Not logged in."
         },
         401
       );
@@ -403,18 +620,27 @@ export async function onRequestGet(context) {
       ok: true,
 
       account: {
-        id: user.id,
-        username: user.username,
+        id:
+          user.id,
+
+        username:
+          user.username,
+
         server:
           user.role === "admin"
             ? "ADMIN"
             : user.server,
-        role: user.role
+
+        role:
+          user.role
       },
 
       deletion: {
-        available: user.role !== "admin",
-        confirmation_text: CONFIRMATION_TEXT,
+        available:
+          user.role !== "admin",
+
+        confirmation_text:
+          CONFIRMATION_TEXT,
 
         effects: [
           "The account will be permanently disabled.",
@@ -427,53 +653,89 @@ export async function onRequestGet(context) {
         ]
       }
     });
+
   } catch (error) {
-    console.error("Account delete GET error:", error);
+    console.error(
+      "Account delete GET error:",
+      error
+    );
 
     return json(
       {
         ok: false,
-        error: "Internal server error."
+        error:
+          "Internal server error."
       },
       500
     );
   }
 }
 
-export async function onRequestDelete(context) {
-  const { request, env } = context;
+
+/*
+  DELETE /api/account/delete
+
+  JSON:
+
+  {
+    "confirmation": "DELETE"
+  }
+
+  Optional:
+
+  {
+    "confirmation": "DELETE",
+    "username": "Spielername"
+  }
+
+  Der Endpoint kann ausschließlich den
+  aktuell eingeloggten eigenen Account löschen.
+*/
+
+export async function onRequestDelete(
+  context
+) {
+  const {
+    request,
+    env
+  } = context;
 
   try {
     if (!env.DB) {
       return json(
         {
           ok: false,
-          error: "Database binding missing."
+          error:
+            "Database binding missing."
         },
         500
       );
     }
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(
+        request,
+        env
+      );
 
     if (!user) {
       return json(
         {
           ok: false,
-          error: "Not logged in."
+          error:
+            "Not logged in."
         },
         401
       );
     }
 
     /*
-      Der Admin-Account darf nicht über die normale
-      Accountlöschfunktion gelöscht werden.
-
-      Dadurch verhindern wir, dass du dich versehentlich selbst
-      aus der Administration aussperrst.
+      Admin-Accounts dürfen nicht über die
+      normale Accountlöschung gelöscht werden.
     */
-    if (user.role === "admin") {
+    if (
+      user.role === "admin"
+    ) {
       return json(
         {
           ok: false,
@@ -487,12 +749,14 @@ export async function onRequestDelete(context) {
     let body;
 
     try {
-      body = await request.json();
+      body =
+        await request.json();
     } catch {
       return json(
         {
           ok: false,
-          error: "Invalid JSON body."
+          error:
+            "Invalid JSON body."
         },
         400
       );
@@ -503,7 +767,9 @@ export async function onRequestDelete(context) {
         ? body.confirmation.trim()
         : "";
 
-    if (confirmation !== CONFIRMATION_TEXT) {
+    if (
+      confirmation !== CONFIRMATION_TEXT
+    ) {
       return json(
         {
           ok: false,
@@ -515,76 +781,107 @@ export async function onRequestDelete(context) {
     }
 
     /*
-      Optional kann das Frontend zusätzlich den aktuellen
-      Spielernamen mitsenden.
-
-      Dadurch wird ein versehentlicher Request noch schwieriger.
+      Optional kann das Frontend zusätzlich
+      den aktuellen Spielernamen mitsenden.
     */
     if (
       body?.username !== undefined &&
-      String(body.username).trim() !== user.username
+      String(body.username).trim() !==
+        user.username
     ) {
       return json(
         {
           ok: false,
-          error: "Username confirmation does not match."
+          error:
+            "Username confirmation does not match."
         },
         400
       );
     }
 
     /*
-      Zuerst anonymisieren wir den eigentlichen Account.
+      Zuerst Account anonymisieren.
+
+      Dadurch bleiben Beiträge/Nachrichten
+      strukturell erhalten, zeigen aber nicht
+      mehr den ursprünglichen Spielernamen.
     */
     const anonymousUsername =
-      await anonymizeUser(env, user);
+      await anonymizeUser(
+        env,
+        user
+      );
 
     /*
-      Danach entfernen wir alle persönlichen/verzichtbaren
-      Account-Verknüpfungen und insbesondere sämtliche Sessions.
+      Danach alle persönlichen bzw.
+      verzichtbaren Verknüpfungen entfernen.
+      Sämtliche Sessions werden ebenfalls
+      gelöscht.
     */
-    await deleteUserRelations(env, user.id);
+    await deleteUserRelations(
+      env,
+      user.id
+    );
 
     return new Response(
       JSON.stringify({
         ok: true,
+
         deleted: true,
-        message: "Account deleted successfully.",
-        anonymous_username: anonymousUsername
+
+        message:
+          "Account deleted successfully.",
+
+        anonymous_username:
+          anonymousUsername
       }),
       {
         status: 200,
+
         headers: {
           "Content-Type":
             "application/json; charset=utf-8",
 
-          "Cache-Control": "no-store",
+          "Cache-Control":
+            "no-store",
 
           /*
-            Browser-Session ebenfalls sofort entfernen.
+            Browser-Session sofort entfernen.
           */
-          "Set-Cookie": expiredSessionCookie()
+          "Set-Cookie":
+            expiredSessionCookie()
         }
       }
     );
+
   } catch (error) {
-    console.error("Account delete DELETE error:", error);
+    console.error(
+      "Account delete DELETE error:",
+      error
+    );
 
     return json(
       {
         ok: false,
-        error: "Internal server error."
+        error:
+          "Internal server error."
       },
       500
     );
   }
 }
 
+
+/*
+  Alle anderen Methoden gesperrt.
+*/
+
 export async function onRequestPost() {
   return json(
     {
       ok: false,
-      error: "Method not allowed."
+      error:
+        "Method not allowed."
     },
     405
   );
@@ -594,7 +891,8 @@ export async function onRequestPut() {
   return json(
     {
       ok: false,
-      error: "Method not allowed."
+      error:
+        "Method not allowed."
     },
     405
   );
@@ -604,7 +902,8 @@ export async function onRequestPatch() {
   return json(
     {
       ok: false,
-      error: "Method not allowed."
+      error:
+        "Method not allowed."
     },
     405
   );
