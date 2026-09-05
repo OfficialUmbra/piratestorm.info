@@ -85,6 +85,9 @@ async function getCurrentUser(request, env) {
       ON users.id = sessions.user_id
     WHERE sessions.id = ?
       AND sessions.expires_at > ?
+      AND LOWER(TRIM(users.username)) NOT LIKE 'deleted user%'
+      AND LOWER(TRIM(users.username)) NOT LIKE 'deleted_user%'
+      AND LOWER(TRIM(users.username)) NOT LIKE 'deleted-user%'
     LIMIT 1
   `)
     .bind(sessionId, now)
@@ -110,6 +113,9 @@ async function getRegisteredCount(env) {
   const row = await env.DB.prepare(`
     SELECT COUNT(*) AS total
     FROM users
+    WHERE LOWER(TRIM(username)) NOT LIKE 'deleted user%'
+      AND LOWER(TRIM(username)) NOT LIKE 'deleted_user%'
+      AND LOWER(TRIM(username)) NOT LIKE 'deleted-user%'
   `).first();
 
   return Number(row?.total || 0);
@@ -125,26 +131,36 @@ async function getPresenceCounts(env) {
 
     Gäste zählen wir anhand der nur für die aktuelle geöffnete
     Webseite erzeugten temporären visitor_id.
+
+    Zusätzlich werden Presence-Einträge von bereits gelöschten
+    Accounts nicht mehr als eingeloggte Mitglieder gezählt.
   */
   const row = await env.DB.prepare(`
     SELECT
       COUNT(
         DISTINCT CASE
-          WHEN user_id IS NULL
-          THEN visitor_id
+          WHEN site_presence.user_id IS NULL
+          THEN site_presence.visitor_id
         END
       ) AS guests,
 
       COUNT(
         DISTINCT CASE
-          WHEN user_id IS NOT NULL
-          THEN user_id
+          WHEN site_presence.user_id IS NOT NULL
+            AND users.id IS NOT NULL
+          THEN site_presence.user_id
         END
       ) AS members
 
     FROM site_presence
 
-    WHERE last_seen >= ?
+    LEFT JOIN users
+      ON users.id = site_presence.user_id
+      AND LOWER(TRIM(users.username)) NOT LIKE 'deleted user%'
+      AND LOWER(TRIM(users.username)) NOT LIKE 'deleted_user%'
+      AND LOWER(TRIM(users.username)) NOT LIKE 'deleted-user%'
+
+    WHERE site_presence.last_seen >= ?
   `)
     .bind(cutoff)
     .first();
@@ -225,7 +241,7 @@ export async function onRequestGet(context) {
 /*
   POST
   ----
-  Heartbeat für die aktuelle geöffnete Webseite.
+  Heartbeat für die aktuell geöffnete Webseite.
 
   Body:
 
@@ -233,8 +249,7 @@ export async function onRequestGet(context) {
     "visitor_id": "page_xxxxx"
   }
 
-  Diese visitor_id wird künftig NICHT mehr in localStorage
-  gespeichert.
+  Diese visitor_id wird NICHT in localStorage gespeichert.
 
   Das Frontend erzeugt beim Laden der Seite einmal eine zufällige
   ID ausschließlich im JavaScript-Arbeitsspeicher.
@@ -295,6 +310,9 @@ export async function onRequestPost(context) {
 
       Falls sich ein Nutzer ausloggt, wird derselbe Eintrag beim
       nächsten Heartbeat wieder zu einem Gast.
+
+      Ein gelöschter Account wird durch getCurrentUser()
+      nicht mehr als eingeloggter Nutzer erkannt.
     */
     await env.DB.prepare(`
       INSERT INTO site_presence (
