@@ -58,7 +58,7 @@ async function getCurrentUser(request, env) {
       users.role
     FROM sessions
     JOIN users ON users.id = sessions.user_id
-    WHERE sessions.token = ?
+    WHERE sessions.id = ?
       AND sessions.expires_at > ?
     LIMIT 1
   `)
@@ -170,9 +170,7 @@ async function validateTarget(
   }
 
   /*
-   * ============================================
    * ADMIN-SCHUTZ
-   * ============================================
    *
    * Kein Admin-Account kann:
    * - gekickt
@@ -412,10 +410,13 @@ export async function onRequestGet(context) {
 
           user: {
             id: item.user_id,
+
             username:
               item.target_username,
+
             server:
               item.target_server,
+
             server_code:
               getServerCode(
                 item.target_server
@@ -424,6 +425,7 @@ export async function onRequestGet(context) {
 
           banned_by: {
             id: item.banned_by,
+
             username:
               item.admin_username
           },
@@ -489,7 +491,6 @@ export async function onRequestGet(context) {
  *   "reason": "Spam"
  * }
  *
- *
  * 2. Bann
  *
  * {
@@ -498,7 +499,6 @@ export async function onRequestGet(context) {
  *   "duration": "24h",
  *   "reason": "Beleidigungen"
  * }
- *
  *
  * Erlaubte duration:
  *
@@ -985,7 +985,10 @@ export async function onRequestDelete(context) {
           ban.reason,
 
         previous_expires_at:
-          ban.expires_at
+          ban.expires_at,
+
+        unbanned_at:
+          now
       }
     );
 
