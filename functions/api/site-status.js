@@ -1,464 +1,301 @@
-/*
- * =====================================================
- * PirateStorm.info
- * Site Presence / Status API
- *
- * GET  /api/site-status
- * POST /api/site-status
- *
- * Liefert:
- *
- * - Besucher online gesamt
- * - Gäste online
- * - eingeloggte Member online
- * - registrierte Accounts gesamt
- *
- * Presence ist unabhängig vom Chat.
- * =====================================================
- */
-
 const ONLINE_TIMEOUT_SECONDS = 5 * 60;
 
-
-/*
- * =====================================================
- * RESPONSE
- * =====================================================
- */
+const MAX_VISITOR_ID_LENGTH = 100;
+const MIN_VISITOR_ID_LENGTH = 10;
 
 function json(data, status = 200) {
-  return new Response(
-    JSON.stringify(data),
-    {
-      status,
-      headers: {
-        "Content-Type":
-          "application/json; charset=utf-8",
-
-        "Cache-Control":
-          "no-store"
-      }
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store"
     }
-  );
+  });
 }
 
-
-/*
- * =====================================================
- * COOKIE
- * =====================================================
- */
-
 function getCookie(request, name) {
-  const cookie =
-    request.headers.get("Cookie") || "";
+  const cookieHeader = request.headers.get("Cookie") || "";
 
-  for (const part of cookie.split(";")) {
-    const [key, ...value] =
-      part.trim().split("=");
+  for (const part of cookieHeader.split(";")) {
+    const trimmed = part.trim();
+
+    if (!trimmed) {
+      continue;
+    }
+
+    const separatorIndex = trimmed.indexOf("=");
+
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    const value = trimmed.slice(separatorIndex + 1).trim();
 
     if (key === name) {
-      return decodeURIComponent(
-        value.join("=")
-      );
+      try {
+        return decodeURIComponent(value);
+      } catch {
+        return value;
+      }
     }
   }
 
   return null;
 }
 
+function normalizeVisitorId(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
 
-/*
- * =====================================================
- * CURRENT USER
- * =====================================================
- *
- * WICHTIG:
- *
- * Session liegt in sessions.id.
- * =====================================================
- */
+  const visitorId = value.trim();
 
-async function getCurrentUser(
-  request,
-  env
-) {
-  const sessionId =
-    getCookie(
-      request,
-      "ps_session"
-    );
+  if (
+    visitorId.length < MIN_VISITOR_ID_LENGTH ||
+    visitorId.length > MAX_VISITOR_ID_LENGTH
+  ) {
+    return null;
+  }
+
+  if (!/^[a-zA-Z0-9_-]+$/.test(visitorId)) {
+    return null;
+  }
+
+  return visitorId;
+}
+
+async function getCurrentUser(request, env) {
+  const sessionId = getCookie(request, "ps_session");
 
   if (!sessionId) {
     return null;
   }
 
-  const now =
-    Math.floor(
-      Date.now() / 1000
-    );
+  const now = Math.floor(Date.now() / 1000);
 
-  return await env.DB.prepare(`
+  const user = await env.DB.prepare(`
     SELECT
-      u.id,
-      u.username,
-      u.server,
-      u.role
-
-    FROM sessions s
-
-    JOIN users u
-      ON u.id = s.user_id
-
-    WHERE s.id = ?
-      AND s.expires_at > ?
-
+      users.id,
+      users.username,
+      users.server,
+      users.role
+    FROM sessions
+    JOIN users
+      ON users.id = sessions.user_id
+    WHERE sessions.id = ?
+      AND sessions.expires_at > ?
     LIMIT 1
   `)
-    .bind(
-      sessionId,
-      now
-    )
+    .bind(sessionId, now)
     .first();
+
+  return user || null;
 }
 
-
-/*
- * =====================================================
- * CLEANUP
- * =====================================================
- */
-
-async function cleanupPresence(env) {
+async function cleanupOldPresence(env) {
   const cutoff =
-    Math.floor(
-      Date.now() / 1000
-    ) -
+    Math.floor(Date.now() / 1000) -
     ONLINE_TIMEOUT_SECONDS;
 
   await env.DB.prepare(`
     DELETE FROM site_presence
-
     WHERE last_seen < ?
   `)
     .bind(cutoff)
     .run();
 }
 
+async function getRegisteredCount(env) {
+  const row = await env.DB.prepare(`
+    SELECT COUNT(*) AS total
+    FROM users
+  `).first();
 
-/*
- * =====================================================
- * VISITOR ID VALIDATION
- * =====================================================
- *
- * visitor_id wird im Browser zufällig erzeugt.
- *
- * Beispiel:
- *
- * ps_7e87e82b_4be4_4a71_8a3f...
- *
- * Wir erlauben nur eine begrenzte Länge und
- * unkritische Zeichen.
- * =====================================================
- */
-
-function normalizeVisitorId(value) {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const id =
-    value.trim();
-
-  if (
-    id.length < 10 ||
-    id.length > 100
-  ) {
-    return null;
-  }
-
-  if (
-    !/^[a-zA-Z0-9_-]+$/.test(id)
-  ) {
-    return null;
-  }
-
-  return id;
+  return Number(row?.total || 0);
 }
 
-
-/*
- * =====================================================
- * SITE STATISTICS
- * =====================================================
- */
-
-async function getStatistics(env) {
-  const now =
-    Math.floor(
-      Date.now() / 1000
-    );
-
+async function getPresenceCounts(env) {
   const cutoff =
-    now -
+    Math.floor(Date.now() / 1000) -
     ONLINE_TIMEOUT_SECONDS;
 
-
   /*
-   * =================================================
-   * ONLINE COUNTS
-   * =================================================
-   *
-   * Member werden nach user_id gezählt.
-   *
-   * Dadurch wird ein eingeloggter Benutzer nicht
-   * mehrfach als Member gezählt, wenn die Seite
-   * beispielsweise in mehreren Tabs offen ist.
-   *
-   * Gäste werden anhand ihrer visitor_id gezählt.
-   * =================================================
-   */
+    Mitglieder zählen wir anhand ihrer user_id eindeutig.
 
-  const online =
-    await env.DB.prepare(`
-      SELECT
+    Gäste zählen wir anhand der nur für die aktuelle geöffnete
+    Webseite erzeugten temporären visitor_id.
+  */
+  const row = await env.DB.prepare(`
+    SELECT
+      COUNT(
+        DISTINCT CASE
+          WHEN user_id IS NULL
+          THEN visitor_id
+        END
+      ) AS guests,
 
-        COUNT(
-          DISTINCT CASE
-            WHEN user_id IS NULL
-            THEN visitor_id
-          END
-        ) AS guests,
+      COUNT(
+        DISTINCT CASE
+          WHEN user_id IS NOT NULL
+          THEN user_id
+        END
+      ) AS members
 
-        COUNT(
-          DISTINCT CASE
-            WHEN user_id IS NOT NULL
-            THEN user_id
-          END
-        ) AS members
+    FROM site_presence
 
-      FROM site_presence
+    WHERE last_seen >= ?
+  `)
+    .bind(cutoff)
+    .first();
 
-      WHERE last_seen >= ?
-    `)
-      .bind(cutoff)
-      .first();
-
-
-  /*
-   * =================================================
-   * REGISTERED USERS
-   * =================================================
-   */
-
-  const registered =
-    await env.DB.prepare(`
-      SELECT
-        COUNT(*) AS total
-
-      FROM users
-    `)
-      .first();
-
-
-  const guests =
-    Number(
-      online?.guests || 0
-    );
-
-  const members =
-    Number(
-      online?.members || 0
-    );
-
-  const registeredUsers =
-    Number(
-      registered?.total || 0
-    );
-
+  const guests = Number(row?.guests || 0);
+  const members = Number(row?.members || 0);
 
   return {
-    online:
-      guests + members,
-
     guests,
-
     members,
-
-    registered:
-      registeredUsers
+    online: guests + members
   };
 }
 
+async function getSiteStatus(env) {
+  await cleanupOldPresence(env);
+
+  const [
+    presence,
+    registered
+  ] = await Promise.all([
+    getPresenceCounts(env),
+    getRegisteredCount(env)
+  ]);
+
+  return {
+    online: presence.online,
+    guests: presence.guests,
+    members: presence.members,
+    registered
+  };
+}
 
 /*
- * =====================================================
- * GET
- * =====================================================
- *
- * GET /api/site-status
- *
- * Dieser Request verändert keine Presence.
- *
- * Er liefert nur den aktuellen Stand.
- * =====================================================
- */
+  GET
+  ----
+  Liefert ausschließlich die aktuellen Zahlen.
 
-export async function onRequestGet(
-  context
-) {
+  GET erzeugt und verändert keine Presence-Einträge.
+*/
+export async function onRequestGet(context) {
+  const { env } = context;
+
   try {
-    const { env } =
-      context;
-
-    await cleanupPresence(
-      env
-    );
-
-    const stats =
-      await getStatistics(
-        env
+    if (!env.DB) {
+      return json(
+        {
+          ok: false,
+          error: "Database binding missing."
+        },
+        500
       );
+    }
+
+    const status = await getSiteStatus(env);
 
     return json({
       ok: true,
-
-      online:
-        stats.online,
-
-      guests:
-        stats.guests,
-
-      members:
-        stats.members,
-
-      registered:
-        stats.registered,
-
-      timeout_seconds:
-        ONLINE_TIMEOUT_SECONDS
+      ...status,
+      timeout_seconds: ONLINE_TIMEOUT_SECONDS
     });
-
   } catch (error) {
     console.error(
-      "GET /api/site-status error:",
+      "Site status GET error:",
       error
     );
 
-    return json({
-      ok: false,
-
-      error:
-        "Der Seitenstatus konnte nicht geladen werden."
-    }, 500);
+    return json(
+      {
+        ok: false,
+        error: "Internal server error."
+      },
+      500
+    );
   }
 }
 
-
 /*
- * =====================================================
- * POST
- * =====================================================
- *
- * HEARTBEAT
- *
- * Body:
- *
- * {
- *   "visitor_id": "ps_..."
- * }
- *
- *
- * Nicht eingeloggt:
- *
- * visitor_id + user_id NULL
- *
- *
- * Eingeloggt:
- *
- * visitor_id + echte user_id
- *
- *
- * Das Frontend sendet später etwa alle
- * 30 Sekunden einen Heartbeat.
- * =====================================================
- */
+  POST
+  ----
+  Heartbeat für die aktuelle geöffnete Webseite.
 
-export async function onRequestPost(
-  context
-) {
+  Body:
+
+  {
+    "visitor_id": "page_xxxxx"
+  }
+
+  Diese visitor_id wird künftig NICHT mehr in localStorage
+  gespeichert.
+
+  Das Frontend erzeugt beim Laden der Seite einmal eine zufällige
+  ID ausschließlich im JavaScript-Arbeitsspeicher.
+
+  Beim Schließen der Seite geht diese ID verloren.
+*/
+export async function onRequestPost(context) {
+  const { request, env } = context;
+
   try {
-    const {
-      request,
-      env
-    } = context;
+    if (!env.DB) {
+      return json(
+        {
+          ok: false,
+          error: "Database binding missing."
+        },
+        500
+      );
+    }
 
     let body;
 
     try {
-      body =
-        await request.json();
-
+      body = await request.json();
     } catch {
-      return json({
-        ok: false,
-
-        error:
-          "Ungültige Anfrage."
-      }, 400);
+      return json(
+        {
+          ok: false,
+          error: "Invalid JSON body."
+        },
+        400
+      );
     }
-
-
-    /*
-     * =================================================
-     * VISITOR ID
-     * =================================================
-     */
 
     const visitorId =
-      normalizeVisitorId(
-        body.visitor_id
-      );
+      normalizeVisitorId(body?.visitor_id);
 
     if (!visitorId) {
-      return json({
-        ok: false,
-
-        error:
-          "Ungültige Besucher-ID."
-      }, 400);
+      return json(
+        {
+          ok: false,
+          error: "Invalid visitor ID."
+        },
+        400
+      );
     }
 
-
-    /*
-     * =================================================
-     * LOGIN STATUS
-     * =================================================
-     */
-
-    const user =
-      await getCurrentUser(
-        request,
-        env
-      );
-
-    const userId =
-      user
-        ? user.id
-        : null;
+    const currentUser =
+      await getCurrentUser(request, env);
 
     const now =
-      Math.floor(
-        Date.now() / 1000
-      );
-
+      Math.floor(Date.now() / 1000);
 
     /*
-     * =================================================
-     * PRESENCE UPSERT
-     * =================================================
-     */
+      Falls der eingeloggte Nutzer vorher als Gast mit derselben
+      temporären Page-ID vorhanden war, wird der Eintrag einfach
+      zum Member-Eintrag aktualisiert.
 
+      Falls sich ein Nutzer ausloggt, wird derselbe Eintrag beim
+      nächsten Heartbeat wieder zu einem Gast.
+    */
     await env.DB.prepare(`
       INSERT INTO site_presence (
         visitor_id,
@@ -466,225 +303,190 @@ export async function onRequestPost(
         last_seen,
         created_at
       )
-
-      VALUES (?, ?, ?, ?)
+      VALUES (
+        ?,
+        ?,
+        ?,
+        ?
+      )
 
       ON CONFLICT(visitor_id)
-
       DO UPDATE SET
-        user_id =
-          excluded.user_id,
-
-        last_seen =
-          excluded.last_seen
+        user_id = excluded.user_id,
+        last_seen = excluded.last_seen
     `)
       .bind(
         visitorId,
-        userId,
+        currentUser?.id || null,
         now,
         now
       )
       .run();
 
-
     /*
-     * =================================================
-     * CLEANUP
-     * =================================================
-     */
+      Ein eingeloggter Nutzer kann theoretisch mehrere Tabs offen
+      haben.
 
-    await cleanupPresence(
-      env
-    );
+      Das ist okay:
+      Bei der Anzeige zählen wir Mitglieder mit DISTINCT user_id
+      trotzdem nur einmal.
+    */
 
+    await cleanupOldPresence(env);
 
-    /*
-     * =================================================
-     * CURRENT STATISTICS
-     * =================================================
-     */
-
-    const stats =
-      await getStatistics(
-        env
-      );
-
+    const status =
+      await getSiteStatus(env);
 
     return json({
       ok: true,
 
       presence: {
-        online:
-          true,
+        active: true,
 
-        authenticated:
-          Boolean(user),
+        logged_in:
+          Boolean(currentUser),
 
         user_id:
-          userId,
+          currentUser?.id || null,
 
-        username:
-          user
-            ? user.username
-            : null,
-
-        last_seen:
-          now
+        server:
+          currentUser
+            ? (
+                currentUser.role === "admin"
+                  ? "ADMIN"
+                  : currentUser.server
+              )
+            : null
       },
 
-      online:
-        stats.online,
-
-      guests:
-        stats.guests,
-
-      members:
-        stats.members,
-
-      registered:
-        stats.registered,
+      ...status,
 
       timeout_seconds:
         ONLINE_TIMEOUT_SECONDS
     });
-
   } catch (error) {
     console.error(
-      "POST /api/site-status error:",
+      "Site status POST error:",
       error
     );
 
-    return json({
-      ok: false,
-
-      error:
-        "Der Online-Status konnte nicht aktualisiert werden."
-    }, 500);
+    return json(
+      {
+        ok: false,
+        error: "Internal server error."
+      },
+      500
+    );
   }
 }
 
-
 /*
- * =====================================================
- * DELETE
- * =====================================================
- *
- * Optional:
- *
- * Das Frontend kann beim Logout die eigene Presence
- * sofort entfernen.
- *
- * Body:
- *
- * {
- *   "visitor_id": "ps_..."
- * }
- *
- * Wir verlassen uns trotzdem hauptsächlich auf den
- * 5-Minuten-Timeout, da Browser beim Schließen nicht
- * garantiert noch einen Request senden.
- * =====================================================
- */
+  DELETE
+  ------
+  Entfernt die temporäre Presence-ID sofort.
 
-export async function onRequestDelete(
-  context
-) {
+  Body:
+
+  {
+    "visitor_id": "page_xxxxx"
+  }
+
+  Das Frontend versucht diesen Request beim Verlassen der Seite
+  mit fetch(..., { keepalive: true }) zu senden.
+
+  Falls der Browser ihn nicht mehr abschicken kann, verschwindet
+  der Eintrag automatisch spätestens nach fünf Minuten.
+*/
+export async function onRequestDelete(context) {
+  const { request, env } = context;
+
   try {
-    const {
-      request,
-      env
-    } = context;
+    if (!env.DB) {
+      return json(
+        {
+          ok: false,
+          error: "Database binding missing."
+        },
+        500
+      );
+    }
 
     let body;
 
     try {
-      body =
-        await request.json();
-
+      body = await request.json();
     } catch {
-      return json({
-        ok: false,
-
-        error:
-          "Ungültige Anfrage."
-      }, 400);
+      return json(
+        {
+          ok: false,
+          error: "Invalid JSON body."
+        },
+        400
+      );
     }
 
     const visitorId =
-      normalizeVisitorId(
-        body.visitor_id
-      );
+      normalizeVisitorId(body?.visitor_id);
 
     if (!visitorId) {
-      return json({
-        ok: false,
-
-        error:
-          "Ungültige Besucher-ID."
-      }, 400);
+      return json(
+        {
+          ok: false,
+          error: "Invalid visitor ID."
+        },
+        400
+      );
     }
 
     await env.DB.prepare(`
       DELETE FROM site_presence
-
       WHERE visitor_id = ?
     `)
-      .bind(
-        visitorId
-      )
+      .bind(visitorId)
       .run();
 
-    const stats =
-      await getStatistics(
-        env
-      );
+    await cleanupOldPresence(env);
+
+    const status =
+      await getSiteStatus(env);
 
     return json({
       ok: true,
-
-      removed:
-        true,
-
-      online:
-        stats.online,
-
-      guests:
-        stats.guests,
-
-      members:
-        stats.members,
-
-      registered:
-        stats.registered
+      removed: true,
+      ...status
     });
-
   } catch (error) {
     console.error(
-      "DELETE /api/site-status error:",
+      "Site status DELETE error:",
       error
     );
 
-    return json({
-      ok: false,
-
-      error:
-        "Der Online-Status konnte nicht entfernt werden."
-    }, 500);
+    return json(
+      {
+        ok: false,
+        error: "Internal server error."
+      },
+      500
+    );
   }
 }
 
-
-/*
- * =====================================================
- * PUT
- * =====================================================
- */
-
 export async function onRequestPut() {
-  return json({
-    ok: false,
+  return json(
+    {
+      ok: false,
+      error: "Method not allowed."
+    },
+    405
+  );
+}
 
-    error:
-      "Diese Methode wird nicht unterstützt."
-  }, 405);
+export async function onRequestPatch() {
+  return json(
+    {
+      ok: false,
+      error: "Method not allowed."
+    },
+    405
+  );
 }
