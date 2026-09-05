@@ -1361,7 +1361,7 @@ function chatCanModerate(){return chatIsAdmin()||chatIsModerator()}
 function chatCanModerateRole(role,userId=null){if(!chatCanModerate())return false;if(userId!==null&&Number(userId)===Number(forumCurrentUser?.id))return false;if(role==='admin')return false;if(chatIsModerator()&&role==='moderator')return false;return true}
 function chatRoleBadge(role){if(role==='admin')return '<span class="chat-role-badge admin">ADMIN</span>';if(role==='moderator')return '<span class="chat-role-badge mod">MOD</span>';return ''}
 function chatColorClass(m,local=false){if(m.is_admin||m.role==='admin')return 'chat-admin';if(m.is_moderator||m.role==='moderator')return 'chat-moderator';return local?'server-local':(CHAT_CLASS[m.server]||'server-ar1')}
-function chatServerCode(server,role=null,serverCode=null){if(role==='admin')return 'ADMIN';return serverCode||CHAT_SERVER[server]||server||''}
+function chatServerCode(server,role=null,serverCode=null){if(role==='admin')return 'ADMIN';if(role==='moderator')return 'MOD';return serverCode||CHAT_SERVER[server]||server||''}
 function chatSetStatus(t,bad=false){const e=chatEl('chatStatus');if(e){e.textContent=t||'';e.style.color=bad?'#ff8585':''}}
 function chatModal(html,closable=true){chatEl('chatModalBody').innerHTML=html;chatEl('chatModalClose').style.display=closable?'inline-block':'none';chatEl('chatModal').classList.add('open')}
 function chatDate(unix){return unix?new Date(Number(unix)*1000).toLocaleString(lang==='de'?'de-DE':'en-GB'):''}
