@@ -1,33 +1,84 @@
 function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store"
+  return new Response(
+    JSON.stringify(data),
+    {
+      status,
+      headers: {
+        "Content-Type":
+          "application/json; charset=utf-8",
+
+        "Cache-Control":
+          "no-store"
+      }
     }
-  });
+  );
 }
 
-function getCookie(request, name) {
-  const cookie = request.headers.get("Cookie") || "";
 
-  for (const part of cookie.split(";")) {
-    const [key, ...value] = part.trim().split("=");
+/*
+ * =====================================================
+ * COOKIE
+ * =====================================================
+ */
 
-    if (key === name) {
-      return decodeURIComponent(value.join("="));
+function getCookie(
+  request,
+  name
+) {
+  const cookie =
+    request.headers.get(
+      "Cookie"
+    ) || "";
+
+  for (
+    const part
+    of cookie.split(";")
+  ) {
+    const [
+      key,
+      ...value
+    ] =
+      part
+        .trim()
+        .split("=");
+
+    if (
+      key === name
+    ) {
+      return decodeURIComponent(
+        value.join("=")
+      );
     }
   }
 
   return null;
 }
 
-async function getCurrentUser(request, env) {
-  const token = getCookie(request, "ps_session");
+
+/*
+ * =====================================================
+ * CURRENT USER
+ * =====================================================
+ */
+
+async function getCurrentUser(
+  request,
+  env
+) {
+  const token =
+    getCookie(
+      request,
+      "ps_session"
+    );
 
   if (!token) {
     return null;
   }
+
+  const now =
+    Math.floor(
+      Date.now() / 1000
+    );
 
   return await env.DB.prepare(`
     SELECT
@@ -35,29 +86,72 @@ async function getCurrentUser(request, env) {
       users.username,
       users.server,
       users.role
+
     FROM sessions
+
     JOIN users
-      ON users.id = sessions.user_id
+      ON users.id =
+        sessions.user_id
+
     WHERE sessions.id = ?
       AND sessions.expires_at > ?
+
     LIMIT 1
   `)
     .bind(
       token,
-      Math.floor(Date.now() / 1000)
+      now
     )
     .first();
 }
 
+
+/*
+ * =====================================================
+ * ROLES
+ * =====================================================
+ */
+
 function isAdmin(user) {
   return Boolean(
     user &&
-    user.role === "admin"
+    user.role ===
+    "admin"
   );
 }
 
+
+function isModerator(user) {
+  return Boolean(
+    user &&
+    user.role ===
+    "moderator"
+  );
+}
+
+
+function canModerate(user) {
+  return Boolean(
+    user &&
+    (
+      isAdmin(user) ||
+      isModerator(user)
+    )
+  );
+}
+
+
+/*
+ * =====================================================
+ * TEXT
+ * =====================================================
+ */
+
 function normalizeReason(value) {
-  if (typeof value !== "string") {
+  if (
+    typeof value !==
+    "string"
+  ) {
     return "";
   }
 
@@ -67,6 +161,160 @@ function normalizeReason(value) {
     .trim();
 }
 
+
+/*
+ * =====================================================
+ * POSITIVE INTEGER
+ * =====================================================
+ */
+
+function toPositiveInt(value) {
+  const number =
+    Number(value);
+
+  if (
+    !Number.isInteger(number) ||
+    number <= 0
+  ) {
+    return null;
+  }
+
+  return number;
+}
+
+
+/*
+ * =====================================================
+ * STAFF AUTH
+ * =====================================================
+ */
+
+async function requireModerator(
+  request,
+  env
+) {
+  const user =
+    await getCurrentUser(
+      request,
+      env
+    );
+
+  if (!user) {
+    return {
+      ok:
+        false,
+
+      response:
+        json({
+          ok:
+            false,
+
+          error:
+            "Du musst eingeloggt sein."
+        }, 401)
+    };
+  }
+
+  if (
+    !canModerate(
+      user
+    )
+  ) {
+    return {
+      ok:
+        false,
+
+      response:
+        json({
+          ok:
+            false,
+
+          error:
+            "Nur Administratoren und Moderatoren dürfen Whisper-Meldungen verwalten."
+        }, 403)
+    };
+  }
+
+  return {
+    ok:
+      true,
+
+    user
+  };
+}
+
+
+/*
+ * =====================================================
+ * TARGET PERMISSION
+ * =====================================================
+ *
+ * Moderator:
+ * -> nur normale User
+ *
+ * Admin:
+ * -> User + Moderator
+ *
+ * Admin als Ziel:
+ * -> niemals
+ * =====================================================
+ */
+
+function canModerateTarget(
+  actor,
+  target
+) {
+  if (
+    !actor ||
+    !target
+  ) {
+    return false;
+  }
+
+  if (
+    Number(actor.id) ===
+    Number(target.id)
+  ) {
+    return false;
+  }
+
+  if (
+    target.role ===
+    "admin"
+  ) {
+    return false;
+  }
+
+  if (
+    isModerator(actor)
+  ) {
+    return (
+      target.role ===
+      "user"
+    );
+  }
+
+  if (
+    isAdmin(actor)
+  ) {
+    return (
+      target.role ===
+        "user" ||
+      target.role ===
+        "moderator"
+    );
+  }
+
+  return false;
+}
+
+
+/*
+ * =====================================================
+ * WHISPER ROOM MEMBERSHIP
+ * =====================================================
+ */
+
 async function isRoomMember(
   env,
   roomId,
@@ -74,10 +322,14 @@ async function isRoomMember(
 ) {
   const member =
     await env.DB.prepare(`
-      SELECT 1 AS found
+      SELECT
+        1 AS found
+
       FROM whisper_members
+
       WHERE room_id = ?
         AND user_id = ?
+
       LIMIT 1
     `)
       .bind(
@@ -86,8 +338,17 @@ async function isRoomMember(
       )
       .first();
 
-  return Boolean(member);
+  return Boolean(
+    member
+  );
 }
+
+
+/*
+ * =====================================================
+ * MODERATION LOG
+ * =====================================================
+ */
 
 async function addModerationLog(
   env,
@@ -96,25 +357,56 @@ async function addModerationLog(
   action,
   details
 ) {
-  await env.DB.prepare(`
-    INSERT INTO chat_moderation_log (
-      admin_id,
-      target_user_id,
-      action,
-      details,
-      created_at
-    )
-    VALUES (?, ?, ?, ?, ?)
-  `)
-    .bind(
-      adminId,
-      targetUserId,
-      action,
-      JSON.stringify(details || {}),
-      Math.floor(Date.now() / 1000)
-    )
-    .run();
+  try {
+    await env.DB.prepare(`
+      INSERT INTO chat_moderation_log (
+        admin_id,
+        target_user_id,
+        action,
+        details,
+        created_at
+      )
+
+      VALUES (?, ?, ?, ?, ?)
+    `)
+      .bind(
+        adminId,
+        targetUserId ||
+        null,
+        action,
+        JSON.stringify(
+          details ||
+          {}
+        ),
+        Math.floor(
+          Date.now() / 1000
+        )
+      )
+      .run();
+
+  } catch (error) {
+    console.error(
+      "Whisper moderation log error:",
+      error
+    );
+  }
 }
+
+
+/*
+ * =====================================================
+ * WHISPER CONTEXT
+ * =====================================================
+ *
+ * Nur über einen tatsächlichen Report erreichbar.
+ *
+ * Es werden geladen:
+ *
+ * 5 Nachrichten davor
+ * gemeldete Nachricht
+ * 5 Nachrichten danach
+ * =====================================================
+ */
 
 async function getWhisperContext(
   env,
@@ -140,12 +432,14 @@ async function getWhisperContext(
       FROM whisper_messages wm
 
       JOIN users u
-        ON u.id = wm.user_id
+        ON u.id =
+          wm.user_id
 
       WHERE wm.room_id = ?
         AND wm.id < ?
 
-      ORDER BY wm.id DESC
+      ORDER BY
+        wm.id DESC
 
       LIMIT 5
     `)
@@ -154,6 +448,7 @@ async function getWhisperContext(
         messageId
       )
       .all();
+
 
   const reported =
     await env.DB.prepare(`
@@ -174,7 +469,8 @@ async function getWhisperContext(
       FROM whisper_messages wm
 
       JOIN users u
-        ON u.id = wm.user_id
+        ON u.id =
+          wm.user_id
 
       WHERE wm.room_id = ?
         AND wm.id = ?
@@ -186,6 +482,7 @@ async function getWhisperContext(
         messageId
       )
       .first();
+
 
   const after =
     await env.DB.prepare(`
@@ -206,12 +503,14 @@ async function getWhisperContext(
       FROM whisper_messages wm
 
       JOIN users u
-        ON u.id = wm.user_id
+        ON u.id =
+          wm.user_id
 
       WHERE wm.room_id = ?
         AND wm.id > ?
 
-      ORDER BY wm.id ASC
+      ORDER BY
+        wm.id ASC
 
       LIMIT 5
     `)
@@ -221,60 +520,124 @@ async function getWhisperContext(
       )
       .all();
 
+
   const rows = [
-    ...(before.results || []).reverse(),
-    ...(reported ? [reported] : []),
-    ...(after.results || [])
+    ...(
+      before.results ||
+      []
+    ).reverse(),
+
+    ...(
+      reported
+        ? [reported]
+        : []
+    ),
+
+    ...(
+      after.results ||
+      []
+    )
   ];
 
-  return rows.map(row => ({
-    id:
-      row.id,
 
-    room_id:
-      row.room_id,
-
-    user: {
+  return rows.map(
+    row => ({
       id:
-        row.user_id,
+        row.id,
 
-      username:
-        row.username,
+      room_id:
+        row.room_id,
 
-      server:
-        row.server,
+      user: {
+        id:
+          row.user_id,
 
-      role:
-        row.role,
+        username:
+          row.username,
 
-      is_admin:
-        row.role === "admin"
-    },
+        server:
+          row.server,
 
-    message:
-      row.original_message ||
-      row.message,
+        role:
+          row.role,
 
-    reply_to:
-      row.reply_to,
+        is_admin:
+          row.role ===
+          "admin",
 
-    created_at:
-      row.created_at,
+        is_moderator:
+          row.role ===
+          "moderator"
+      },
 
-    deleted:
-      Boolean(row.deleted_at),
+      /*
+       * Moderationskontext:
+       *
+       * original_message wird benutzt,
+       * falls vorhanden.
+       */
+      message:
+        row.original_message ||
+        row.message,
 
-    reported:
-      row.id === messageId
-  }));
+      reply_to:
+        row.reply_to,
+
+      created_at:
+        row.created_at,
+
+      deleted:
+        Boolean(
+          row.deleted_at
+        ),
+
+      reported:
+        Number(
+          row.id
+        ) ===
+        Number(
+          messageId
+        )
+    })
+  );
 }
 
+
 /*
+ * =====================================================
+ * POST
+ * =====================================================
+ *
  * WHISPER-NACHRICHT MELDEN
+ *
+ * {
+ *   "message_id": 123,
+ *   "reason": "Beleidigung"
+ * }
+ *
+ * Jeder eingeloggte Spieler darf melden.
+ *
+ * Voraussetzungen:
+ *
+ * - tatsächliches Mitglied des Raums
+ * - nicht eigene Nachricht
+ * - kein Admin als Ziel
+ *
+ * Moderator darf gemeldet werden.
+ *
+ * Diese Meldung sieht anschließend nur der Admin.
+ * =====================================================
  */
-export async function onRequestPost(context) {
+
+export async function onRequestPost(
+  context
+) {
   try {
-    const { request, env } = context;
+    const {
+      request,
+      env
+    } = context;
+
 
     const user =
       await getCurrentUser(
@@ -282,61 +645,86 @@ export async function onRequestPost(context) {
         env
       );
 
+
     if (!user) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Du musst eingeloggt sein."
       }, 401);
     }
+
 
     let body;
 
     try {
       body =
         await request.json();
+
     } catch {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Ungültige Anfrage."
       }, 400);
     }
 
+
     const messageId =
-      Number(body.message_id);
+      toPositiveInt(
+        body.message_id
+      );
+
 
     if (
-      !Number.isInteger(messageId) ||
-      messageId <= 0
+      !messageId
     ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Ungültige Nachricht."
       }, 400);
     }
+
 
     const reason =
       normalizeReason(
         body.reason
       );
 
-    if (!reason) {
+
+    if (
+      !reason
+    ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Bitte gib einen Grund für die Meldung an."
       }, 400);
     }
 
-    if (reason.length > 500) {
+
+    if (
+      reason.length >
+      500
+    ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Der Meldegrund darf maximal 500 Zeichen enthalten."
       }, 400);
     }
+
 
     const message =
       await env.DB.prepare(`
@@ -355,22 +743,53 @@ export async function onRequestPost(context) {
         FROM whisper_messages wm
 
         JOIN users author
-          ON author.id = wm.user_id
+          ON author.id =
+            wm.user_id
 
         WHERE wm.id = ?
 
         LIMIT 1
       `)
-        .bind(messageId)
+        .bind(
+          messageId
+        )
         .first();
 
-    if (!message) {
+
+    if (
+      !message
+    ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Nachricht wurde nicht gefunden."
       }, 404);
     }
+
+
+    if (
+      message.deleted_at
+    ) {
+      return json({
+        ok:
+          false,
+
+        error:
+          "Gelöschte Nachrichten können nicht gemeldet werden."
+      }, 409);
+    }
+
+
+    /*
+     * =================================================
+     * ROOM MEMBERSHIP
+     * =================================================
+     *
+     * Auch Admin oder Moderator bekommen hier
+     * keinen Sonderzugriff.
+     */
 
     const member =
       await isRoomMember(
@@ -379,41 +798,85 @@ export async function onRequestPost(context) {
         user.id
       );
 
-    if (!member) {
+
+    if (
+      !member
+    ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Du kannst keine Nachricht aus diesem Whisper-Chat melden."
       }, 403);
     }
 
-    if (message.user_id === user.id) {
+
+    /*
+     * EIGENE NACHRICHT
+     */
+
+    if (
+      Number(
+        message.user_id
+      ) ===
+      Number(
+        user.id
+      )
+    ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Du kannst deine eigene Nachricht nicht melden."
       }, 400);
     }
 
-    if (message.role === "admin") {
+
+    /*
+     * =================================================
+     * ADMIN IMMUNITY
+     * =================================================
+     */
+
+    if (
+      message.role ===
+      "admin"
+    ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Der Administrator kann nicht gemeldet werden."
       }, 403);
     }
 
+
+    /*
+     * =================================================
+     * DUPLIKAT
+     * =================================================
+     */
+
     const existing =
       await env.DB.prepare(`
-        SELECT id
+        SELECT
+          id
+
         FROM chat_reports
+
         WHERE reporter_id = ?
           AND whisper_message_id = ?
-          AND report_type = 'whisper'
+          AND report_type =
+            'whisper'
+
           AND status IN (
             'open',
             'reviewed'
           )
+
         LIMIT 1
       `)
         .bind(
@@ -422,16 +885,25 @@ export async function onRequestPost(context) {
         )
         .first();
 
-    if (existing) {
+
+    if (
+      existing
+    ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Du hast diese Nachricht bereits gemeldet."
       }, 409);
     }
 
+
     const now =
-      Math.floor(Date.now() / 1000);
+      Math.floor(
+        Date.now() / 1000
+      );
+
 
     const result =
       await env.DB.prepare(`
@@ -445,6 +917,7 @@ export async function onRequestPost(context) {
           status,
           created_at
         )
+
         VALUES (
           ?,
           ?,
@@ -465,12 +938,16 @@ export async function onRequestPost(context) {
         )
         .run();
 
+
     return json({
-      ok: true,
+      ok:
+        true,
 
       report: {
         id:
-          result.meta.last_row_id,
+          result?.meta
+            ?.last_row_id ||
+          null,
 
         type:
           "whisper",
@@ -486,7 +963,14 @@ export async function onRequestPost(context) {
             message.username,
 
           server:
-            message.server
+            message.server,
+
+          role:
+            message.role,
+
+          is_moderator:
+            message.role ===
+            "moderator"
         },
 
         reason,
@@ -509,49 +993,78 @@ export async function onRequestPost(context) {
     );
 
     return json({
-      ok: false,
+      ok:
+        false,
+
       error:
         "Die Meldung konnte nicht erstellt werden."
     }, 500);
   }
 }
 
-/*
- * ADMIN: WHISPER-MELDUNGEN LADEN
- */
-export async function onRequestGet(context) {
-  try {
-    const { request, env } = context;
 
-    const user =
-      await getCurrentUser(
+/*
+ * =====================================================
+ * GET
+ * =====================================================
+ *
+ * WHISPER-MELDUNGEN LADEN
+ *
+ * Moderator:
+ * -> nur Reports gegen normale User
+ *
+ * Admin:
+ * -> Reports gegen User + Moderatoren
+ *
+ * Admin-Reports:
+ * -> niemals
+ * =====================================================
+ */
+
+export async function onRequestGet(
+  context
+) {
+  try {
+    const {
+      request,
+      env
+    } = context;
+
+
+    const auth =
+      await requireModerator(
         request,
         env
       );
 
-    if (!user) {
-      return json({
-        ok: false,
-        error:
-          "Du musst eingeloggt sein."
-      }, 401);
+
+    if (
+      !auth.ok
+    ) {
+      return auth.response;
     }
 
-    if (!isAdmin(user)) {
-      return json({
-        ok: false,
-        error:
-          "Nur der Administrator darf Whisper-Meldungen ansehen."
-      }, 403);
-    }
+
+    const actor =
+      auth.user;
+
 
     const url =
-      new URL(request.url);
+      new URL(
+        request.url
+      );
+
 
     const status =
-      url.searchParams.get(
-        "status"
-      ) || "open";
+      (
+        url.searchParams.get(
+          "status"
+        ) ||
+        "open"
+      )
+        .trim()
+        .toLowerCase();
+
 
     if (
       ![
@@ -559,14 +1072,19 @@ export async function onRequestGet(context) {
         "reviewed",
         "closed",
         "all"
-      ].includes(status)
+      ].includes(
+        status
+      )
     ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Ungültiger Statusfilter."
       }, 400);
     }
+
 
     let query = `
       SELECT
@@ -584,6 +1102,9 @@ export async function onRequestGet(context) {
         reporter.server
           AS reporter_server,
 
+        reporter.role
+          AS reporter_role,
+
         target.username
           AS target_username,
 
@@ -596,8 +1117,10 @@ export async function onRequestGet(context) {
         wm.room_id,
         wm.message,
         wm.original_message,
+
         wm.created_at
           AS message_created_at,
+
         wm.deleted_at
 
       FROM chat_reports r
@@ -615,38 +1138,89 @@ export async function onRequestGet(context) {
           r.whisper_message_id
 
       WHERE
-        r.report_type = 'whisper'
+        r.report_type =
+          'whisper'
     `;
 
-    const bindings = [];
 
-    if (status !== "all") {
+    const bindings =
+      [];
+
+
+    /*
+     * STATUS FILTER
+     */
+
+    if (
+      status !==
+      "all"
+    ) {
       query += `
         AND r.status = ?
       `;
 
-      bindings.push(status);
+      bindings.push(
+        status
+      );
     }
+
+
+    /*
+     * =================================================
+     * STAFF HIERARCHY
+     * =================================================
+     */
+
+    if (
+      isModerator(
+        actor
+      )
+    ) {
+      query += `
+        AND target.role = 'user'
+      `;
+
+    } else {
+      query += `
+        AND target.role != 'admin'
+      `;
+    }
+
 
     query += `
       ORDER BY
-        r.created_at DESC
+        r.created_at DESC,
+        r.id DESC
 
       LIMIT 100
     `;
 
+
     const result =
       await env.DB
-        .prepare(query)
-        .bind(...bindings)
+        .prepare(
+          query
+        )
+        .bind(
+          ...bindings
+        )
         .all();
 
-    const reports = [];
+
+    const reports =
+      [];
+
 
     for (
       const report
-      of result.results || []
+      of result.results ||
+      []
     ) {
+      /*
+       * Zusätzlicher Schutz auch außerhalb
+       * der SQL-Abfrage.
+       */
+
       if (
         report.target_role ===
         "admin"
@@ -654,12 +1228,25 @@ export async function onRequestGet(context) {
         continue;
       }
 
+
+      if (
+        isModerator(
+          actor
+        ) &&
+        report.target_role !==
+        "user"
+      ) {
+        continue;
+      }
+
+
       const contextMessages =
         await getWhisperContext(
           env,
           report.room_id,
           report.whisper_message_id
         );
+
 
       reports.push({
         id:
@@ -676,7 +1263,18 @@ export async function onRequestGet(context) {
             report.reporter_username,
 
           server:
-            report.reporter_server
+            report.reporter_server,
+
+          role:
+            report.reporter_role,
+
+          is_admin:
+            report.reporter_role ===
+            "admin",
+
+          is_moderator:
+            report.reporter_role ===
+            "moderator"
         },
 
         reported_user: {
@@ -687,7 +1285,18 @@ export async function onRequestGet(context) {
             report.target_username,
 
           server:
-            report.target_server
+            report.target_server,
+
+          role:
+            report.target_role,
+
+          is_admin:
+            report.target_role ===
+            "admin",
+
+          is_moderator:
+            report.target_role ===
+            "moderator"
         },
 
         room_id:
@@ -724,10 +1333,41 @@ export async function onRequestGet(context) {
       });
     }
 
+
     return json({
-      ok: true,
+      ok:
+        true,
+
+      current_user: {
+        id:
+          actor.id,
+
+        username:
+          actor.username,
+
+        server:
+          actor.server,
+
+        role:
+          actor.role,
+
+        is_admin:
+          isAdmin(
+            actor
+          ),
+
+        is_moderator:
+          isModerator(
+            actor
+          )
+      },
+
       filter:
         status,
+
+      count:
+        reports.length,
+
       reports
     });
 
@@ -737,88 +1377,130 @@ export async function onRequestGet(context) {
       error
     );
 
+
     return json({
-      ok: false,
+      ok:
+        false,
+
       error:
         "Whisper-Meldungen konnten nicht geladen werden."
     }, 500);
   }
 }
 
-/*
- * ADMIN: REPORT-STATUS ÄNDERN
- */
-export async function onRequestPut(context) {
-  try {
-    const { request, env } = context;
 
-    const admin =
-      await getCurrentUser(
+/*
+ * =====================================================
+ * PUT
+ * =====================================================
+ *
+ * REPORT-STATUS ÄNDERN
+ *
+ * {
+ *   "report_id": 12,
+ *   "status": "reviewed"
+ * }
+ *
+ * Moderator:
+ * -> nur User
+ *
+ * Admin:
+ * -> User + Moderator
+ * =====================================================
+ */
+
+export async function onRequestPut(
+  context
+) {
+  try {
+    const {
+      request,
+      env
+    } = context;
+
+
+    const auth =
+      await requireModerator(
         request,
         env
       );
 
-    if (!admin) {
-      return json({
-        ok: false,
-        error:
-          "Du musst eingeloggt sein."
-      }, 401);
+
+    if (
+      !auth.ok
+    ) {
+      return auth.response;
     }
 
-    if (!isAdmin(admin)) {
-      return json({
-        ok: false,
-        error:
-          "Nur der Administrator darf Meldungen bearbeiten."
-      }, 403);
-    }
+
+    const actor =
+      auth.user;
+
 
     let body;
 
     try {
       body =
         await request.json();
+
     } catch {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Ungültige Anfrage."
       }, 400);
     }
 
+
     const reportId =
-      Number(body.report_id);
+      toPositiveInt(
+        body.report_id ||
+        body.id
+      );
+
 
     const status =
-      typeof body.status === "string"
-        ? body.status.toLowerCase()
+      typeof body.status ===
+      "string"
+        ? body.status
+            .trim()
+            .toLowerCase()
         : "";
 
+
     if (
-      !Number.isInteger(reportId) ||
-      reportId <= 0
+      !reportId
     ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Ungültige Meldung."
       }, 400);
     }
+
 
     if (
       ![
         "open",
         "reviewed",
         "closed"
-      ].includes(status)
+      ].includes(
+        status
+      )
     ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Ungültiger Meldestatus."
       }, 400);
     }
+
 
     const report =
       await env.DB.prepare(`
@@ -839,34 +1521,131 @@ export async function onRequestPut(context) {
             r.reported_user_id
 
         WHERE r.id = ?
+
           AND r.report_type =
             'whisper'
 
         LIMIT 1
       `)
-        .bind(reportId)
+        .bind(
+          reportId
+        )
         .first();
 
-    if (!report) {
+
+    if (
+      !report
+    ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Whisper-Meldung wurde nicht gefunden."
       }, 404);
     }
 
-    if (report.role === "admin") {
+
+    const target = {
+      id:
+        report.reported_user_id,
+
+      username:
+        report.username,
+
+      server:
+        report.server,
+
+      role:
+        report.role
+    };
+
+
+    /*
+     * =================================================
+     * HIERARCHY
+     * =================================================
+     */
+
+    if (
+      !canModerateTarget(
+        actor,
+        target
+      )
+    ) {
+      if (
+        target.role ===
+        "admin"
+      ) {
+        return json({
+          ok:
+            false,
+
+          error:
+            "Der Administrator kann nicht moderiert werden."
+        }, 403);
+      }
+
+
+      if (
+        isModerator(
+          actor
+        ) &&
+        target.role ===
+        "moderator"
+      ) {
+        return json({
+          ok:
+            false,
+
+          error:
+            "Whisper-Meldungen gegen Moderatoren können nur vom Administrator bearbeitet werden."
+        }, 403);
+      }
+
+
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
-          "Der Administrator kann nicht moderiert werden."
+          "Du darfst diese Whisper-Meldung nicht bearbeiten."
       }, 403);
     }
 
+
+    /*
+     * Keine Änderung.
+     */
+
+    if (
+      report.status ===
+      status
+    ) {
+      return json({
+        ok:
+          true,
+
+        unchanged:
+          true,
+
+        report: {
+          id:
+            report.id,
+
+          status
+        }
+      });
+    }
+
+
     await env.DB.prepare(`
       UPDATE chat_reports
+
       SET status = ?
+
       WHERE id = ?
+
         AND report_type =
           'whisper'
     `)
@@ -876,9 +1655,10 @@ export async function onRequestPut(context) {
       )
       .run();
 
+
     await addModerationLog(
       env,
-      admin.id,
+      actor.id,
       report.reported_user_id,
       "whisper_report_status",
       {
@@ -887,6 +1667,9 @@ export async function onRequestPut(context) {
 
         whisper_message_id:
           report.whisper_message_id,
+
+        actor_role:
+          actor.role,
 
         username:
           report.username,
@@ -902,8 +1685,13 @@ export async function onRequestPut(context) {
       }
     );
 
+
     return json({
-      ok: true,
+      ok:
+        true,
+
+      unchanged:
+        false,
 
       report: {
         id:
@@ -922,74 +1710,105 @@ export async function onRequestPut(context) {
       error
     );
 
+
     return json({
-      ok: false,
+      ok:
+        false,
+
       error:
         "Die Whisper-Meldung konnte nicht aktualisiert werden."
     }, 500);
   }
 }
 
+
 /*
- * ADMIN: GEMELDETE WHISPER-NACHRICHT LÖSCHEN
+ * =====================================================
+ * DELETE
+ * =====================================================
+ *
+ * GEMELDETE WHISPER-NACHRICHT LÖSCHEN
+ *
+ * Request:
+ *
+ * {
+ *   "report_id": 12
+ * }
  *
  * Wichtig:
- * Der Admin übergibt ausschließlich die Report-ID.
- * Die zugehörige private Nachricht wird serverseitig
- * über die Meldung ermittelt.
+ *
+ * Die private Nachricht wird ausschließlich über
+ * die Report-ID serverseitig ermittelt.
+ *
+ * Ein Moderator kann dadurch NICHT einfach eine
+ * beliebige Whisper-Nachricht-ID übergeben.
+ * =====================================================
  */
-export async function onRequestDelete(context) {
-  try {
-    const { request, env } = context;
 
-    const admin =
-      await getCurrentUser(
+export async function onRequestDelete(
+  context
+) {
+  try {
+    const {
+      request,
+      env
+    } = context;
+
+
+    const auth =
+      await requireModerator(
         request,
         env
       );
 
-    if (!admin) {
-      return json({
-        ok: false,
-        error:
-          "Du musst eingeloggt sein."
-      }, 401);
+
+    if (
+      !auth.ok
+    ) {
+      return auth.response;
     }
 
-    if (!isAdmin(admin)) {
-      return json({
-        ok: false,
-        error:
-          "Nur der Administrator darf gemeldete Whisper-Nachrichten löschen."
-      }, 403);
-    }
+
+    const actor =
+      auth.user;
+
 
     let body;
 
     try {
       body =
         await request.json();
+
     } catch {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Ungültige Anfrage."
       }, 400);
     }
 
+
     const reportId =
-      Number(body.report_id);
+      toPositiveInt(
+        body.report_id ||
+        body.id
+      );
+
 
     if (
-      !Number.isInteger(reportId) ||
-      reportId <= 0
+      !reportId
     ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Ungültige Meldung."
       }, 400);
     }
+
 
     const report =
       await env.DB.prepare(`
@@ -1017,44 +1836,133 @@ export async function onRequestDelete(context) {
             r.whisper_message_id
 
         WHERE r.id = ?
+
           AND r.report_type =
             'whisper'
 
         LIMIT 1
       `)
-        .bind(reportId)
+        .bind(
+          reportId
+        )
         .first();
 
-    if (!report) {
+
+    if (
+      !report
+    ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Whisper-Meldung wurde nicht gefunden."
       }, 404);
     }
 
-    if (report.role === "admin") {
+
+    const target = {
+      id:
+        report.reported_user_id,
+
+      username:
+        report.username,
+
+      server:
+        report.server,
+
+      role:
+        report.role
+    };
+
+
+    /*
+     * =================================================
+     * HIERARCHY
+     * =================================================
+     */
+
+    if (
+      !canModerateTarget(
+        actor,
+        target
+      )
+    ) {
+      if (
+        target.role ===
+        "admin"
+      ) {
+        return json({
+          ok:
+            false,
+
+          error:
+            "Nachrichten des Administrators können nicht über Meldungen moderiert werden."
+        }, 403);
+      }
+
+
+      if (
+        isModerator(
+          actor
+        ) &&
+        target.role ===
+        "moderator"
+      ) {
+        return json({
+          ok:
+            false,
+
+          error:
+            "Nachrichten anderer Moderatoren können nur vom Administrator moderiert werden."
+        }, 403);
+      }
+
+
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
-          "Nachrichten des Administrators können nicht über Meldungen moderiert werden."
+          "Du darfst diese Nachricht nicht moderieren."
       }, 403);
     }
 
-    if (report.deleted_at) {
+
+    /*
+     * Bereits gelöscht.
+     */
+
+    if (
+      report.deleted_at
+    ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Diese Nachricht wurde bereits gelöscht."
       }, 409);
     }
 
+
     const now =
-      Math.floor(Date.now() / 1000);
+      Math.floor(
+        Date.now() / 1000
+      );
+
+
+    /*
+     * =================================================
+     * SOFT DELETE
+     * =================================================
+     */
 
     await env.DB.prepare(`
       UPDATE whisper_messages
+
       SET deleted_at = ?
+
       WHERE id = ?
         AND deleted_at IS NULL
     `)
@@ -1064,18 +1972,37 @@ export async function onRequestDelete(context) {
       )
       .run();
 
+
+    /*
+     * Report gleichzeitig schließen.
+     */
+
     await env.DB.prepare(`
       UPDATE chat_reports
-      SET status = 'closed'
+
+      SET status =
+        'closed'
+
       WHERE id = ?
-        AND report_type = 'whisper'
+
+        AND report_type =
+          'whisper'
     `)
-      .bind(report.id)
+      .bind(
+        report.id
+      )
       .run();
+
+
+    /*
+     * =================================================
+     * LOG
+     * =================================================
+     */
 
     await addModerationLog(
       env,
-      admin.id,
+      actor.id,
       report.reported_user_id,
       "delete_reported_whisper_message",
       {
@@ -1088,6 +2015,9 @@ export async function onRequestDelete(context) {
         room_id:
           report.room_id,
 
+        actor_role:
+          actor.role,
+
         username:
           report.username,
 
@@ -1096,14 +2026,19 @@ export async function onRequestDelete(context) {
       }
     );
 
+
     return json({
-      ok: true,
+      ok:
+        true,
 
       report_id:
         report.id,
 
       whisper_message_id:
         report.whisper_message_id,
+
+      closed:
+        true,
 
       message:
         "Die gemeldete Whisper-Nachricht wurde gelöscht."
@@ -1115,8 +2050,11 @@ export async function onRequestDelete(context) {
       error
     );
 
+
     return json({
-      ok: false,
+      ok:
+        false,
+
       error:
         "Die gemeldete Whisper-Nachricht konnte nicht gelöscht werden."
     }, 500);
