@@ -1,24 +1,70 @@
 const ONLINE_TIMEOUT_SECONDS = 10 * 60;
 
+const SERVER_MAP = {
+  "Deutschland 1": "DE1",
+  "Europa 1": "EU1",
+  "Europa 2": "EU2",
+  "Europa 3": "EU3",
+  "Europa 4": "EU4",
+  "Arabien 1": "AR1",
+  "Lateinamerika 1": "LA1",
+  "USA 1": "USA1"
+};
+
+
+/*
+ * =====================================================
+ * RESPONSE
+ * =====================================================
+ */
+
 function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store"
+  return new Response(
+    JSON.stringify(data),
+    {
+      status,
+      headers: {
+        "Content-Type":
+          "application/json; charset=utf-8",
+
+        "Cache-Control":
+          "no-store"
+      }
     }
-  });
+  );
 }
 
-function getCookie(request, name) {
+
+/*
+ * =====================================================
+ * COOKIE
+ * =====================================================
+ */
+
+function getCookie(
+  request,
+  name
+) {
   const cookie =
-    request.headers.get("Cookie") || "";
+    request.headers.get(
+      "Cookie"
+    ) || "";
 
-  for (const part of cookie.split(";")) {
-    const [key, ...value] =
-      part.trim().split("=");
+  for (
+    const part
+    of cookie.split(";")
+  ) {
+    const [
+      key,
+      ...value
+    ] =
+      part
+        .trim()
+        .split("=");
 
-    if (key === name) {
+    if (
+      key === name
+    ) {
       return decodeURIComponent(
         value.join("=")
       );
@@ -28,40 +74,62 @@ function getCookie(request, name) {
   return null;
 }
 
-async function getCurrentUser(request, env) {
-  const token =
+
+/*
+ * =====================================================
+ * CURRENT USER
+ * =====================================================
+ */
+
+async function getCurrentUser(
+  request,
+  env
+) {
+  const sessionId =
     getCookie(
       request,
       "ps_session"
     );
 
-  if (!token) {
+  if (!sessionId) {
     return null;
   }
 
+  const now =
+    Math.floor(
+      Date.now() / 1000
+    );
+
   return await env.DB.prepare(`
     SELECT
-      users.id,
-      users.username,
-      users.server,
-      users.role
+      u.id,
+      u.username,
+      u.server,
+      u.role
 
-    FROM sessions
+    FROM sessions s
 
-    JOIN users
-      ON users.id = sessions.user_id
+    JOIN users u
+      ON u.id = s.user_id
 
-    WHERE sessions.id = ?
-      AND sessions.expires_at > ?
+    WHERE s.id = ?
+      AND s.expires_at > ?
 
     LIMIT 1
   `)
     .bind(
-      token,
-      Math.floor(Date.now() / 1000)
+      sessionId,
+      now
     )
     .first();
 }
+
+
+/*
+ * =====================================================
+ * HELPERS
+ * =====================================================
+ */
 
 function isAdmin(user) {
   return Boolean(
@@ -70,9 +138,44 @@ function isAdmin(user) {
   );
 }
 
-async function cleanupExpiredPresence(env) {
+
+function getServerCode(
+  server,
+  role = null
+) {
+  /*
+   * V25:
+   *
+   * Admin zeigt nicht mehr DE1,
+   * sondern ADMIN.
+   */
+  if (
+    role === "admin"
+  ) {
+    return "ADMIN";
+  }
+
+  return (
+    SERVER_MAP[server] ||
+    server ||
+    ""
+  );
+}
+
+
+/*
+ * =====================================================
+ * EXPIRED PRESENCE CLEANUP
+ * =====================================================
+ */
+
+async function cleanupExpiredPresence(
+  env
+) {
   const cutoff =
-    Math.floor(Date.now() / 1000) -
+    Math.floor(
+      Date.now() / 1000
+    ) -
     ONLINE_TIMEOUT_SECONDS;
 
   await env.DB.prepare(`
@@ -80,35 +183,184 @@ async function cleanupExpiredPresence(env) {
 
     WHERE last_seen < ?
   `)
-    .bind(cutoff)
+    .bind(
+      cutoff
+    )
     .run();
 }
+
+
+/*
+ * =====================================================
+ * EXPIRED BANS CLEANUP
+ * =====================================================
+ */
+
+async function cleanupExpiredBans(
+  env
+) {
+  const now =
+    Math.floor(
+      Date.now() / 1000
+    );
+
+  await env.DB.prepare(`
+    UPDATE chat_bans
+
+    SET active = 0
+
+    WHERE active = 1
+      AND expires_at IS NOT NULL
+      AND expires_at <= ?
+  `)
+    .bind(
+      now
+    )
+    .run();
+}
+
+
+/*
+ * =====================================================
+ * ACTIVE BAN
+ * =====================================================
+ */
+
+async function getActiveBan(
+  env,
+  user
+) {
+  /*
+   * Admin ist immun.
+   */
+  if (
+    !user ||
+    isAdmin(user)
+  ) {
+    return null;
+  }
+
+  await cleanupExpiredBans(
+    env
+  );
+
+  const now =
+    Math.floor(
+      Date.now() / 1000
+    );
+
+  return await env.DB.prepare(`
+    SELECT
+      id,
+      user_id,
+      reason,
+      banned_at,
+      expires_at
+
+    FROM chat_bans
+
+    WHERE user_id = ?
+      AND active = 1
+      AND (
+        expires_at IS NULL
+        OR expires_at > ?
+      )
+
+    ORDER BY
+      banned_at DESC,
+      id DESC
+
+    LIMIT 1
+  `)
+    .bind(
+      user.id,
+      now
+    )
+    .first();
+}
+
+
+/*
+ * =====================================================
+ * PLAYER FORMAT
+ * =====================================================
+ */
+
+function formatPlayer(
+  player
+) {
+  return {
+    id:
+      player.id,
+
+    username:
+      player.username,
+
+    server:
+      player.server,
+
+    server_code:
+      getServerCode(
+        player.server,
+        player.role
+      ),
+
+    role:
+      player.role,
+
+    is_admin:
+      player.role ===
+      "admin",
+
+    /*
+     * V25 Frontend kann daraus direkt den
+     * kleinen grünen Punkt darstellen.
+     */
+    online:
+      true,
+
+    last_seen:
+      player.last_seen
+  };
+}
+
 
 /*
  * =====================================================
  * GET
  * =====================================================
  *
- * Liefert die aktuell im Chat aktiven Spieler.
+ * GLOBAL
  *
- * WICHTIG:
+ * /api/chat/online?room=global
  *
- * chat_presence besitzt nur eine Zeile pro Spieler.
- * Deshalb wird room_type NICHT mehr dazu verwendet,
- * einen Spieler aus anderen Chatlisten auszublenden.
+ * -> alle aktuell aktiven Spieler
  *
- * GLOBAL:
- * - zeigt alle aktuell aktiven Chatspieler
  *
- * SERVER:
- * - zeigt alle aktuell aktiven Spieler des Servers
- * - normaler Spieler: nur eigener Server
- * - Admin: ausgewählter Server
+ * SERVER
  *
- * Dadurch bleibt z.B. Umbra auch für DE1-Spieler
- * sichtbar, wenn Umbra zuletzt im Globalchat aktiv war.
+ * /api/chat/online?room=server&server=Deutschland%201
+ *
+ * Normaler Spieler:
+ * eigener Server
+ *
+ * Admin:
+ * kann einen Server auswählen
+ *
+ *
+ * WICHTIG V25:
+ *
+ * p.room_type wird NICHT mehr für die Sichtbarkeit
+ * verwendet.
+ *
+ * Eine Presence ist eine Presence des Accounts,
+ * nicht eines einzelnen Tabs.
+ * =====================================================
  */
-export async function onRequestGet(context) {
+
+export async function onRequestGet(
+  context
+) {
   try {
     const {
       request,
@@ -123,20 +375,71 @@ export async function onRequestGet(context) {
 
     if (!user) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Du musst eingeloggt sein."
       }, 401);
     }
 
-    await cleanupExpiredPresence(env);
+    /*
+     * Gebannter aktueller Benutzer darf die
+     * Online-Liste ebenfalls nicht als Chatfunktion
+     * weiterverwenden.
+     */
+    const currentBan =
+      await getActiveBan(
+        env,
+        user
+      );
+
+    if (currentBan) {
+      /*
+       * Eigene Presence direkt entfernen.
+       */
+      await env.DB.prepare(`
+        DELETE FROM chat_presence
+
+        WHERE user_id = ?
+      `)
+        .bind(
+          user.id
+        )
+        .run();
+
+      return json({
+        ok:
+          false,
+
+        code:
+          "CHAT_BANNED",
+
+        error:
+          "Du bist derzeit vom Chat ausgeschlossen."
+      }, 403);
+    }
+
+    await Promise.all([
+      cleanupExpiredPresence(
+        env
+      ),
+
+      cleanupExpiredBans(
+        env
+      )
+    ]);
 
     const url =
-      new URL(request.url);
+      new URL(
+        request.url
+      );
 
     const room =
       (
-        url.searchParams.get("room") ||
+        url.searchParams.get(
+          "room"
+        ) ||
         "global"
       )
         .trim()
@@ -147,30 +450,37 @@ export async function onRequestGet(context) {
       room !== "server"
     ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Ungültiger Chatraum."
       }, 400);
     }
 
     const cutoff =
-      Math.floor(Date.now() / 1000) -
+      Math.floor(
+        Date.now() / 1000
+      ) -
       ONLINE_TIMEOUT_SECONDS;
 
     let result;
-    let activeServer = null;
+    let activeServer =
+      null;
 
     /*
      * =================================================
-     * GLOBALCHAT
+     * GLOBAL
      * =================================================
      *
-     * Jeder Spieler, dessen Presence noch aktuell ist,
-     * wird angezeigt.
+     * Alle aktiven Spieler.
      *
-     * room_type spielt hier absichtlich keine Rolle.
+     * Gebannte Accounts werden ausgeschlossen.
      */
-    if (room === "global") {
+    if (
+      room ===
+      "global"
+    ) {
       result =
         await env.DB.prepare(`
           SELECT
@@ -183,58 +493,99 @@ export async function onRequestGet(context) {
           FROM chat_presence p
 
           JOIN users u
-            ON u.id = p.user_id
+            ON u.id =
+              p.user_id
 
           WHERE p.last_seen >= ?
 
+            AND (
+              u.role = 'admin'
+
+              OR NOT EXISTS (
+                SELECT 1
+
+                FROM chat_bans b
+
+                WHERE b.user_id =
+                  u.id
+
+                  AND b.active = 1
+
+                  AND (
+                    b.expires_at
+                      IS NULL
+
+                    OR b.expires_at > ?
+                  )
+              )
+            )
+
           ORDER BY
             CASE
-              WHEN u.role = 'admin'
+              WHEN u.role =
+                'admin'
               THEN 0
               ELSE 1
             END,
 
-            LOWER(u.username) ASC
+            LOWER(
+              u.username
+            ) ASC
         `)
-          .bind(cutoff)
+          .bind(
+            cutoff,
+            Math.floor(
+              Date.now() / 1000
+            )
+          )
           .all();
     }
 
     /*
      * =================================================
-     * SERVERCHAT
+     * SERVER
      * =================================================
      */
     else {
-      if (isAdmin(user)) {
-        const requestedServer =
-          url.searchParams.get("server");
-
+      if (
+        isAdmin(user)
+      ) {
         activeServer =
-          typeof requestedServer === "string" &&
-          requestedServer.trim()
-            ? requestedServer.trim()
-            : user.server;
+          (
+            url.searchParams.get(
+              "server"
+            ) ||
+            user.server
+          )
+            .trim();
       } else {
-        /*
-         * Normale Spieler können niemals eine
-         * Online-Liste eines fremden Servers abrufen.
-         */
         activeServer =
           user.server;
       }
 
+      if (
+        !activeServer ||
+        !SERVER_MAP[
+          activeServer
+        ]
+      ) {
+        return json({
+          ok:
+            false,
+
+          error:
+            "Ungültiger Server."
+        }, 400);
+      }
+
       /*
-       * Wichtig:
+       * Spieler des ausgewählten Servers
+       * +
+       * Admin unabhängig von dessen registriertem
+       * Server.
        *
-       * Wir filtern nach users.server und NICHT nach
-       * chat_presence.room_type / chat_presence.server.
-       *
-       * Presence sagt lediglich:
-       * "Dieser Account ist gerade im Chat aktiv."
-       *
-       * Der registrierte Server des Accounts bestimmt,
-       * in welcher Server-Online-Liste er erscheint.
+       * Dadurch bleibt Umbra in jedem öffentlichen
+       * Serverchat sichtbar, den er gerade moderiert.
        */
       result =
         await env.DB.prepare(`
@@ -248,54 +599,71 @@ export async function onRequestGet(context) {
           FROM chat_presence p
 
           JOIN users u
-            ON u.id = p.user_id
+            ON u.id =
+              p.user_id
 
           WHERE p.last_seen >= ?
+
             AND (
               u.server = ?
-              OR u.role = 'admin'
+              OR u.role =
+                'admin'
+            )
+
+            AND (
+              u.role = 'admin'
+
+              OR NOT EXISTS (
+                SELECT 1
+
+                FROM chat_bans b
+
+                WHERE b.user_id =
+                  u.id
+
+                  AND b.active = 1
+
+                  AND (
+                    b.expires_at
+                      IS NULL
+
+                    OR b.expires_at > ?
+                  )
+              )
             )
 
           ORDER BY
             CASE
-              WHEN u.role = 'admin'
+              WHEN u.role =
+                'admin'
               THEN 0
               ELSE 1
             END,
 
-            LOWER(u.username) ASC
+            LOWER(
+              u.username
+            ) ASC
         `)
           .bind(
             cutoff,
-            activeServer
+            activeServer,
+            Math.floor(
+              Date.now() / 1000
+            )
           )
           .all();
     }
 
     const players =
-      (result.results || [])
-        .map(player => ({
-          id:
-            player.id,
-
-          username:
-            player.username,
-
-          server:
-            player.server,
-
-          role:
-            player.role,
-
-          is_admin:
-            player.role === "admin",
-
-          last_seen:
-            player.last_seen
-        }));
+      (
+        result.results || []
+      ).map(
+        formatPlayer
+      );
 
     return json({
-      ok: true,
+      ok:
+        true,
 
       room,
 
@@ -318,29 +686,46 @@ export async function onRequestGet(context) {
     );
 
     return json({
-      ok: false,
+      ok:
+        false,
+
       error:
         "Die Online-Liste konnte nicht geladen werden."
     }, 500);
   }
 }
 
+
 /*
  * =====================================================
  * POST
  * =====================================================
  *
- * Heartbeat des eingeloggten Spielers.
+ * HEARTBEAT
  *
- * Die Zeile wird weiterhin aktualisiert, damit wir
- * erkennen können, ob ein Spieler den Chat noch
- * geöffnet hat.
+ * {
+ *   room: "global"
+ * }
  *
- * room_type/server bleiben als Zusatzinformation
- * gespeichert, bestimmen aber NICHT mehr, ob jemand
- * grundsätzlich online angezeigt wird.
+ * oder:
+ *
+ * {
+ *   room: "server",
+ *   server: "Deutschland 1"
+ * }
+ *
+ *
+ * room_type/server werden weiterhin gespeichert,
+ * falls wir sie später brauchen.
+ *
+ * Die ONLINE-SICHTBARKEIT hängt aber nicht mehr
+ * davon ab.
+ * =====================================================
  */
-export async function onRequestPost(context) {
+
+export async function onRequestPost(
+  context
+) {
   try {
     const {
       request,
@@ -355,52 +740,121 @@ export async function onRequestPost(context) {
 
     if (!user) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Du musst eingeloggt sein."
       }, 401);
     }
 
-    let body = {};
+    /*
+     * =================================================
+     * BAN CHECK
+     * =================================================
+     */
+    const ban =
+      await getActiveBan(
+        env,
+        user
+      );
+
+    if (ban) {
+      /*
+       * Falls noch eine alte Presence existiert:
+       * sofort entfernen.
+       */
+      await env.DB.prepare(`
+        DELETE FROM chat_presence
+
+        WHERE user_id = ?
+      `)
+        .bind(
+          user.id
+        )
+        .run();
+
+      return json({
+        ok:
+          false,
+
+        code:
+          "CHAT_BANNED",
+
+        error:
+          "Du bist derzeit vom Chat ausgeschlossen."
+      }, 403);
+    }
+
+    let body;
 
     try {
       body =
         await request.json();
+
     } catch {
-      /*
-       * Heartbeat darf auch ohne sinnvollen Body
-       * funktionieren.
-       */
-      body = {};
+      return json({
+        ok:
+          false,
+
+        error:
+          "Ungültige Anfrage."
+      }, 400);
     }
 
-    let room =
-      typeof body.room === "string"
+    const room =
+      typeof body.room ===
+      "string"
         ? body.room
             .trim()
             .toLowerCase()
-        : "global";
+        : "";
 
     if (
       room !== "global" &&
       room !== "server"
     ) {
-      room =
-        "global";
+      return json({
+        ok:
+          false,
+
+        error:
+          "Ungültiger Chatraum."
+      }, 400);
     }
 
-    let activeServer = null;
+    let server =
+      null;
 
-    if (room === "server") {
-      if (isAdmin(user)) {
-        activeServer =
-          typeof body.server === "string" &&
+    if (
+      room ===
+      "server"
+    ) {
+      if (
+        isAdmin(user)
+      ) {
+        server =
+          typeof body.server ===
+            "string" &&
           body.server.trim()
             ? body.server.trim()
             : user.server;
       } else {
-        activeServer =
+        server =
           user.server;
+      }
+
+      if (
+        !server ||
+        !SERVER_MAP[server]
+      ) {
+        return json({
+          ok:
+            false,
+
+          error:
+            "Ungültiger Server."
+        }, 400);
       }
     }
 
@@ -410,8 +864,7 @@ export async function onRequestPost(context) {
       );
 
     /*
-     * Pro Spieler existiert weiterhin genau
-     * eine Presence-Zeile.
+     * Eine Presence-Zeile pro Account.
      */
     await env.DB.prepare(`
       INSERT INTO chat_presence (
@@ -439,12 +892,13 @@ export async function onRequestPost(context) {
         user.id,
         now,
         room,
-        activeServer
+        server
       )
       .run();
 
     return json({
-      ok: true,
+      ok:
+        true,
 
       online:
         true,
@@ -459,6 +913,12 @@ export async function onRequestPost(context) {
         server:
           user.server,
 
+        server_code:
+          getServerCode(
+            user.server,
+            user.role
+          ),
+
         role:
           user.role,
 
@@ -469,7 +929,7 @@ export async function onRequestPost(context) {
       room,
 
       active_server:
-        activeServer,
+        server,
 
       last_seen:
         now,
@@ -485,23 +945,28 @@ export async function onRequestPost(context) {
     );
 
     return json({
-      ok: false,
+      ok:
+        false,
+
       error:
         "Der Online-Status konnte nicht aktualisiert werden."
     }, 500);
   }
 }
 
+
 /*
  * =====================================================
  * DELETE
  * =====================================================
  *
- * Entfernt die Presence des eingeloggten Spielers.
- *
- * Kann z.B. beim Logout verwendet werden.
+ * Presence manuell entfernen.
+ * =====================================================
  */
-export async function onRequestDelete(context) {
+
+export async function onRequestDelete(
+  context
+) {
   try {
     const {
       request,
@@ -516,7 +981,9 @@ export async function onRequestDelete(context) {
 
     if (!user) {
       return json({
-        ok: false,
+        ok:
+          false,
+
         error:
           "Du musst eingeloggt sein."
       }, 401);
@@ -527,11 +994,15 @@ export async function onRequestDelete(context) {
 
       WHERE user_id = ?
     `)
-      .bind(user.id)
+      .bind(
+        user.id
+      )
       .run();
 
     return json({
-      ok: true,
+      ok:
+        true,
+
       online:
         false
     });
@@ -543,9 +1014,28 @@ export async function onRequestDelete(context) {
     );
 
     return json({
-      ok: false,
+      ok:
+        false,
+
       error:
         "Der Online-Status konnte nicht entfernt werden."
     }, 500);
   }
+}
+
+
+/*
+ * =====================================================
+ * PUT
+ * =====================================================
+ */
+
+export async function onRequestPut() {
+  return json({
+    ok:
+      false,
+
+    error:
+      "Diese Methode wird nicht unterstützt."
+  }, 405);
 }
