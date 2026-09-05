@@ -118,7 +118,7 @@ async function getCurrentUser(
 
 /*
  * =====================================================
- * HELPERS
+ * ROLE HELPERS
  * =====================================================
  */
 
@@ -129,6 +129,31 @@ function isAdmin(user) {
   );
 }
 
+
+function isModerator(user) {
+  return Boolean(
+    user &&
+    user.role === "moderator"
+  );
+}
+
+
+function canModerate(user) {
+  return Boolean(
+    user &&
+    (
+      isAdmin(user) ||
+      isModerator(user)
+    )
+  );
+}
+
+
+/*
+ * =====================================================
+ * GENERIC HELPERS
+ * =====================================================
+ */
 
 function cleanText(value) {
   if (
@@ -162,11 +187,11 @@ function toPositiveInt(value) {
 
 /*
  * =====================================================
- * ADMIN AUTH
+ * MODERATOR AUTH
  * =====================================================
  */
 
-async function requireAdmin(
+async function requireModerator(
   request,
   env
 ) {
@@ -193,7 +218,7 @@ async function requireAdmin(
   }
 
   if (
-    !isAdmin(user)
+    !canModerate(user)
   ) {
     return {
       ok:
@@ -205,7 +230,7 @@ async function requireAdmin(
             false,
 
           error:
-            "Nur Administratoren dürfen Moderationsnotizen verwenden."
+            "Nur Administratoren und Moderatoren dürfen Moderationsnotizen verwenden."
         }, 403)
     };
   }
@@ -251,6 +276,113 @@ async function getUserById(
 
 /*
  * =====================================================
+ * TARGET PERMISSION
+ * =====================================================
+ *
+ * ADMIN
+ * -> darf User + Moderator verwalten
+ *
+ * MODERATOR
+ * -> darf ausschließlich User verwalten
+ *
+ * ADMIN TARGET
+ * -> niemals
+ * =====================================================
+ */
+
+function canModerateTarget(
+  actor,
+  target
+) {
+  if (
+    !actor ||
+    !target
+  ) {
+    return false;
+  }
+
+  if (
+    Number(actor.id) ===
+    Number(target.id)
+  ) {
+    return false;
+  }
+
+  if (
+    target.role ===
+    "admin"
+  ) {
+    return false;
+  }
+
+  if (
+    isModerator(actor)
+  ) {
+    return (
+      target.role ===
+      "user"
+    );
+  }
+
+  if (
+    isAdmin(actor)
+  ) {
+    return (
+      target.role ===
+        "user" ||
+      target.role ===
+        "moderator"
+    );
+  }
+
+  return false;
+}
+
+
+/*
+ * =====================================================
+ * TARGET ERROR
+ * =====================================================
+ */
+
+function targetPermissionError(
+  actor,
+  target
+) {
+  if (
+    !target
+  ) {
+    return "Spieler wurde nicht gefunden.";
+  }
+
+  if (
+    Number(actor?.id) ===
+    Number(target.id)
+  ) {
+    return "Du kannst keine Moderationsnotiz über dich selbst führen.";
+  }
+
+  if (
+    target.role ===
+    "admin"
+  ) {
+    return "Für Administratoren können keine Moderationsnotizen geführt werden.";
+  }
+
+  if (
+    isModerator(actor) &&
+    target.role ===
+    "moderator"
+  ) {
+    return "Moderatoren dürfen keine Moderationsnotizen zu anderen Moderatoren verwalten.";
+  }
+
+  return "Du darfst diesen Spieler nicht moderieren.";
+}
+
+
+/*
+ * =====================================================
  * NOTE LOOKUP
  * =====================================================
  */
@@ -268,13 +400,13 @@ async function getNoteById(
       n.created_at,
       n.updated_at,
 
-      admin.username
+      actor.username
         AS admin_username,
 
-      admin.server
+      actor.server
         AS admin_server,
 
-      admin.role
+      actor.role
         AS admin_role,
 
       target.username
@@ -288,8 +420,8 @@ async function getNoteById(
 
     FROM chat_moderation_notes n
 
-    JOIN users admin
-      ON admin.id =
+    JOIN users actor
+      ON actor.id =
         n.admin_id
 
     JOIN users target
@@ -342,7 +474,15 @@ function formatNote(row) {
         row.admin_server,
 
       role:
-        row.admin_role
+        row.admin_role,
+
+      is_admin:
+        row.admin_role ===
+        "admin",
+
+      is_moderator:
+        row.admin_role ===
+        "moderator"
     },
 
     target_user: {
@@ -360,7 +500,11 @@ function formatNote(row) {
 
       is_admin:
         row.target_role ===
-        "admin"
+        "admin",
+
+      is_moderator:
+        row.target_role ===
+        "moderator"
     }
   };
 }
@@ -374,7 +518,7 @@ function formatNote(row) {
 
 async function addModerationLog(
   env,
-  adminId,
+  actorId,
   targetUserId,
   action,
   details
@@ -397,8 +541,9 @@ async function addModerationLog(
       VALUES (?, ?, ?, ?, ?)
     `)
       .bind(
-        adminId,
-        targetUserId || null,
+        actorId,
+        targetUserId ||
+        null,
         action,
         JSON.stringify(
           details || {}
@@ -421,19 +566,9 @@ async function addModerationLog(
  * GET
  * =====================================================
  *
- * Nur Admin.
- *
- * Alle Notizen:
- *
  * GET /api/chat/notes
  *
- *
- * Notizen zu einem bestimmten Spieler:
- *
  * GET /api/chat/notes?user_id=123
- *
- *
- * Einzelne Notiz:
  *
  * GET /api/chat/notes?id=456
  * =====================================================
@@ -449,7 +584,7 @@ export async function onRequestGet(
     } = context;
 
     const auth =
-      await requireAdmin(
+      await requireModerator(
         request,
         env
       );
@@ -459,6 +594,9 @@ export async function onRequestGet(
     ) {
       return auth.response;
     }
+
+    const actor =
+      auth.user;
 
     const url =
       new URL(
@@ -512,7 +650,9 @@ export async function onRequestGet(
      * =================================================
      */
 
-    if (noteId) {
+    if (
+      noteId
+    ) {
       const note =
         await getNoteById(
           env,
@@ -527,6 +667,38 @@ export async function onRequestGet(
           error:
             "Moderationsnotiz wurde nicht gefunden."
         }, 404);
+      }
+
+      const target = {
+        id:
+          note.target_user_id,
+
+        username:
+          note.target_username,
+
+        server:
+          note.target_server,
+
+        role:
+          note.target_role
+      };
+
+      if (
+        !canModerateTarget(
+          actor,
+          target
+        )
+      ) {
+        return json({
+          ok:
+            false,
+
+          error:
+            targetPermissionError(
+              actor,
+              target
+            )
+        }, 403);
       }
 
       return json({
@@ -547,7 +719,9 @@ export async function onRequestGet(
      * =================================================
      */
 
-    if (targetUserId) {
+    if (
+      targetUserId
+    ) {
       const target =
         await getUserById(
           env,
@@ -564,22 +738,21 @@ export async function onRequestGet(
         }, 404);
       }
 
-      /*
-       * Admin-Immunität:
-       *
-       * Auch interne Moderationsnotizen sollen nicht
-       * gegen den Administrator geführt werden.
-       */
       if (
-        target.role ===
-        "admin"
+        !canModerateTarget(
+          actor,
+          target
+        )
       ) {
         return json({
           ok:
             false,
 
           error:
-            "Für Administratoren können keine Moderationsnotizen geführt werden."
+            targetPermissionError(
+              actor,
+              target
+            )
         }, 403);
       }
 
@@ -593,13 +766,13 @@ export async function onRequestGet(
             n.created_at,
             n.updated_at,
 
-            admin.username
+            note_actor.username
               AS admin_username,
 
-            admin.server
+            note_actor.server
               AS admin_server,
 
-            admin.role
+            note_actor.role
               AS admin_role,
 
             target.username
@@ -613,8 +786,8 @@ export async function onRequestGet(
 
           FROM chat_moderation_notes n
 
-          JOIN users admin
-            ON admin.id =
+          JOIN users note_actor
+            ON note_actor.id =
               n.admin_id
 
           JOIN users target
@@ -635,6 +808,14 @@ export async function onRequestGet(
           )
           .all();
 
+      const notes =
+        (
+          result.results ||
+          []
+        ).map(
+          formatNote
+        );
+
       return json({
         ok:
           true,
@@ -650,22 +831,21 @@ export async function onRequestGet(
             target.server,
 
           role:
-            target.role
+            target.role,
+
+          is_admin:
+            target.role ===
+            "admin",
+
+          is_moderator:
+            target.role ===
+            "moderator"
         },
 
         count:
-          (
-            result.results ||
-            []
-          ).length,
+          notes.length,
 
-        notes:
-          (
-            result.results ||
-            []
-          ).map(
-            formatNote
-          )
+        notes
       });
     }
 
@@ -676,75 +856,100 @@ export async function onRequestGet(
      * =================================================
      */
 
+    let query = `
+      SELECT
+        n.id,
+        n.admin_id,
+        n.target_user_id,
+        n.note,
+        n.created_at,
+        n.updated_at,
+
+        note_actor.username
+          AS admin_username,
+
+        note_actor.server
+          AS admin_server,
+
+        note_actor.role
+          AS admin_role,
+
+        target.username
+          AS target_username,
+
+        target.server
+          AS target_server,
+
+        target.role
+          AS target_role
+
+      FROM chat_moderation_notes n
+
+      JOIN users note_actor
+        ON note_actor.id =
+          n.admin_id
+
+      JOIN users target
+        ON target.id =
+          n.target_user_id
+
+      WHERE
+    `;
+
+    /*
+     * Moderator sieht nur normale User.
+     *
+     * Admin sieht normale User + Moderatoren.
+     */
+    if (
+      isModerator(
+        actor
+      )
+    ) {
+      query += `
+        target.role = 'user'
+      `;
+
+    } else {
+      query += `
+        target.role != 'admin'
+      `;
+    }
+
+    query += `
+      ORDER BY
+        n.created_at DESC,
+        n.id DESC
+
+      LIMIT ?
+    `;
+
     const result =
-      await env.DB.prepare(`
-        SELECT
-          n.id,
-          n.admin_id,
-          n.target_user_id,
-          n.note,
-          n.created_at,
-          n.updated_at,
-
-          admin.username
-            AS admin_username,
-
-          admin.server
-            AS admin_server,
-
-          admin.role
-            AS admin_role,
-
-          target.username
-            AS target_username,
-
-          target.server
-            AS target_server,
-
-          target.role
-            AS target_role
-
-        FROM chat_moderation_notes n
-
-        JOIN users admin
-          ON admin.id =
-            n.admin_id
-
-        JOIN users target
-          ON target.id =
-            n.target_user_id
-
-        WHERE target.role !=
-          'admin'
-
-        ORDER BY
-          n.created_at DESC,
-          n.id DESC
-
-        LIMIT ?
-      `)
+      await env.DB
+        .prepare(
+          query
+        )
         .bind(
           limit
         )
         .all();
+
+    const notes =
+      (
+        result.results ||
+        []
+      ).map(
+        formatNote
+      );
 
     return json({
       ok:
         true,
 
       count:
-        (
-          result.results ||
-          []
-        ).length,
+        notes.length,
 
-      notes:
-        (
-          result.results ||
-          []
-        ).map(
-          formatNote
-        )
+      notes
     });
 
   } catch (error) {
@@ -769,8 +974,6 @@ export async function onRequestGet(
  * POST
  * =====================================================
  *
- * Neue Notiz:
- *
  * {
  *   "user_id": 123,
  *   "note": "Mehrfach wegen Beleidigungen aufgefallen."
@@ -788,7 +991,7 @@ export async function onRequestPost(
     } = context;
 
     const auth =
-      await requireAdmin(
+      await requireModerator(
         request,
         env
       );
@@ -799,7 +1002,7 @@ export async function onRequestPost(
       return auth.response;
     }
 
-    const admin =
+    const actor =
       auth.user;
 
     let body;
@@ -882,22 +1085,21 @@ export async function onRequestPost(
       }, 404);
     }
 
-    /*
-     * =================================================
-     * ADMIN IMMUNITY
-     * =================================================
-     */
-
     if (
-      target.role ===
-      "admin"
+      !canModerateTarget(
+        actor,
+        target
+      )
     ) {
       return json({
         ok:
           false,
 
         error:
-          "Für Administratoren können keine Moderationsnotizen erstellt werden."
+          targetPermissionError(
+            actor,
+            target
+          )
       }, 403);
     }
 
@@ -919,7 +1121,7 @@ export async function onRequestPost(
         VALUES (?, ?, ?, ?, ?)
       `)
         .bind(
-          admin.id,
+          actor.id,
           target.id,
           noteText,
           now,
@@ -934,12 +1136,21 @@ export async function onRequestPost(
 
     await addModerationLog(
       env,
-      admin.id,
+      actor.id,
       target.id,
       "create_moderation_note",
       {
         note_id:
-          noteId
+          noteId,
+
+        actor_role:
+          actor.role,
+
+        username:
+          target.username,
+
+        server:
+          target.server
       }
     );
 
@@ -972,7 +1183,10 @@ export async function onRequestPost(
 
               updated_at:
                 now
-            }
+            },
+
+      message:
+        "Moderationsnotiz wurde gespeichert."
     }, 201);
 
   } catch (error) {
@@ -997,14 +1211,10 @@ export async function onRequestPost(
  * PUT
  * =====================================================
  *
- * Notiz bearbeiten:
- *
  * {
  *   "id": 12,
  *   "note": "Neue Notiz..."
  * }
- *
- * Nur der Admin kann sie bearbeiten.
  * =====================================================
  */
 
@@ -1018,7 +1228,7 @@ export async function onRequestPut(
     } = context;
 
     const auth =
-      await requireAdmin(
+      await requireModerator(
         request,
         env
       );
@@ -1029,7 +1239,7 @@ export async function onRequestPut(
       return auth.response;
     }
 
-    const admin =
+    const actor =
       auth.user;
 
     let body;
@@ -1059,7 +1269,9 @@ export async function onRequestPut(
         body.note
       );
 
-    if (!noteId) {
+    if (
+      !noteId
+    ) {
       return json({
         ok:
           false,
@@ -1069,7 +1281,9 @@ export async function onRequestPut(
       }, 400);
     }
 
-    if (!noteText) {
+    if (
+      !noteText
+    ) {
       return json({
         ok:
           false,
@@ -1108,19 +1322,35 @@ export async function onRequestPut(
       }, 404);
     }
 
-    /*
-     * Sicherheit für alte/manipulierte Daten.
-     */
+    const target = {
+      id:
+        existing.target_user_id,
+
+      username:
+        existing.target_username,
+
+      server:
+        existing.target_server,
+
+      role:
+        existing.target_role
+    };
+
     if (
-      existing.target_role ===
-      "admin"
+      !canModerateTarget(
+        actor,
+        target
+      )
     ) {
       return json({
         ok:
           false,
 
         error:
-          "Moderationsnotizen für Administratoren können nicht bearbeitet werden."
+          targetPermissionError(
+            actor,
+            target
+          )
       }, 403);
     }
 
@@ -1150,12 +1380,15 @@ export async function onRequestPut(
 
     await addModerationLog(
       env,
-      admin.id,
+      actor.id,
       existing.target_user_id,
       "edit_moderation_note",
       {
         note_id:
           noteId,
+
+        actor_role:
+          actor.role,
 
         old_note:
           oldText,
@@ -1178,7 +1411,10 @@ export async function onRequestPut(
       note:
         formatNote(
           updated
-        )
+        ),
+
+      message:
+        "Moderationsnotiz wurde aktualisiert."
     });
 
   } catch (error) {
@@ -1204,8 +1440,6 @@ export async function onRequestPut(
  * =====================================================
  *
  * DELETE /api/chat/notes?id=12
- *
- * Nur Admin.
  * =====================================================
  */
 
@@ -1219,7 +1453,7 @@ export async function onRequestDelete(
     } = context;
 
     const auth =
-      await requireAdmin(
+      await requireModerator(
         request,
         env
       );
@@ -1230,7 +1464,7 @@ export async function onRequestDelete(
       return auth.response;
     }
 
-    const admin =
+    const actor =
       auth.user;
 
     const url =
@@ -1245,7 +1479,9 @@ export async function onRequestDelete(
         )
       );
 
-    if (!noteId) {
+    if (
+      !noteId
+    ) {
       return json({
         ok:
           false,
@@ -1271,16 +1507,35 @@ export async function onRequestDelete(
       }, 404);
     }
 
+    const target = {
+      id:
+        existing.target_user_id,
+
+      username:
+        existing.target_username,
+
+      server:
+        existing.target_server,
+
+      role:
+        existing.target_role
+    };
+
     if (
-      existing.target_role ===
-      "admin"
+      !canModerateTarget(
+        actor,
+        target
+      )
     ) {
       return json({
         ok:
           false,
 
         error:
-          "Moderationsnotizen für Administratoren können nicht gelöscht werden."
+          targetPermissionError(
+            actor,
+            target
+          )
       }, 403);
     }
 
@@ -1296,15 +1551,24 @@ export async function onRequestDelete(
 
     await addModerationLog(
       env,
-      admin.id,
+      actor.id,
       existing.target_user_id,
       "delete_moderation_note",
       {
         note_id:
           noteId,
 
+        actor_role:
+          actor.role,
+
         deleted_note:
-          existing.note
+          existing.note,
+
+        username:
+          existing.target_username,
+
+        server:
+          existing.target_server
       }
     );
 
@@ -1316,7 +1580,10 @@ export async function onRequestDelete(
         true,
 
       note_id:
-        noteId
+        noteId,
+
+      message:
+        "Moderationsnotiz wurde gelöscht."
     });
 
   } catch (error) {
