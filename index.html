@@ -1571,7 +1571,7 @@ updateOnline(); setInterval(updateOnline,30000);
         const allUsers=Array.isArray(d.users)?d.users:[];
         const isDeletedUser=u=>{
           const name=String(u?.username||"").trim().toLowerCase();
-          return Boolean(u?.deleted_at)||name==="deleted user"||name.startsWith("deleted user ")||name.startsWith("deleted_user")||name.startsWith("deleted-user");
+          return Boolean(u?.deleted_at)||name==="deleted user"||name.startsWith("deleteduser_")||name.startsWith("deleted user ")||name.startsWith("deleted_user")||name.startsWith("deleted-user");
         };
         const visibleUsers=allUsers.filter(u=>!isDeletedUser(u));
         const apiTotal=Number(d.pagination?.total);
