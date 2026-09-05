@@ -1,7 +1,3 @@
-const MAX_ROOM_MEMBERS = 5;
-const MAX_MESSAGE_LENGTH = 500;
-const MAX_ROOM_NAME_LENGTH = 50;
-
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -13,13 +9,17 @@ function json(data, status = 200) {
 }
 
 function getCookie(request, name) {
-  const cookie = request.headers.get("Cookie") || "";
+  const cookie =
+    request.headers.get("Cookie") || "";
 
   for (const part of cookie.split(";")) {
-    const [key, ...value] = part.trim().split("=");
+    const [key, ...value] =
+      part.trim().split("=");
 
     if (key === name) {
-      return decodeURIComponent(value.join("="));
+      return decodeURIComponent(
+        value.join("=")
+      );
     }
   }
 
@@ -27,28 +27,41 @@ function getCookie(request, name) {
 }
 
 async function getCurrentUser(request, env) {
-  const token = getCookie(request, "ps_session");
+  const sessionId =
+    getCookie(
+      request,
+      "ps_session"
+    );
 
-  if (!token) {
+  if (!sessionId) {
     return null;
   }
 
+  const now =
+    Math.floor(
+      Date.now() / 1000
+    );
+
   return await env.DB.prepare(`
     SELECT
-      users.id,
-      users.username,
-      users.server,
-      users.role
-    FROM sessions
-    JOIN users
-      ON users.id = sessions.user_id
-    WHERE sessions.id = ?
-      AND sessions.expires_at > ?
+      u.id,
+      u.username,
+      u.server,
+      u.role
+
+    FROM sessions s
+
+    JOIN users u
+      ON u.id = s.user_id
+
+    WHERE s.id = ?
+      AND s.expires_at > ?
+
     LIMIT 1
   `)
     .bind(
-      token,
-      Math.floor(Date.now() / 1000)
+      sessionId,
+      now
     )
     .first();
 }
@@ -60,146 +73,24 @@ function isAdmin(user) {
   );
 }
 
-function normalizeText(value) {
-  if (typeof value !== "string") {
-    return "";
+function cleanText(value) {
+  return typeof value === "string"
+    ? value.trim()
+    : "";
+}
+
+function toPositiveInt(value) {
+  const number =
+    Number(value);
+
+  if (
+    !Number.isInteger(number) ||
+    number <= 0
+  ) {
+    return null;
   }
 
-  return value
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
-    .trim();
-}
-
-async function getUserById(env, userId) {
-  return await env.DB.prepare(`
-    SELECT
-      id,
-      username,
-      server,
-      role
-    FROM users
-    WHERE id = ?
-    LIMIT 1
-  `)
-    .bind(userId)
-    .first();
-}
-
-async function cleanupExpiredBans(env) {
-  const now =
-    Math.floor(Date.now() / 1000);
-
-  await env.DB.prepare(`
-    UPDATE chat_bans
-    SET active = 0
-    WHERE active = 1
-      AND expires_at IS NOT NULL
-      AND expires_at <= ?
-  `)
-    .bind(now)
-    .run();
-}
-
-async function getActiveBan(env, userId) {
-  await cleanupExpiredBans(env);
-
-  const now =
-    Math.floor(Date.now() / 1000);
-
-  return await env.DB.prepare(`
-    SELECT
-      id,
-      reason,
-      banned_at,
-      expires_at
-    FROM chat_bans
-    WHERE user_id = ?
-      AND active = 1
-      AND (
-        expires_at IS NULL
-        OR expires_at > ?
-      )
-    ORDER BY banned_at DESC
-    LIMIT 1
-  `)
-    .bind(
-      userId,
-      now
-    )
-    .first();
-}
-
-async function ensureNotBanned(env, user) {
-  if (isAdmin(user)) {
-    return {
-      ok: true
-    };
-  }
-
-  const ban =
-    await getActiveBan(
-      env,
-      user.id
-    );
-
-  if (!ban) {
-    return {
-      ok: true
-    };
-  }
-
-  return {
-    ok: false,
-
-    response: json({
-      ok: false,
-
-      error:
-        "Du bist derzeit vom Chat ausgeschlossen.",
-
-      ban: {
-        id: ban.id,
-        reason: ban.reason,
-        banned_at: ban.banned_at,
-        expires_at: ban.expires_at,
-        permanent:
-          ban.expires_at === null
-      }
-    }, 403)
-  };
-}
-
-async function hasBlockBetween(
-  env,
-  userA,
-  userB
-) {
-  const block =
-    await env.DB.prepare(`
-      SELECT id
-      FROM chat_blocks
-      WHERE
-        (
-          blocker_id = ?
-          AND blocked_id = ?
-        )
-        OR
-        (
-          blocker_id = ?
-          AND blocked_id = ?
-        )
-      LIMIT 1
-    `)
-      .bind(
-        userA,
-        userB,
-        userB,
-        userA
-      )
-      .first();
-
-  return Boolean(block);
+  return number;
 }
 
 async function isRoomMember(
@@ -207,32 +98,41 @@ async function isRoomMember(
   roomId,
   userId
 ) {
-  const member =
-    await env.DB.prepare(`
-      SELECT 1 AS found
-      FROM whisper_members
-      WHERE room_id = ?
-        AND user_id = ?
-      LIMIT 1
-    `)
-      .bind(
-        roomId,
-        userId
-      )
-      .first();
+  return await env.DB.prepare(`
+    SELECT
+      room_id,
+      user_id,
+      joined_at
 
-  return Boolean(member);
+    FROM whisper_members
+
+    WHERE room_id = ?
+      AND user_id = ?
+
+    LIMIT 1
+  `)
+    .bind(
+      roomId,
+      userId
+    )
+    .first();
 }
 
-async function getRoom(env, roomId) {
+async function getRoom(
+  env,
+  roomId
+) {
   return await env.DB.prepare(`
     SELECT
       id,
       created_by,
       name,
       created_at
+
     FROM whisper_rooms
+
     WHERE id = ?
+
     LIMIT 1
   `)
     .bind(roomId)
@@ -251,38 +151,140 @@ async function getRoomMembers(
         u.server,
         u.role,
         wm.joined_at
+
       FROM whisper_members wm
+
       JOIN users u
         ON u.id = wm.user_id
+
       WHERE wm.room_id = ?
-      ORDER BY wm.joined_at ASC
+
+      ORDER BY
+        wm.joined_at ASC,
+        LOWER(u.username) ASC
     `)
       .bind(roomId)
       .all();
 
-  return result.results || [];
+  return (
+    result.results || []
+  ).map(user => ({
+    id:
+      user.id,
+
+    username:
+      user.username,
+
+    server:
+      user.server,
+
+    role:
+      user.role,
+
+    is_admin:
+      user.role === "admin",
+
+    joined_at:
+      user.joined_at
+  }));
 }
 
-async function getPendingInviteCount(
+async function usersBlockEachOther(
   env,
-  roomId
+  userA,
+  userB
 ) {
   const row =
     await env.DB.prepare(`
-      SELECT COUNT(*) AS total
-      FROM whisper_invites
-      WHERE room_id = ?
-        AND status = 'pending'
+      SELECT id
+
+      FROM chat_blocks
+
+      WHERE
+        (
+          blocker_id = ?
+          AND blocked_id = ?
+        )
+        OR
+        (
+          blocker_id = ?
+          AND blocked_id = ?
+        )
+
+      LIMIT 1
     `)
-      .bind(roomId)
+      .bind(
+        userA,
+        userB,
+        userB,
+        userA
+      )
       .first();
 
-  return Number(row?.total || 0);
+  return Boolean(row);
 }
 
+async function getRoomResponse(
+  env,
+  roomId
+) {
+  const room =
+    await getRoom(
+      env,
+      roomId
+    );
+
+  if (!room) {
+    return null;
+  }
+
+  const members =
+    await getRoomMembers(
+      env,
+      roomId
+    );
+
+  return {
+    id:
+      room.id,
+
+    created_by:
+      room.created_by,
+
+    name:
+      room.name || null,
+
+    created_at:
+      room.created_at,
+
+    members
+  };
+}
+
+/*
+ * =====================================================
+ * GET
+ * =====================================================
+ *
+ * Ohne room_id:
+ *
+ * - eigene Whisper-Räume
+ * - offene Einladungen
+ *
+ * Mit room_id:
+ *
+ * - Nachrichten eines eigenen Whisper-Raumes
+ *
+ * WICHTIG:
+ * Auch Admins haben KEINEN automatischen Zugriff auf
+ * fremde private Whisper-Chats.
+ */
 export async function onRequestGet(context) {
   try {
-    const { request, env } = context;
+    const {
+      request,
+      env
+    } = context;
 
     const user =
       await getCurrentUser(
@@ -298,353 +300,311 @@ export async function onRequestGet(context) {
       }, 401);
     }
 
-    const banCheck =
-      await ensureNotBanned(
-        env,
-        user
-      );
-
-    if (!banCheck.ok) {
-      return banCheck.response;
-    }
-
     const url =
       new URL(request.url);
 
-    const roomIdRaw =
-      url.searchParams.get(
-        "room_id"
+    const roomId =
+      toPositiveInt(
+        url.searchParams.get(
+          "room_id"
+        )
       );
 
-    if (!roomIdRaw) {
-      const roomsResult =
-        await env.DB.prepare(`
-          SELECT
-            wr.id,
-            wr.created_by,
-            wr.name,
-            wr.created_at
-          FROM whisper_rooms wr
-          JOIN whisper_members wm
-            ON wm.room_id = wr.id
-          WHERE wm.user_id = ?
-          ORDER BY wr.created_at DESC
-        `)
-          .bind(user.id)
-          .all();
+    /*
+     * =================================================
+     * EINEN WHISPER-RAUM LADEN
+     * =================================================
+     */
+    if (roomId) {
+      const membership =
+        await isRoomMember(
+          env,
+          roomId,
+          user.id
+        );
 
-      const rooms = [];
-
-      for (
-        const room
-        of roomsResult.results || []
-      ) {
-        const members =
-          await getRoomMembers(
-            env,
-            room.id
-          );
-
-        rooms.push({
-          id: room.id,
-          name:
-            room.name || null,
-          created_by:
-            room.created_by,
-          created_at:
-            room.created_at,
-
-          members:
-            members.map(
-              member => ({
-                id: member.id,
-                username:
-                  member.username,
-                server:
-                  member.server,
-                role:
-                  member.role,
-                is_admin:
-                  member.role ===
-                  "admin"
-              })
-            ),
-
-          unread: 0
-        });
+      if (!membership) {
+        return json({
+          ok: false,
+          error:
+            "Du bist kein Mitglied dieses Whisper-Chats."
+        }, 403);
       }
 
-      const invitesResult =
+      const room =
+        await getRoomResponse(
+          env,
+          roomId
+        );
+
+      if (!room) {
+        return json({
+          ok: false,
+          error:
+            "Whisper-Chat wurde nicht gefunden."
+        }, 404);
+      }
+
+      const messagesResult =
         await env.DB.prepare(`
           SELECT
-            wi.id,
-            wi.room_id,
-            wi.inviter_id,
-            wi.created_at,
+            wm.id,
+            wm.room_id,
+            wm.user_id,
+            wm.message,
+            wm.original_message,
+            wm.reply_to,
+            wm.created_at,
+            wm.deleted_at,
 
-            inviter.username
-              AS inviter_username,
+            u.username,
+            u.server,
+            u.role,
 
-            inviter.server
-              AS inviter_server,
+            reply_user.username
+              AS reply_username,
 
-            wr.name
-              AS room_name
+            reply_message.message
+              AS reply_message,
 
-          FROM whisper_invites wi
+            reply_message.original_message
+              AS reply_original_message
 
-          JOIN users inviter
-            ON inviter.id =
-              wi.inviter_id
+          FROM whisper_messages wm
 
-          JOIN whisper_rooms wr
-            ON wr.id =
-              wi.room_id
+          JOIN users u
+            ON u.id = wm.user_id
 
-          WHERE wi.invited_user_id = ?
-            AND wi.status = 'pending'
+          LEFT JOIN whisper_messages reply_message
+            ON reply_message.id =
+              wm.reply_to
+
+          LEFT JOIN users reply_user
+            ON reply_user.id =
+              reply_message.user_id
+
+          WHERE wm.room_id = ?
+            AND wm.deleted_at IS NULL
 
           ORDER BY
-            wi.created_at DESC
+            wm.created_at ASC,
+            wm.id ASC
+
+          LIMIT 500
         `)
-          .bind(user.id)
+          .bind(roomId)
           .all();
+
+      const messages =
+        (
+          messagesResult.results || []
+        ).map(message => ({
+          id:
+            message.id,
+
+          room_id:
+            message.room_id,
+
+          user_id:
+            message.user_id,
+
+          username:
+            message.username,
+
+          server:
+            message.server,
+
+          role:
+            message.role,
+
+          is_admin:
+            message.role === "admin",
+
+          message:
+            message.message,
+
+          content:
+            message.message,
+
+          reply_to:
+            message.reply_to || null,
+
+          reply_username:
+            message.reply_username || null,
+
+          reply_excerpt:
+            message.reply_to
+              ? (
+                  message.reply_message ||
+                  message.reply_original_message ||
+                  ""
+                ).slice(0, 120)
+              : null,
+
+          created_at:
+            message.created_at
+        }));
 
       return json({
         ok: true,
 
-        rooms,
+        room,
 
-        invites:
-          (
-            invitesResult.results ||
-            []
-          ).map(
-            invite => ({
-              id:
-                invite.id,
-
-              room_id:
-                invite.room_id,
-
-              room_name:
-                invite.room_name,
-
-              inviter: {
-                id:
-                  invite.inviter_id,
-
-                username:
-                  invite.inviter_username,
-
-                server:
-                  invite.inviter_server
-              },
-
-              created_at:
-                invite.created_at
-            })
-          )
+        messages
       });
     }
 
-    const roomId =
-      Number(roomIdRaw);
-
-    if (
-      !Number.isInteger(roomId) ||
-      roomId <= 0
-    ) {
-      return json({
-        ok: false,
-        error:
-          "Ungültiger Whisper-Raum."
-      }, 400);
-    }
-
-    const room =
-      await getRoom(
-        env,
-        roomId
-      );
-
-    if (!room) {
-      return json({
-        ok: false,
-        error:
-          "Whisper-Raum wurde nicht gefunden."
-      }, 404);
-    }
-
-    // Kein Admin-Bypass für private Chats.
-    const member =
-      await isRoomMember(
-        env,
-        roomId,
-        user.id
-      );
-
-    if (!member) {
-      return json({
-        ok: false,
-        error:
-          "Du hast keinen Zugriff auf diesen Whisper-Chat."
-      }, 403);
-    }
-
-    const limitRaw =
-      Number(
-        url.searchParams.get(
-          "limit"
-        ) || 100
-      );
-
-    const limit =
-      Math.max(
-        1,
-        Math.min(
-          limitRaw,
-          200
-        )
-      );
-
-    const members =
-      await getRoomMembers(
-        env,
-        roomId
-      );
-
-    const messagesResult =
+    /*
+     * =================================================
+     * EIGENE RÄUME
+     * =================================================
+     */
+    const roomsResult =
       await env.DB.prepare(`
         SELECT
-          wm.id,
-          wm.room_id,
-          wm.user_id,
-          wm.message,
-          wm.original_message,
-          wm.reply_to,
-          wm.created_at,
-          wm.deleted_at,
+          wr.id,
+          wr.created_by,
+          wr.name,
+          wr.created_at,
+          wm.joined_at
 
-          u.username,
-          u.server,
-          u.role
+        FROM whisper_members wm
 
-        FROM whisper_messages wm
+        JOIN whisper_rooms wr
+          ON wr.id = wm.room_id
 
-        JOIN users u
-          ON u.id = wm.user_id
-
-        WHERE wm.room_id = ?
+        WHERE wm.user_id = ?
 
         ORDER BY
-          wm.created_at DESC,
-          wm.id DESC
-
-        LIMIT ?
+          wr.created_at DESC,
+          wr.id DESC
       `)
-        .bind(
-          roomId,
-          limit
-        )
+        .bind(user.id)
         .all();
 
-    const rawMessages =
-      (
-        messagesResult.results ||
-        []
-      ).reverse();
+    const rooms = [];
 
-    return json({
-      ok: true,
+    for (
+      const room
+      of roomsResult.results || []
+    ) {
+      const members =
+        await getRoomMembers(
+          env,
+          room.id
+        );
 
-      room: {
+      rooms.push({
         id:
           room.id,
-
-        name:
-          room.name,
 
         created_by:
           room.created_by,
 
+        name:
+          room.name || null,
+
         created_at:
           room.created_at,
 
-        members:
-          members.map(
-            member => ({
-              id:
-                member.id,
+        joined_at:
+          room.joined_at,
 
-              username:
-                member.username,
+        members
+      });
+    }
 
-              server:
-                member.server,
+    /*
+     * =================================================
+     * OFFENE EINLADUNGEN
+     * =================================================
+     */
+    const invitesResult =
+      await env.DB.prepare(`
+        SELECT
+          wi.id,
+          wi.room_id,
+          wi.inviter_id,
+          wi.invited_user_id,
+          wi.status,
+          wi.created_at,
 
-              role:
-                member.role,
+          inviter.username
+            AS inviter_username,
 
-              is_admin:
-                member.role ===
-                "admin"
-            })
-          )
-      },
+          inviter.server
+            AS inviter_server,
 
-      messages:
-        rawMessages.map(
-          message => ({
-            id:
-              message.id,
+          inviter.role
+            AS inviter_role,
 
-            room_id:
-              message.room_id,
+          wr.name
+            AS room_name
 
-            user: {
-              id:
-                message.user_id,
+        FROM whisper_invites wi
 
-              username:
-                message.username,
+        JOIN users inviter
+          ON inviter.id =
+            wi.inviter_id
 
-              server:
-                message.server,
+        JOIN whisper_rooms wr
+          ON wr.id =
+            wi.room_id
 
-              role:
-                message.role,
+        WHERE wi.invited_user_id = ?
+          AND wi.status = 'pending'
 
-              is_admin:
-                message.role ===
-                "admin"
-            },
+        ORDER BY
+          wi.created_at DESC,
+          wi.id DESC
+      `)
+        .bind(user.id)
+        .all();
 
-            message:
-              message.deleted_at
-                ? null
-                : message.message,
+    const invites =
+      (
+        invitesResult.results || []
+      ).map(invite => ({
+        id:
+          invite.id,
 
-            original_message:
-              message.deleted_at
-                ? null
-                : (
-                    message.original_message ||
-                    message.message
-                  ),
+        room_id:
+          invite.room_id,
 
-            reply_to:
-              message.reply_to,
+        status:
+          invite.status,
 
-            created_at:
-              message.created_at,
+        created_at:
+          invite.created_at,
 
-            deleted:
-              Boolean(
-                message.deleted_at
-              )
-          })
-        )
+        room_name:
+          invite.room_name || null,
+
+        inviter: {
+          id:
+            invite.inviter_id,
+
+          username:
+            invite.inviter_username,
+
+          server:
+            invite.inviter_server,
+
+          role:
+            invite.inviter_role,
+
+          is_admin:
+            invite.inviter_role ===
+            "admin"
+        }
+      }));
+
+    return json({
+      ok: true,
+
+      rooms,
+
+      invites
     });
 
   } catch (error) {
@@ -656,14 +616,27 @@ export async function onRequestGet(context) {
     return json({
       ok: false,
       error:
-        "Whisper-Chats konnten nicht geladen werden."
+        "Whisper-Daten konnten nicht geladen werden."
     }, 500);
   }
 }
 
+/*
+ * =====================================================
+ * POST
+ * =====================================================
+ *
+ * Aktionen:
+ *
+ * create
+ * send
+ */
 export async function onRequestPost(context) {
   try {
-    const { request, env } = context;
+    const {
+      request,
+      env
+    } = context;
 
     const user =
       await getCurrentUser(
@@ -677,16 +650,6 @@ export async function onRequestPost(context) {
         error:
           "Du musst eingeloggt sein."
       }, 401);
-    }
-
-    const banCheck =
-      await ensureNotBanned(
-        env,
-        user
-      );
-
-    if (!banCheck.ok) {
-      return banCheck.response;
     }
 
     let body;
@@ -703,62 +666,53 @@ export async function onRequestPost(context) {
     }
 
     const action =
-      typeof body.action === "string"
-        ? body.action.toLowerCase()
-        : "";
+      cleanText(
+        body.action
+      ).toLowerCase();
 
     /*
-     * CREATE
+     * =================================================
+     * WHISPER ERSTELLEN
+     * =================================================
+     *
+     * Creator wird sofort Mitglied.
+     *
+     * Eingeladene Spieler werden NICHT automatisch
+     * Mitglied. Sie bekommen zunächst eine Einladung.
      */
     if (action === "create") {
-      const name =
-        normalizeText(body.name);
-
-      if (
-        name.length >
-        MAX_ROOM_NAME_LENGTH
-      ) {
-        return json({
-          ok: false,
-          error:
-            `Der Gruppenname darf maximal ${MAX_ROOM_NAME_LENGTH} Zeichen lang sein.`
-        }, 400);
-      }
-
-      if (
-        !Array.isArray(
+      const rawIds =
+        Array.isArray(
           body.invited_user_ids
         )
-      ) {
-        return json({
-          ok: false,
-          error:
-            "Es muss mindestens ein Spieler eingeladen werden."
-        }, 400);
-      }
+          ? body.invited_user_ids
+          : [];
 
-      const uniqueInviteIds =
+      const invitedIds =
         [
           ...new Set(
-            body.invited_user_ids
-              .map(Number)
-              .filter(
-                id =>
-                  Number.isInteger(id) &&
-                  id > 0 &&
-                  id !== user.id
-              )
+            rawIds
+              .map(toPositiveInt)
+              .filter(Boolean)
           )
-        ];
+        ].filter(
+          id =>
+            Number(id) !==
+            Number(user.id)
+        );
 
+      /*
+       * Creator + maximal 4 weitere Spieler
+       * = maximal 5 Spieler.
+       */
       if (
-        uniqueInviteIds.length < 1 ||
-        uniqueInviteIds.length > 4
+        invitedIds.length < 1 ||
+        invitedIds.length > 4
       ) {
         return json({
           ok: false,
           error:
-            "Ein Whisper-Chat muss insgesamt 2 bis 5 Spieler haben."
+            "Ein Whisper-Chat benötigt 2 bis 5 Spieler."
         }, 400);
       }
 
@@ -766,105 +720,131 @@ export async function onRequestPost(context) {
 
       for (
         const invitedId
-        of uniqueInviteIds
+        of invitedIds
       ) {
-        const invitedUser =
-          await getUserById(
-            env,
-            invitedId
-          );
+        const target =
+          await env.DB.prepare(`
+            SELECT
+              id,
+              username,
+              server,
+              role
 
-        if (!invitedUser) {
+            FROM users
+
+            WHERE id = ?
+
+            LIMIT 1
+          `)
+            .bind(invitedId)
+            .first();
+
+        if (!target) {
           return json({
             ok: false,
             error:
-              `Spieler-ID ${invitedId} wurde nicht gefunden.`
+              "Mindestens ein ausgewählter Spieler wurde nicht gefunden."
           }, 404);
         }
 
+        /*
+         * Whisper nur innerhalb desselben Servers.
+         *
+         * Admin-Sonderrechte gelten hier bewusst
+         * NICHT für private Whisper-Chats.
+         */
         if (
-          invitedUser.server !==
+          target.server !==
           user.server
         ) {
           return json({
             ok: false,
             error:
-              `${invitedUser.username} spielt auf einem anderen Server.`
+              "Whisper ist nur mit Spielern desselben Servers möglich."
           }, 403);
         }
 
+        /*
+         * Niemand darf Admin blockieren.
+         * Falls dennoch alte Block-Daten existieren,
+         * soll das Admin-Konto dadurch nicht
+         * eingeschränkt werden.
+         */
         if (
           !isAdmin(user) &&
-          !isAdmin(invitedUser)
+          !isAdmin(target)
         ) {
           const blocked =
-            await hasBlockBetween(
+            await usersBlockEachOther(
               env,
               user.id,
-              invitedUser.id
+              target.id
             );
 
           if (blocked) {
             return json({
               ok: false,
               error:
-                `Mit ${invitedUser.username} kann derzeit kein Whisper-Chat gestartet werden.`
+                `Whisper mit ${target.username} ist wegen einer Blockierung nicht möglich.`
             }, 403);
           }
         }
 
-        const invitedBan =
-          await getActiveBan(
-            env,
-            invitedUser.id
-          );
-
-        if (
-          invitedBan &&
-          !isAdmin(invitedUser)
-        ) {
-          return json({
-            ok: false,
-            error:
-              `${invitedUser.username} ist derzeit vom Chat ausgeschlossen.`
-          }, 403);
-        }
-
         invitedUsers.push(
-          invitedUser
+          target
         );
       }
+
+      const name =
+        cleanText(
+          body.name
+        ).slice(0, 50);
 
       const now =
         Math.floor(
           Date.now() / 1000
         );
 
-      const roomResult =
+      const created =
         await env.DB.prepare(`
           INSERT INTO whisper_rooms (
             created_by,
             name,
             created_at
           )
+
           VALUES (?, ?, ?)
+
+          RETURNING id
         `)
           .bind(
             user.id,
             name || null,
             now
           )
-          .run();
+          .first();
+
+      if (!created?.id) {
+        return json({
+          ok: false,
+          error:
+            "Whisper-Chat konnte nicht erstellt werden."
+        }, 500);
+      }
 
       const roomId =
-        roomResult.meta.last_row_id;
+        created.id;
 
+      /*
+       * Ersteller ist sofort Mitglied.
+       */
       await env.DB.prepare(`
         INSERT INTO whisper_members (
           room_id,
           user_id,
           joined_at
         )
+
         VALUES (?, ?, ?)
       `)
         .bind(
@@ -874,8 +854,11 @@ export async function onRequestPost(context) {
         )
         .run();
 
+      /*
+       * Für alle anderen werden Einladungen erzeugt.
+       */
       for (
-        const invitedUser
+        const target
         of invitedUsers
       ) {
         await env.DB.prepare(`
@@ -886,95 +869,79 @@ export async function onRequestPost(context) {
             status,
             created_at
           )
+
           VALUES (?, ?, ?, 'pending', ?)
         `)
           .bind(
             roomId,
             user.id,
-            invitedUser.id,
+            target.id,
             now
           )
           .run();
       }
 
+      const room =
+        await getRoomResponse(
+          env,
+          roomId
+        );
+
       return json({
         ok: true,
 
-        room: {
-          id:
-            roomId,
+        room,
 
-          name:
-            name || null,
-
-          server:
-            user.server,
-
-          created_at:
-            now,
-
-          members: [
-            {
+        invited_users:
+          invitedUsers.map(
+            target => ({
               id:
-                user.id,
+                target.id,
 
               username:
-                user.username,
+                target.username,
 
               server:
-                user.server,
+                target.server,
 
               role:
-                user.role,
+                target.role,
 
               is_admin:
-                isAdmin(user)
-            }
-          ],
-
-          pending_invites:
-            invitedUsers.map(
-              invitedUser => ({
-                id:
-                  invitedUser.id,
-
-                username:
-                  invitedUser.username
-              })
-            )
-        },
-
-        message:
-          "Whisper-Chat wurde erstellt. Die Spieler müssen die Einladung noch annehmen."
+                target.role ===
+                "admin"
+            })
+          )
       }, 201);
     }
 
     /*
-     * SEND
+     * =================================================
+     * NACHRICHT SENDEN
+     * =================================================
      */
     if (action === "send") {
       const roomId =
-        Number(body.room_id);
+        toPositiveInt(
+          body.room_id
+        );
 
-      if (
-        !Number.isInteger(roomId) ||
-        roomId <= 0
-      ) {
+      if (!roomId) {
         return json({
           ok: false,
           error:
-            "Ungültiger Whisper-Raum."
+            "Ungültiger Whisper-Chat."
         }, 400);
       }
 
-      const member =
+      const membership =
         await isRoomMember(
           env,
           roomId,
           user.id
         );
 
-      if (!member) {
+      if (!membership) {
         return json({
           ok: false,
           error:
@@ -982,65 +949,8 @@ export async function onRequestPost(context) {
         }, 403);
       }
 
-      const room =
-        await getRoom(
-          env,
-          roomId
-        );
-
-      if (!room) {
-        return json({
-          ok: false,
-          error:
-            "Whisper-Chat wurde nicht gefunden."
-        }, 404);
-      }
-
-      const members =
-        await getRoomMembers(
-          env,
-          roomId
-        );
-
-      for (
-        const roomMember
-        of members
-      ) {
-        if (
-          roomMember.server !==
-          user.server
-        ) {
-          return json({
-            ok: false,
-            error:
-              "Dieser Whisper-Chat enthält eine ungültige Serverkombination."
-          }, 403);
-        }
-
-        if (
-          roomMember.id !== user.id &&
-          !isAdmin(user) &&
-          !isAdmin(roomMember)
-        ) {
-          const blocked =
-            await hasBlockBetween(
-              env,
-              user.id,
-              roomMember.id
-            );
-
-          if (blocked) {
-            return json({
-              ok: false,
-              error:
-                `Eine Nachricht an ${roomMember.username} ist wegen einer Blockierung nicht möglich.`
-            }, 403);
-          }
-        }
-      }
-
       const message =
-        normalizeText(
+        cleanText(
           body.message
         );
 
@@ -1053,73 +963,57 @@ export async function onRequestPost(context) {
       }
 
       if (
-        message.length >
-        MAX_MESSAGE_LENGTH
+        message.length > 1000
       ) {
         return json({
           ok: false,
           error:
-            `Die Nachricht darf maximal ${MAX_MESSAGE_LENGTH} Zeichen enthalten.`
+            "Die Nachricht ist zu lang."
         }, 400);
       }
 
-      const now =
-        Math.floor(
-          Date.now() / 1000
+      /*
+       * Prüfen, ob zwischen Sender und einem anderen
+       * aktuellen Mitglied eine Blockierung besteht.
+       */
+      const members =
+        await getRoomMembers(
+          env,
+          roomId
         );
 
-      const flood =
-        await env.DB.prepare(`
-          SELECT COUNT(*) AS total
-          FROM whisper_messages
-          WHERE user_id = ?
-            AND created_at >= ?
-        `)
-          .bind(
+      for (
+        const member
+        of members
+      ) {
+        if (
+          Number(member.id) ===
+          Number(user.id)
+        ) {
+          continue;
+        }
+
+        if (
+          isAdmin(user) ||
+          member.is_admin
+        ) {
+          continue;
+        }
+
+        const blocked =
+          await usersBlockEachOther(
+            env,
             user.id,
-            now - 10
-          )
-          .first();
+            member.id
+          );
 
-      if (
-        Number(
-          flood?.total || 0
-        ) >= 5
-      ) {
-        return json({
-          ok: false,
-          error:
-            "Du schreibst zu schnell. Bitte warte einen Moment."
-        }, 429);
-      }
-
-      const previous =
-        await env.DB.prepare(`
-          SELECT message
-          FROM whisper_messages
-          WHERE room_id = ?
-            AND user_id = ?
-            AND deleted_at IS NULL
-          ORDER BY
-            created_at DESC,
-            id DESC
-          LIMIT 1
-        `)
-          .bind(
-            roomId,
-            user.id
-          )
-          .first();
-
-      if (
-        previous &&
-        previous.message === message
-      ) {
-        return json({
-          ok: false,
-          error:
-            "Bitte sende nicht mehrfach dieselbe Nachricht."
-        }, 429);
+        if (blocked) {
+          return json({
+            ok: false,
+            error:
+              "Die Nachricht kann wegen einer Blockierung nicht gesendet werden."
+          }, 403);
+        }
       }
 
       let replyTo = null;
@@ -1130,12 +1024,11 @@ export async function onRequestPost(context) {
         body.reply_to !== ""
       ) {
         replyTo =
-          Number(body.reply_to);
+          toPositiveInt(
+            body.reply_to
+          );
 
-        if (
-          !Number.isInteger(replyTo) ||
-          replyTo <= 0
-        ) {
+        if (!replyTo) {
           return json({
             ok: false,
             error:
@@ -1145,11 +1038,16 @@ export async function onRequestPost(context) {
 
         const replyMessage =
           await env.DB.prepare(`
-            SELECT id
+            SELECT
+              id,
+              room_id
+
             FROM whisper_messages
+
             WHERE id = ?
               AND room_id = ?
               AND deleted_at IS NULL
+
             LIMIT 1
           `)
             .bind(
@@ -1162,12 +1060,24 @@ export async function onRequestPost(context) {
           return json({
             ok: false,
             error:
-              "Die Nachricht, auf die du antworten möchtest, existiert nicht."
+              "Die Nachricht, auf die du antworten möchtest, wurde nicht gefunden."
           }, 404);
         }
       }
 
-      const result =
+      const now =
+        Math.floor(
+          Date.now() / 1000
+        );
+
+      /*
+       * original_message bleibt für spätere
+       * Moderations-/Filterfunktionen erhalten.
+       *
+       * Aktuell findet keine automatische
+       * Sprachübersetzung statt.
+       */
+      const inserted =
         await env.DB.prepare(`
           INSERT INTO whisper_messages (
             room_id,
@@ -1177,7 +1087,10 @@ export async function onRequestPost(context) {
             reply_to,
             created_at
           )
+
           VALUES (?, ?, ?, ?, ?, ?)
+
+          RETURNING id
         `)
           .bind(
             roomId,
@@ -1187,37 +1100,68 @@ export async function onRequestPost(context) {
             replyTo,
             now
           )
+          .first();
+
+      /*
+       * Eigene Nachricht direkt als gelesen markieren.
+       */
+      if (inserted?.id) {
+        await env.DB.prepare(`
+          INSERT INTO whisper_read_state (
+            room_id,
+            user_id,
+            last_read_message_id,
+            updated_at
+          )
+
+          VALUES (?, ?, ?, ?)
+
+          ON CONFLICT(room_id, user_id)
+
+          DO UPDATE SET
+            last_read_message_id =
+              excluded.last_read_message_id,
+
+            updated_at =
+              excluded.updated_at
+        `)
+          .bind(
+            roomId,
+            user.id,
+            inserted.id,
+            now
+          )
           .run();
+      }
 
       return json({
         ok: true,
 
         message: {
           id:
-            result.meta.last_row_id,
+            inserted?.id || null,
 
           room_id:
             roomId,
 
-          user: {
-            id:
-              user.id,
+          user_id:
+            user.id,
 
-            username:
-              user.username,
+          username:
+            user.username,
 
-            server:
-              user.server,
+          server:
+            user.server,
 
-            role:
-              user.role,
+          role:
+            user.role,
 
-            is_admin:
-              isAdmin(user)
-          },
+          is_admin:
+            isAdmin(user),
 
           message,
-          original_message:
+
+          content:
             message,
 
           reply_to:
@@ -1229,241 +1173,10 @@ export async function onRequestPost(context) {
       }, 201);
     }
 
-    /*
-     * INVITE
-     */
-    if (action === "invite") {
-      const roomId =
-        Number(body.room_id);
-
-      const targetUserId =
-        Number(body.user_id);
-
-      if (
-        !Number.isInteger(roomId) ||
-        roomId <= 0 ||
-        !Number.isInteger(
-          targetUserId
-        ) ||
-        targetUserId <= 0
-      ) {
-        return json({
-          ok: false,
-          error:
-            "Ungültige Anfrage."
-        }, 400);
-      }
-
-      const member =
-        await isRoomMember(
-          env,
-          roomId,
-          user.id
-        );
-
-      if (!member) {
-        return json({
-          ok: false,
-          error:
-            "Du bist kein Mitglied dieses Whisper-Chats."
-        }, 403);
-      }
-
-      if (
-        targetUserId === user.id
-      ) {
-        return json({
-          ok: false,
-          error:
-            "Du bist bereits Mitglied."
-        }, 400);
-      }
-
-      const target =
-        await getUserById(
-          env,
-          targetUserId
-        );
-
-      if (!target) {
-        return json({
-          ok: false,
-          error:
-            "Spieler wurde nicht gefunden."
-        }, 404);
-      }
-
-      if (
-        target.server !==
-        user.server
-      ) {
-        return json({
-          ok: false,
-          error:
-            "Du kannst nur Spieler deines eigenen Servers einladen."
-        }, 403);
-      }
-
-      const targetBan =
-        await getActiveBan(
-          env,
-          target.id
-        );
-
-      if (
-        targetBan &&
-        !isAdmin(target)
-      ) {
-        return json({
-          ok: false,
-          error:
-            "Dieser Spieler ist derzeit vom Chat ausgeschlossen."
-        }, 403);
-      }
-
-      if (
-        !isAdmin(user) &&
-        !isAdmin(target)
-      ) {
-        const blocked =
-          await hasBlockBetween(
-            env,
-            user.id,
-            target.id
-          );
-
-        if (blocked) {
-          return json({
-            ok: false,
-            error:
-              "Zwischen euch besteht eine Blockierung."
-          }, 403);
-        }
-      }
-
-      const alreadyMember =
-        await isRoomMember(
-          env,
-          roomId,
-          target.id
-        );
-
-      if (alreadyMember) {
-        return json({
-          ok: false,
-          error:
-            "Dieser Spieler ist bereits Mitglied."
-        }, 409);
-      }
-
-      const existingInvite =
-        await env.DB.prepare(`
-          SELECT id
-          FROM whisper_invites
-          WHERE room_id = ?
-            AND invited_user_id = ?
-            AND status = 'pending'
-          LIMIT 1
-        `)
-          .bind(
-            roomId,
-            target.id
-          )
-          .first();
-
-      if (existingInvite) {
-        return json({
-          ok: false,
-          error:
-            "Dieser Spieler wurde bereits eingeladen."
-        }, 409);
-      }
-
-      const members =
-        await getRoomMembers(
-          env,
-          roomId
-        );
-
-      const pendingCount =
-        await getPendingInviteCount(
-          env,
-          roomId
-        );
-
-      if (
-        members.length +
-        pendingCount >=
-        MAX_ROOM_MEMBERS
-      ) {
-        return json({
-          ok: false,
-          error:
-            "Dieser Whisper-Chat hat bereits die maximale Größe von 5 Spielern erreicht."
-        }, 409);
-      }
-
-      const now =
-        Math.floor(
-          Date.now() / 1000
-        );
-
-      const result =
-        await env.DB.prepare(`
-          INSERT INTO whisper_invites (
-            room_id,
-            inviter_id,
-            invited_user_id,
-            status,
-            created_at
-          )
-          VALUES (?, ?, ?, 'pending', ?)
-        `)
-          .bind(
-            roomId,
-            user.id,
-            target.id,
-            now
-          )
-          .run();
-
-      return json({
-        ok: true,
-
-        invite: {
-          id:
-            result.meta.last_row_id,
-
-          room_id:
-            roomId,
-
-          invited_user: {
-            id:
-              target.id,
-
-            username:
-              target.username,
-
-            server:
-              target.server
-          },
-
-          status:
-            "pending",
-
-          created_at:
-            now
-        },
-
-        message:
-          `${target.username} wurde eingeladen.`
-      }, 201);
-    }
-
     return json({
       ok: false,
       error:
-        "Ungültige Whisper-Aktion."
+        "Ungültige Whisper Aktion."
     }, 400);
 
   } catch (error) {
@@ -1475,14 +1188,36 @@ export async function onRequestPost(context) {
     return json({
       ok: false,
       error:
-        "Die Whisper-Aktion konnte nicht ausgeführt werden."
+        "Whisper-Aktion konnte nicht ausgeführt werden."
     }, 500);
   }
 }
 
+/*
+ * =====================================================
+ * PUT
+ * =====================================================
+ *
+ * Einladung annehmen / ablehnen.
+ *
+ * {
+ *   "invite_id": 123,
+ *   "response": "accepted"
+ * }
+ *
+ * oder:
+ *
+ * {
+ *   "invite_id": 123,
+ *   "response": "declined"
+ * }
+ */
 export async function onRequestPut(context) {
   try {
-    const { request, env } = context;
+    const {
+      request,
+      env
+    } = context;
 
     const user =
       await getCurrentUser(
@@ -1496,16 +1231,6 @@ export async function onRequestPut(context) {
         error:
           "Du musst eingeloggt sein."
       }, 401);
-    }
-
-    const banCheck =
-      await ensureNotBanned(
-        env,
-        user
-      );
-
-    if (!banCheck.ok) {
-      return banCheck.response;
     }
 
     let body;
@@ -1522,17 +1247,16 @@ export async function onRequestPut(context) {
     }
 
     const inviteId =
-      Number(body.invite_id);
+      toPositiveInt(
+        body.invite_id
+      );
 
     const response =
-      typeof body.response === "string"
-        ? body.response.toLowerCase()
-        : "";
+      cleanText(
+        body.response
+      ).toLowerCase();
 
-    if (
-      !Number.isInteger(inviteId) ||
-      inviteId <= 0
-    ) {
+    if (!inviteId) {
       return json({
         ok: false,
         error:
@@ -1547,7 +1271,7 @@ export async function onRequestPut(context) {
       return json({
         ok: false,
         error:
-          "Antwort muss accepted oder declined sein."
+          "Ungültige Antwort auf die Einladung."
       }, 400);
     }
 
@@ -1559,9 +1283,6 @@ export async function onRequestPut(context) {
           wi.inviter_id,
           wi.invited_user_id,
           wi.status,
-
-          inviter.username
-            AS inviter_username,
 
           inviter.server
             AS inviter_server,
@@ -1576,10 +1297,14 @@ export async function onRequestPut(context) {
             wi.inviter_id
 
         WHERE wi.id = ?
+          AND wi.invited_user_id = ?
 
         LIMIT 1
       `)
-        .bind(inviteId)
+        .bind(
+          inviteId,
+          user.id
+        )
         .first();
 
     if (!invite) {
@@ -1591,48 +1316,72 @@ export async function onRequestPut(context) {
     }
 
     if (
-      invite.invited_user_id !==
-      user.id
+      invite.status !== "pending"
     ) {
       return json({
         ok: false,
         error:
-          "Diese Einladung gehört nicht dir."
-      }, 403);
-    }
-
-    if (
-      invite.status !==
-      "pending"
-    ) {
-      return json({
-        ok: false,
-        error:
-          "Diese Einladung wurde bereits bearbeitet."
+          "Diese Einladung wurde bereits beantwortet."
       }, 409);
     }
 
+    /*
+     * =================================================
+     * ABLEHNEN
+     * =================================================
+     */
     if (
       response === "declined"
     ) {
       await env.DB.prepare(`
         UPDATE whisper_invites
+
         SET status = 'declined'
+
         WHERE id = ?
+          AND invited_user_id = ?
+          AND status = 'pending'
       `)
-        .bind(inviteId)
+        .bind(
+          inviteId,
+          user.id
+        )
         .run();
 
       return json({
         ok: true,
-        status:
-          "declined",
 
-        message:
-          "Einladung wurde abgelehnt."
+        invite_id:
+          inviteId,
+
+        status:
+          "declined"
       });
     }
 
+    /*
+     * =================================================
+     * ANNEHMEN
+     * =================================================
+     */
+
+    const room =
+      await getRoom(
+        env,
+        invite.room_id
+      );
+
+    if (!room) {
+      return json({
+        ok: false,
+        error:
+          "Der Whisper-Chat existiert nicht mehr."
+      }, 404);
+    }
+
+    /*
+     * Gleicher Server bleibt Pflicht.
+     */
     if (
       invite.inviter_server !==
       user.server
@@ -1644,13 +1393,16 @@ export async function onRequestPut(context) {
       }, 403);
     }
 
+    /*
+     * Blockierung erneut prüfen.
+     */
     if (
       !isAdmin(user) &&
       invite.inviter_role !==
       "admin"
     ) {
       const blocked =
-        await hasBlockBetween(
+        await usersBlockEachOther(
           env,
           user.id,
           invite.inviter_id
@@ -1665,108 +1417,88 @@ export async function onRequestPut(context) {
       }
     }
 
-    const members =
-      await getRoomMembers(
-        env,
-        invite.room_id
-      );
+    /*
+     * Maximal 5 Mitglieder.
+     */
+    const memberCount =
+      await env.DB.prepare(`
+        SELECT
+          COUNT(*) AS count
+
+        FROM whisper_members
+
+        WHERE room_id = ?
+      `)
+        .bind(
+          invite.room_id
+        )
+        .first();
 
     if (
-      members.length >=
-      MAX_ROOM_MEMBERS
+      Number(
+        memberCount?.count || 0
+      ) >= 5
     ) {
       return json({
         ok: false,
         error:
-          "Der Whisper-Chat ist bereits voll."
+          "Dieser Whisper-Chat ist bereits voll."
       }, 409);
     }
 
-    for (
-      const member
-      of members
-    ) {
-      if (
-        member.server !==
-        user.server
-      ) {
-        return json({
-          ok: false,
-          error:
-            "Dieser Whisper-Chat enthält eine ungültige Serverkombination."
-        }, 403);
-      }
-
-      if (
-        member.id !== user.id &&
-        member.role !== "admin" &&
-        !isAdmin(user)
-      ) {
-        const blocked =
-          await hasBlockBetween(
-            env,
-            user.id,
-            member.id
-          );
-
-        if (blocked) {
-          return json({
-            ok: false,
-            error:
-              `Du kannst diesem Whisper-Chat wegen einer Blockierung mit ${member.username} nicht beitreten.`
-          }, 403);
-        }
-      }
-    }
-
-    const alreadyMember =
-      await isRoomMember(
-        env,
-        invite.room_id,
-        user.id
+    const now =
+      Math.floor(
+        Date.now() / 1000
       );
 
-    if (!alreadyMember) {
-      const now =
-        Math.floor(
-          Date.now() / 1000
-        );
+    await env.DB.prepare(`
+      INSERT OR IGNORE INTO whisper_members (
+        room_id,
+        user_id,
+        joined_at
+      )
 
-      await env.DB.prepare(`
-        INSERT INTO whisper_members (
-          room_id,
-          user_id,
-          joined_at
-        )
-        VALUES (?, ?, ?)
-      `)
-        .bind(
-          invite.room_id,
-          user.id,
-          now
-        )
-        .run();
-    }
+      VALUES (?, ?, ?)
+    `)
+      .bind(
+        invite.room_id,
+        user.id,
+        now
+      )
+      .run();
 
     await env.DB.prepare(`
       UPDATE whisper_invites
+
       SET status = 'accepted'
+
       WHERE id = ?
+        AND invited_user_id = ?
+        AND status = 'pending'
     `)
-      .bind(inviteId)
+      .bind(
+        inviteId,
+        user.id
+      )
       .run();
+
+    const acceptedRoom =
+      await getRoomResponse(
+        env,
+        invite.room_id
+      );
 
     return json({
       ok: true,
 
+      invite_id:
+        inviteId,
+
       status:
         "accepted",
 
-      room_id:
-        invite.room_id,
-
-      message:
-        "Du bist dem Whisper-Chat beigetreten."
+      room:
+        acceptedRoom
     });
 
   } catch (error) {
@@ -1778,7 +1510,312 @@ export async function onRequestPut(context) {
     return json({
       ok: false,
       error:
-        "Die Einladung konnte nicht bearbeitet werden."
+        "Die Whisper-Einladung konnte nicht verarbeitet werden."
+    }, 500);
+  }
+}
+
+/*
+ * =====================================================
+ * DELETE
+ * =====================================================
+ *
+ * WHISPER VERLASSEN
+ *
+ * Aufruf:
+ *
+ * DELETE /api/chat/whispers?room_id=123
+ *
+ * Der eingeloggte Spieler wird aus dem Raum entfernt.
+ *
+ * - Pending Invites für diesen Spieler werden beendet.
+ * - Read-State wird entfernt.
+ * - Wenn niemand mehr Mitglied ist, wird der komplette
+ *   Whisper-Raum inklusive Nachrichten/Invites
+ *   aufgeräumt.
+ *
+ * Private Nachrichten können dadurch nicht plötzlich
+ * von Admins eingesehen werden.
+ */
+export async function onRequestDelete(context) {
+  try {
+    const {
+      request,
+      env
+    } = context;
+
+    const user =
+      await getCurrentUser(
+        request,
+        env
+      );
+
+    if (!user) {
+      return json({
+        ok: false,
+        error:
+          "Du musst eingeloggt sein."
+      }, 401);
+    }
+
+    const url =
+      new URL(request.url);
+
+    const roomId =
+      toPositiveInt(
+        url.searchParams.get(
+          "room_id"
+        )
+      );
+
+    if (!roomId) {
+      return json({
+        ok: false,
+        error:
+          "Ungültiger Whisper-Chat."
+      }, 400);
+    }
+
+    const membership =
+      await isRoomMember(
+        env,
+        roomId,
+        user.id
+      );
+
+    if (!membership) {
+      return json({
+        ok: false,
+        error:
+          "Du bist kein Mitglied dieses Whisper-Chats."
+      }, 403);
+    }
+
+    /*
+     * Eigene Mitgliedschaft entfernen.
+     */
+    await env.DB.prepare(`
+      DELETE FROM whisper_members
+
+      WHERE room_id = ?
+        AND user_id = ?
+    `)
+      .bind(
+        roomId,
+        user.id
+      )
+      .run();
+
+    /*
+     * Read-State entfernen.
+     */
+    await env.DB.prepare(`
+      DELETE FROM whisper_read_state
+
+      WHERE room_id = ?
+        AND user_id = ?
+    `)
+      .bind(
+        roomId,
+        user.id
+      )
+      .run();
+
+    /*
+     * Eventuell noch vorhandene eigene offene
+     * Einladung abschließen.
+     */
+    await env.DB.prepare(`
+      UPDATE whisper_invites
+
+      SET status = 'declined'
+
+      WHERE room_id = ?
+        AND invited_user_id = ?
+        AND status = 'pending'
+    `)
+      .bind(
+        roomId,
+        user.id
+      )
+      .run();
+
+    const remaining =
+      await env.DB.prepare(`
+        SELECT
+          COUNT(*) AS count
+
+        FROM whisper_members
+
+        WHERE room_id = ?
+      `)
+        .bind(roomId)
+        .first();
+
+    const remainingCount =
+      Number(
+        remaining?.count || 0
+      );
+
+    /*
+     * =================================================
+     * RAUM IST LEER
+     * =================================================
+     *
+     * Wegen der Foreign Keys räumen wir in sinnvoller
+     * Reihenfolge auf.
+     */
+    if (
+      remainingCount === 0
+    ) {
+      await env.DB.prepare(`
+        DELETE FROM whisper_read_state
+
+        WHERE room_id = ?
+      `)
+        .bind(roomId)
+        .run();
+
+      /*
+       * Reports können auf Whisper-Nachrichten zeigen.
+       * Deshalb löschen wir einen leeren Raum nicht
+       * blind, falls bereits Moderationsmeldungen zu
+       * Nachrichten daraus existieren.
+       *
+       * In diesem Fall bleibt der Raum technisch in
+       * der DB erhalten, hat aber keine Mitglieder
+       * mehr und ist somit für niemanden zugänglich.
+       */
+      const reportCount =
+        await env.DB.prepare(`
+          SELECT
+            COUNT(*) AS count
+
+          FROM chat_reports
+
+          WHERE report_type = 'whisper'
+            AND whisper_message_id IN (
+              SELECT id
+
+              FROM whisper_messages
+
+              WHERE room_id = ?
+            )
+        `)
+          .bind(roomId)
+          .first();
+
+      if (
+        Number(
+          reportCount?.count || 0
+        ) === 0
+      ) {
+        await env.DB.prepare(`
+          DELETE FROM whisper_invites
+
+          WHERE room_id = ?
+        `)
+          .bind(roomId)
+          .run();
+
+        /*
+         * Replies innerhalb desselben Raumes zeigen
+         * ebenfalls auf whisper_messages.
+         *
+         * Deshalb zuerst reply_to lösen.
+         */
+        await env.DB.prepare(`
+          UPDATE whisper_messages
+
+          SET reply_to = NULL
+
+          WHERE room_id = ?
+        `)
+          .bind(roomId)
+          .run();
+
+        await env.DB.prepare(`
+          DELETE FROM whisper_messages
+
+          WHERE room_id = ?
+        `)
+          .bind(roomId)
+          .run();
+
+        await env.DB.prepare(`
+          DELETE FROM whisper_rooms
+
+          WHERE id = ?
+        `)
+          .bind(roomId)
+          .run();
+
+        return json({
+          ok: true,
+
+          left:
+            true,
+
+          room_id:
+            roomId,
+
+          room_deleted:
+            true,
+
+          message:
+            "Whisper-Chat wurde verlassen und entfernt."
+        });
+      }
+
+      return json({
+        ok: true,
+
+        left:
+          true,
+
+        room_id:
+          roomId,
+
+        room_deleted:
+          false,
+
+        archived:
+          true,
+
+        message:
+          "Whisper-Chat wurde verlassen."
+      });
+    }
+
+    return json({
+      ok: true,
+
+      left:
+        true,
+
+      room_id:
+        roomId,
+
+      room_deleted:
+        false,
+
+      remaining_members:
+        remainingCount,
+
+      message:
+        "Whisper-Chat wurde verlassen."
+    });
+
+  } catch (error) {
+    console.error(
+      "DELETE /api/chat/whispers error:",
+      error
+    );
+
+    return json({
+      ok: false,
+      error:
+        "Der Whisper-Chat konnte nicht verlassen werden."
     }, 500);
   }
 }
