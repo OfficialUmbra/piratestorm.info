@@ -653,6 +653,25 @@ export async function onRequestGet(
     const conditions = [];
     const bindings = [];
 
+    /*
+      GELÖSCHTE ACCOUNTS AUSBLENDEN
+
+      Gelöschte Accounts werden beim Löschen anonymisiert und
+      bekommen einen Namen wie "Deleted User ...".
+
+      Dieser Filter wirkt automatisch sowohl auf die eigentliche
+      Benutzerliste als auch auf COUNT(*), weil beide Abfragen
+      denselben whereClause verwenden.
+    */
+    conditions.push(`
+      LOWER(TRIM(users.username))
+        NOT LIKE 'deleted user%'
+      AND LOWER(TRIM(users.username))
+        NOT LIKE 'deleted_user%'
+      AND LOWER(TRIM(users.username))
+        NOT LIKE 'deleted-user%'
+    `);
+
     if (search) {
       conditions.push(`
         LOWER(users.username)
