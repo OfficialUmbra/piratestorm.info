@@ -138,14 +138,29 @@ function isAdmin(user) {
   );
 }
 
+function isModerator(user) {
+  return Boolean(
+    user &&
+    user.role === "moderator"
+  );
+}
+
+function isStaff(user) {
+  return Boolean(
+    user &&
+    (
+      isAdmin(user) ||
+      isModerator(user)
+    )
+  );
+}
+
 
 function getServerCode(
   server,
   role = null
 ) {
   /*
-   * V25:
-   *
    * Admin zeigt nicht mehr DE1,
    * sondern ADMIN.
    */
@@ -312,10 +327,10 @@ function formatPlayer(
       player.role ===
       "admin",
 
-    /*
-     * V25 Frontend kann daraus direkt den
-     * kleinen grünen Punkt darstellen.
-     */
+    is_moderator:
+      player.role ===
+      "moderator",
+
     online:
       true,
 
@@ -344,14 +359,9 @@ function formatPlayer(
  * Normaler Spieler:
  * eigener Server
  *
- * Admin:
- * kann einen Server auswählen
+ * Moderator/Admin:
+ * können einen Server auswählen
  *
- *
- * WICHTIG V25:
- *
- * p.room_type wird NICHT mehr für die Sichtbarkeit
- * verwendet.
  *
  * Eine Presence ist eine Presence des Accounts,
  * nicht eines einzelnen Tabs.
@@ -464,9 +474,15 @@ export async function onRequestGet(
       ) -
       ONLINE_TIMEOUT_SECONDS;
 
+    const now =
+      Math.floor(
+        Date.now() / 1000
+      );
+
     let result;
     let activeServer =
       null;
+
 
     /*
      * =================================================
@@ -476,6 +492,12 @@ export async function onRequestGet(
      * Alle aktiven Spieler.
      *
      * Gebannte Accounts werden ausgeschlossen.
+     *
+     * Sortierung:
+     *
+     * ADMIN
+     * MODERATOR
+     * USER
      */
     if (
       room ===
@@ -522,10 +544,13 @@ export async function onRequestGet(
 
           ORDER BY
             CASE
-              WHEN u.role =
-                'admin'
-              THEN 0
-              ELSE 1
+              WHEN u.role = 'admin'
+                THEN 0
+
+              WHEN u.role = 'moderator'
+                THEN 1
+
+              ELSE 2
             END,
 
             LOWER(
@@ -534,12 +559,11 @@ export async function onRequestGet(
         `)
           .bind(
             cutoff,
-            Math.floor(
-              Date.now() / 1000
-            )
+            now
           )
           .all();
     }
+
 
     /*
      * =================================================
@@ -548,7 +572,7 @@ export async function onRequestGet(
      */
     else {
       if (
-        isAdmin(user)
+        isStaff(user)
       ) {
         activeServer =
           (
@@ -558,10 +582,12 @@ export async function onRequestGet(
             user.server
           )
             .trim();
+
       } else {
         activeServer =
           user.server;
       }
+
 
       if (
         !activeServer ||
@@ -578,14 +604,18 @@ export async function onRequestGet(
         }, 400);
       }
 
+
       /*
        * Spieler des ausgewählten Servers
-       * +
-       * Admin unabhängig von dessen registriertem
-       * Server.
        *
-       * Dadurch bleibt Umbra in jedem öffentlichen
-       * Serverchat sichtbar, den er gerade moderiert.
+       * +
+       *
+       * Admin und Moderator unabhängig vom
+       * registrierten Server.
+       *
+       * Dadurch bleiben Staff-Mitglieder in jedem
+       * öffentlichen Serverchat sichtbar, den sie
+       * gerade moderieren.
        */
       result =
         await env.DB.prepare(`
@@ -606,8 +636,11 @@ export async function onRequestGet(
 
             AND (
               u.server = ?
-              OR u.role =
-                'admin'
+
+              OR u.role IN (
+                'admin',
+                'moderator'
+              )
             )
 
             AND (
@@ -634,10 +667,13 @@ export async function onRequestGet(
 
           ORDER BY
             CASE
-              WHEN u.role =
-                'admin'
-              THEN 0
-              ELSE 1
+              WHEN u.role = 'admin'
+                THEN 0
+
+              WHEN u.role = 'moderator'
+                THEN 1
+
+              ELSE 2
             END,
 
             LOWER(
@@ -647,19 +683,20 @@ export async function onRequestGet(
           .bind(
             cutoff,
             activeServer,
-            Math.floor(
-              Date.now() / 1000
-            )
+            now
           )
           .all();
     }
 
+
     const players =
       (
-        result.results || []
+        result.results ||
+        []
       ).map(
         formatPlayer
       );
+
 
     return json({
       ok:
@@ -669,6 +706,35 @@ export async function onRequestGet(
 
       server:
         activeServer,
+
+      current_user: {
+        id:
+          user.id,
+
+        username:
+          user.username,
+
+        server:
+          user.server,
+
+        server_code:
+          getServerCode(
+            user.server,
+            user.role
+          ),
+
+        role:
+          user.role,
+
+        is_admin:
+          isAdmin(user),
+
+        is_moderator:
+          isModerator(user),
+
+        is_staff:
+          isStaff(user)
+      },
 
       online_timeout_seconds:
         ONLINE_TIMEOUT_SECONDS,
@@ -748,6 +814,7 @@ export async function onRequestPost(
       }, 401);
     }
 
+
     /*
      * =================================================
      * BAN CHECK
@@ -786,6 +853,7 @@ export async function onRequestPost(
       }, 403);
     }
 
+
     let body;
 
     try {
@@ -802,6 +870,7 @@ export async function onRequestPost(
       }, 400);
     }
 
+
     const room =
       typeof body.room ===
       "string"
@@ -809,6 +878,7 @@ export async function onRequestPost(
             .trim()
             .toLowerCase()
         : "";
+
 
     if (
       room !== "global" &&
@@ -823,15 +893,21 @@ export async function onRequestPost(
       }, 400);
     }
 
+
     let server =
       null;
+
 
     if (
       room ===
       "server"
     ) {
+      /*
+       * Admin und Moderator dürfen Heartbeats
+       * für einen ausgewählten Server setzen.
+       */
       if (
-        isAdmin(user)
+        isStaff(user)
       ) {
         server =
           typeof body.server ===
@@ -839,14 +915,18 @@ export async function onRequestPost(
           body.server.trim()
             ? body.server.trim()
             : user.server;
+
       } else {
         server =
           user.server;
       }
 
+
       if (
         !server ||
-        !SERVER_MAP[server]
+        !SERVER_MAP[
+          server
+        ]
       ) {
         return json({
           ok:
@@ -858,10 +938,12 @@ export async function onRequestPost(
       }
     }
 
+
     const now =
       Math.floor(
         Date.now() / 1000
       );
+
 
     /*
      * Eine Presence-Zeile pro Account.
@@ -896,6 +978,7 @@ export async function onRequestPost(
       )
       .run();
 
+
     return json({
       ok:
         true,
@@ -923,7 +1006,13 @@ export async function onRequestPost(
           user.role,
 
         is_admin:
-          isAdmin(user)
+          isAdmin(user),
+
+        is_moderator:
+          isModerator(user),
+
+        is_staff:
+          isStaff(user)
       },
 
       room,
@@ -989,6 +1078,7 @@ export async function onRequestDelete(
       }, 401);
     }
 
+
     await env.DB.prepare(`
       DELETE FROM chat_presence
 
@@ -998,6 +1088,7 @@ export async function onRequestDelete(
         user.id
       )
       .run();
+
 
     return json({
       ok:
@@ -1012,6 +1103,7 @@ export async function onRequestDelete(
       "DELETE /api/chat/online error:",
       error
     );
+
 
     return json({
       ok:
