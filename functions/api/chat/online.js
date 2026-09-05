@@ -1,16 +1,5 @@
 const ONLINE_TIMEOUT_SECONDS = 10 * 60;
 
-const SERVERS = [
-  "Arabien 1",
-  "Deutschland 1",
-  "Europa 1",
-  "Europa 2",
-  "Europa 3",
-  "Europa 4",
-  "Lateinamerika 1",
-  "USA 1"
-];
-
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -51,7 +40,7 @@ async function getCurrentUser(request, env) {
     FROM sessions
     JOIN users
       ON users.id = sessions.user_id
-    WHERE sessions.token = ?
+    WHERE sessions.id = ?
       AND sessions.expires_at > ?
     LIMIT 1
   `)
@@ -69,18 +58,6 @@ function isAdmin(user) {
   );
 }
 
-function isValidServer(server) {
-  return SERVERS.includes(server);
-}
-
-/*
- * =====================================================
- * ALTE PRESENCE-EINTRÄGE ENTFERNEN
- * =====================================================
- *
- * Nach 10 Minuten ohne echte Chat-Aktivität
- * gilt ein Spieler als offline.
- */
 async function cleanupExpiredPresence(env) {
   const cutoff =
     Math.floor(Date.now() / 1000) -
@@ -96,111 +73,6 @@ async function cleanupExpiredPresence(env) {
 
 /*
  * =====================================================
- * ABGELAUFENE CHAT-BANS DEAKTIVIEREN
- * =====================================================
- *
- * Permanente Bans haben expires_at = NULL.
- */
-async function cleanupExpiredBans(env) {
-  const now =
-    Math.floor(Date.now() / 1000);
-
-  await env.DB.prepare(`
-    UPDATE chat_bans
-    SET active = 0
-    WHERE active = 1
-      AND expires_at IS NOT NULL
-      AND expires_at <= ?
-  `)
-    .bind(now)
-    .run();
-}
-
-/*
- * =====================================================
- * AKTIVEN CHAT-BAN PRÜFEN
- * =====================================================
- *
- * Admin-Accounts sind grundsätzlich immun.
- *
- * Selbst falls durch alte/manipulierte Daten ein
- * chat_bans-Eintrag für einen Admin existiert,
- * wird er hier nicht angewendet.
- */
-async function getActiveChatBan(env, user) {
-  if (!user || isAdmin(user)) {
-    return null;
-  }
-
-  const now =
-    Math.floor(Date.now() / 1000);
-
-  return await env.DB.prepare(`
-    SELECT
-      id,
-      reason,
-      banned_at,
-      expires_at
-    FROM chat_bans
-    WHERE user_id = ?
-      AND active = 1
-      AND (
-        expires_at IS NULL
-        OR expires_at > ?
-      )
-    ORDER BY banned_at DESC, id DESC
-    LIMIT 1
-  `)
-    .bind(
-      user.id,
-      now
-    )
-    .first();
-}
-
-/*
- * =====================================================
- * GEBANNTEN SPIELER AUS PRESENCE ENTFERNEN
- * =====================================================
- */
-async function removePresence(env, userId) {
-  await env.DB.prepare(`
-    DELETE FROM chat_presence
-    WHERE user_id = ?
-  `)
-    .bind(userId)
-    .run();
-}
-
-/*
- * =====================================================
- * BAN-ANTWORT
- * =====================================================
- */
-function bannedResponse(ban) {
-  return json({
-    ok: false,
-    banned: true,
-    error:
-      "Du bist derzeit vom Chat ausgeschlossen.",
-    ban: {
-      id:
-        ban.id,
-
-      reason:
-        ban.reason || null,
-
-      banned_at:
-        ban.banned_at,
-
-      expires_at:
-        ban.expires_at
-    }
-  }, 403);
-}
-
-/*
- * =====================================================
  * GET
  * =====================================================
  *
@@ -212,11 +84,11 @@ function bannedResponse(ban) {
  * Server:
  * /api/chat/online?room=server
  *
- * Admin:
+ * Admin kann optional:
  * /api/chat/online?room=server&server=Europa%201
  *
  * Normale Spieler können ausschließlich ihren
- * eigenen registrierten Server sehen.
+ * eigenen Server sehen.
  */
 export async function onRequestGet(context) {
   try {
@@ -236,31 +108,7 @@ export async function onRequestGet(context) {
       }, 401);
     }
 
-    /*
-     * Abgelaufene Daten zuerst bereinigen.
-     */
-    await cleanupExpiredBans(env);
     await cleanupExpiredPresence(env);
-
-    /*
-     * Ein Chat-Ban sperrt den gesamten Chat.
-     */
-    const activeBan =
-      await getActiveChatBan(
-        env,
-        user
-      );
-
-    if (activeBan) {
-      await removePresence(
-        env,
-        user.id
-      );
-
-      return bannedResponse(
-        activeBan
-      );
-    }
 
     const url =
       new URL(request.url);
@@ -269,9 +117,7 @@ export async function onRequestGet(context) {
       (
         url.searchParams.get("room") ||
         "global"
-      )
-        .trim()
-        .toLowerCase();
+      ).toLowerCase();
 
     if (
       room !== "global" &&
@@ -289,12 +135,15 @@ export async function onRequestGet(context) {
       ONLINE_TIMEOUT_SECONDS;
 
     let result;
-    let activeServer = null;
 
     /*
      * =============================================
      * GLOBALCHAT
      * =============================================
+     *
+     * Jeder eingeloggte Spieler darf sehen,
+     * welche Spieler derzeit im Globalchat
+     * aktiv sind.
      */
     if (room === "global") {
       result =
@@ -316,20 +165,6 @@ export async function onRequestGet(context) {
           WHERE p.last_seen >= ?
             AND p.room_type = 'global'
 
-            AND (
-              u.role = 'admin'
-              OR NOT EXISTS (
-                SELECT 1
-                FROM chat_bans b
-                WHERE b.user_id = u.id
-                  AND b.active = 1
-                  AND (
-                    b.expires_at IS NULL
-                    OR b.expires_at > ?
-                  )
-              )
-            )
-
           ORDER BY
             CASE
               WHEN u.role = 'admin'
@@ -338,10 +173,7 @@ export async function onRequestGet(context) {
             END,
             LOWER(u.username) ASC
         `)
-          .bind(
-            cutoff,
-            Math.floor(Date.now() / 1000)
-          )
+          .bind(cutoff)
           .all();
     }
 
@@ -351,57 +183,28 @@ export async function onRequestGet(context) {
      * =============================================
      */
     else {
+      let requestedServer =
+        url.searchParams.get("server");
+
       /*
-       * Normale Nutzer werden immer auf ihren
-       * registrierten Server gezwungen.
+       * Normale Spieler dürfen niemals
+       * einen fremden Server abfragen.
+       *
+       * Auch manipulierte URLs helfen nicht.
        */
       if (!isAdmin(user)) {
-        activeServer =
+        requestedServer =
           user.server;
       }
 
       /*
-       * Admin darf einen Server auswählen.
+       * Admin kann Server frei auswählen.
+       * Ohne Angabe nehmen wir seinen
+       * registrierten Server.
        */
-      else {
-        const requestedServer =
-          (
-            url.searchParams.get("server") ||
-            user.server ||
-            ""
-          ).trim();
-
-        if (
-          !isValidServer(
-            requestedServer
-          )
-        ) {
-          return json({
-            ok: false,
-            error:
-              "Ungültiger Server."
-          }, 400);
-        }
-
-        activeServer =
-          requestedServer;
-      }
-
-      /*
-       * Zusätzliche Sicherheit:
-       * Auch der eigene gespeicherte Server eines
-       * normalen Accounts muss gültig sein.
-       */
-      if (
-        !isValidServer(
-          activeServer
-        )
-      ) {
-        return json({
-          ok: false,
-          error:
-            "Ungültiger Server."
-        }, 400);
+      if (!requestedServer) {
+        requestedServer =
+          user.server;
       }
 
       result =
@@ -424,20 +227,6 @@ export async function onRequestGet(context) {
             AND p.room_type = 'server'
             AND p.server = ?
 
-            AND (
-              u.role = 'admin'
-              OR NOT EXISTS (
-                SELECT 1
-                FROM chat_bans b
-                WHERE b.user_id = u.id
-                  AND b.active = 1
-                  AND (
-                    b.expires_at IS NULL
-                    OR b.expires_at > ?
-                  )
-              )
-            )
-
           ORDER BY
             CASE
               WHEN u.role = 'admin'
@@ -448,8 +237,7 @@ export async function onRequestGet(context) {
         `)
           .bind(
             cutoff,
-            activeServer,
-            Math.floor(Date.now() / 1000)
+            requestedServer
           )
           .all();
     }
@@ -484,7 +272,15 @@ export async function onRequestGet(context) {
 
       server:
         room === "server"
-          ? activeServer
+          ? (
+              !isAdmin(user)
+                ? user.server
+                : (
+                    url.searchParams.get(
+                      "server"
+                    ) || user.server
+                  )
+            )
           : null,
 
       online_timeout_seconds:
@@ -515,21 +311,36 @@ export async function onRequestGet(context) {
  * POST
  * =====================================================
  *
- * Aktualisiert echte Chat-Aktivität.
+ * Aktualisiert die Aktivität eines Spielers.
  *
- * Das Frontend soll diesen Endpoint später bei
- * tatsächlicher Aktivität verwenden:
+ * Das Frontend ruft diesen Endpoint später nur
+ * dann auf, wenn echte Chat-Aktivität erkannt wurde:
  *
- * - Mausbewegung im Chatbereich
- * - Klick
+ * - Mausbewegung im Chat
+ * - Klick im Chat
  * - Scrollen
  * - Tippen
  * - Nachricht senden
- * - Chatraum wechseln
+ * - Raum wechseln
  *
- * Dabei nicht bei jedem Mousemove senden.
- * Frontend-seitig drosseln wir später auf ungefähr
- * einmal pro Minute.
+ * Beispiel Global:
+ *
+ * {
+ *   "room": "global"
+ * }
+ *
+ * Beispiel Server:
+ *
+ * {
+ *   "room": "server"
+ * }
+ *
+ * Admin darf zusätzlich:
+ *
+ * {
+ *   "room": "server",
+ *   "server": "Europa 1"
+ * }
  */
 export async function onRequestPost(context) {
   try {
@@ -549,30 +360,6 @@ export async function onRequestPost(context) {
       }, 401);
     }
 
-    await cleanupExpiredBans(env);
-    await cleanupExpiredPresence(env);
-
-    /*
-     * Gebannte Spieler dürfen sich nicht erneut
-     * als online eintragen.
-     */
-    const activeBan =
-      await getActiveChatBan(
-        env,
-        user
-      );
-
-    if (activeBan) {
-      await removePresence(
-        env,
-        user.id
-      );
-
-      return bannedResponse(
-        activeBan
-      );
-    }
-
     let body;
 
     try {
@@ -588,9 +375,7 @@ export async function onRequestPost(context) {
 
     const room =
       typeof body.room === "string"
-        ? body.room
-            .trim()
-            .toLowerCase()
+        ? body.room.toLowerCase()
         : "";
 
     if (
@@ -608,7 +393,7 @@ export async function onRequestPost(context) {
 
     /*
      * =============================================
-     * GLOBALCHAT
+     * GLOBAL
      * =============================================
      */
     if (room === "global") {
@@ -622,10 +407,8 @@ export async function onRequestPost(context) {
      */
     else {
       /*
-       * Normale Spieler:
-       * immer der eigene registrierte Server.
-       *
-       * body.server wird ignoriert.
+       * Normaler Spieler:
+       * zwingend eigener registrierter Server.
        */
       if (!isAdmin(user)) {
         server =
@@ -634,7 +417,7 @@ export async function onRequestPost(context) {
 
       /*
        * Admin:
-       * darf jeden gültigen Server betreten.
+       * darf alle Server betreten.
        */
       else {
         server =
@@ -643,34 +426,19 @@ export async function onRequestPost(context) {
             ? body.server.trim()
             : user.server;
       }
-
-      /*
-       * Manipulierte/falsche Servernamen werden
-       * für alle Rollen abgelehnt.
-       */
-      if (
-        !isValidServer(server)
-      ) {
-        return json({
-          ok: false,
-          error:
-            "Ungültiger Server."
-        }, 400);
-      }
     }
 
     const now =
       Math.floor(Date.now() / 1000);
 
     /*
-     * =================================================
-     * UPSERT PRESENCE
-     * =================================================
+     * UPSERT:
      *
-     * Pro Account gibt es einen Presence-Eintrag.
+     * Pro Spieler existiert nur ein
+     * Presence-Eintrag.
      *
-     * Beim Wechsel zwischen Global- und Serverchat
-     * wird der aktuelle Raum ersetzt.
+     * Wechsel zwischen Global/Server ersetzt
+     * automatisch den alten Zustand.
      */
     await env.DB.prepare(`
       INSERT INTO chat_presence (
@@ -753,11 +521,13 @@ export async function onRequestPost(context) {
  * DELETE
  * =====================================================
  *
- * Setzt den eigenen Account sofort offline.
+ * Optionales sofortiges Offline-Setzen.
  *
- * Das darf auch funktionieren, wenn der Spieler
- * inzwischen gebannt wurde, damit kein alter
- * Presence-Eintrag hängen bleibt.
+ * Kann später beim bewussten Verlassen des Chats
+ * oder beim Logout benutzt werden.
+ *
+ * Ohne diesen Request verschwindet der Spieler
+ * automatisch spätestens nach 10 Minuten.
  */
 export async function onRequestDelete(context) {
   try {
@@ -777,10 +547,12 @@ export async function onRequestDelete(context) {
       }, 401);
     }
 
-    await removePresence(
-      env,
-      user.id
-    );
+    await env.DB.prepare(`
+      DELETE FROM chat_presence
+      WHERE user_id = ?
+    `)
+      .bind(user.id)
+      .run();
 
     return json({
       ok: true,
