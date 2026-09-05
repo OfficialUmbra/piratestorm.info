@@ -217,6 +217,10 @@ async function getCurrentUser(
              sessions.user_id
         WHERE sessions.id = ?
           AND sessions.expires_at > ?
+          AND LOWER(TRIM(users.username)) NOT LIKE 'deleteduser_%'
+          AND LOWER(TRIM(users.username)) NOT LIKE 'deleted user%'
+          AND LOWER(TRIM(users.username)) NOT LIKE 'deleted_user%'
+          AND LOWER(TRIM(users.username)) NOT LIKE 'deleted-user%'
         LIMIT 1
       `)
       .bind(
@@ -654,23 +658,31 @@ export async function onRequestGet(
     const bindings = [];
 
     /*
-      GELÖSCHTE ACCOUNTS AUSBLENDEN
+      GELÖSCHTE / ANONYMISIERTE
+      ACCOUNTS IMMER AUSBLENDEN.
 
-      Gelöschte Accounts werden beim Löschen anonymisiert und
-      bekommen einen Namen wie "Deleted User ...".
+      Aktuelles Löschformat:
+      DeletedUser_<ID>
 
-      Dieser Filter wirkt automatisch sowohl auf die eigentliche
-      Benutzerliste als auch auf COUNT(*), weil beide Abfragen
-      denselben whereClause verwenden.
+      Zusätzlich werden ältere mögliche
+      Varianten berücksichtigt.
     */
+
     conditions.push(`
       LOWER(TRIM(users.username))
+        NOT LIKE 'deleteduser_%'
+      AND LOWER(TRIM(users.username))
         NOT LIKE 'deleted user%'
       AND LOWER(TRIM(users.username))
         NOT LIKE 'deleted_user%'
       AND LOWER(TRIM(users.username))
         NOT LIKE 'deleted-user%'
     `);
+
+
+    /*
+      SUCHE
+    */
 
     if (search) {
       conditions.push(`
@@ -759,6 +771,10 @@ export async function onRequestGet(
 
     /*
       COUNT
+
+      Durch den gemeinsamen whereClause
+      werden gelöschte Accounts auch aus
+      pagination.total ausgeschlossen.
     */
 
     const countRow =
