@@ -139,6 +139,23 @@ function isAdmin(user) {
   );
 }
 
+function isModerator(user) {
+  return Boolean(
+    user &&
+    user.role === "moderator"
+  );
+}
+
+function canModerate(user) {
+  return Boolean(
+    user &&
+    (
+      isAdmin(user) ||
+      isModerator(user)
+    )
+  );
+}
+
 function getServerCode(
   server,
   role = null
@@ -410,11 +427,11 @@ function validateRoom(
   }
 
   /*
-   * Admin darf jeden existierenden öffentlichen
-   * Serverchat öffnen.
+   * Admin und Moderator dürfen jeden existierenden
+   * öffentlichen Serverchat öffnen.
    */
   if (
-    isAdmin(user)
+    canModerate(user)
   ) {
     const server =
       requestedServer ||
@@ -917,7 +934,11 @@ async function loadNormalMessages(
 
       is_admin:
         message.role ===
-        "admin"
+        "admin",
+
+      is_moderator:
+        message.role ===
+        "moderator"
     },
 
     room: {
@@ -952,7 +973,11 @@ async function loadNormalMessages(
 
             is_admin:
               message.reply_role ===
-              "admin"
+              "admin",
+
+            is_moderator:
+              message.reply_role ===
+              "moderator"
           }
         : null,
 
@@ -1349,7 +1374,7 @@ export async function onRequestGet(
           user.server,
 
         /*
-         * Umbra/Admin:
+         * Admin:
          * ADMIN statt DE1.
          */
         server_code:
@@ -1362,7 +1387,10 @@ export async function onRequestGet(
           user.role,
 
         is_admin:
-          isAdmin(user)
+          isAdmin(user),
+
+        is_moderator:
+          isModerator(user)
       },
 
       room: {
@@ -1784,7 +1812,10 @@ export async function onRequestPost(
             user.role,
 
           is_admin:
-            isAdmin(user)
+            isAdmin(user),
+
+          is_moderator:
+            isModerator(user)
         },
 
         room: {
@@ -1834,10 +1865,12 @@ export async function onRequestPost(
  * DELETE
  * =====================================================
  *
- * Nur Admin darf öffentliche Chatnachrichten löschen.
+ * Admin und Moderator dürfen öffentliche Chatnachrichten
+ * entsprechend der Rollen-Hierarchie löschen.
  *
  * DELETE /api/chat/messages?id=123
  */
+
 export async function onRequestDelete(
   context
 ) {
@@ -1864,14 +1897,14 @@ export async function onRequestDelete(
     }
 
     if (
-      !isAdmin(user)
+      !canModerate(user)
     ) {
       return json({
         ok:
           false,
 
         error:
-          "Nur Administratoren dürfen Chatnachrichten löschen."
+          "Nur Administratoren und Moderatoren dürfen Chatnachrichten löschen."
       }, 403);
     }
 
@@ -1911,6 +1944,41 @@ export async function onRequestDelete(
         error:
           "Nachricht wurde nicht gefunden."
       }, 404);
+    }
+
+    /*
+     * Admin-Nachrichten sind vollständig geschützt.
+     */
+    if (
+      message.role ===
+      "admin"
+    ) {
+      return json({
+        ok:
+          false,
+
+        error:
+          "Nachrichten von Administratoren können nicht moderiert werden."
+      }, 403);
+    }
+
+    /*
+     * Moderator darf keinen Moderator moderieren.
+     *
+     * Admin darf Moderator-Nachrichten löschen.
+     */
+    if (
+      isModerator(user) &&
+      message.role ===
+      "moderator"
+    ) {
+      return json({
+        ok:
+          false,
+
+        error:
+          "Moderatoren können keine Nachrichten anderer Moderatoren löschen."
+      }, 403);
     }
 
     if (
@@ -1981,6 +2049,9 @@ export async function onRequestDelete(
 
             username:
               message.username,
+
+            actor_role:
+              user.role,
 
             original_message:
               message.original_message ||
