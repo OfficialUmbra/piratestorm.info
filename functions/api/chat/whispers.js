@@ -40,17 +40,24 @@ async function getCurrentUser(request, env) {
       users.server,
       users.role
     FROM sessions
-    JOIN users ON users.id = sessions.user_id
-    WHERE sessions.token = ?
+    JOIN users
+      ON users.id = sessions.user_id
+    WHERE sessions.id = ?
       AND sessions.expires_at > ?
     LIMIT 1
   `)
-    .bind(token, Math.floor(Date.now() / 1000))
+    .bind(
+      token,
+      Math.floor(Date.now() / 1000)
+    )
     .first();
 }
 
 function isAdmin(user) {
-  return Boolean(user && user.role === "admin");
+  return Boolean(
+    user &&
+    user.role === "admin"
+  );
 }
 
 function normalizeText(value) {
@@ -62,44 +69,6 @@ function normalizeText(value) {
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
     .trim();
-}
-
-/*
- * =====================================================
- * WORTFILTER
- * =====================================================
- *
- * message = gefilterte sichtbare Version
- * original_message = unveränderter Originaltext
- *
- * Das ist weiterhin nur der Basisfilter.
- */
-function censorMessage(text) {
-  const blockedWords = [
-    "arschloch",
-    "hurensohn",
-    "wichser",
-    "fotze",
-    "missgeburt"
-  ];
-
-  let result = text;
-
-  for (const word of blockedWords) {
-    const escaped =
-      word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-    const regex =
-      new RegExp(`\\b${escaped}\\b`, "giu");
-
-    result =
-      result.replace(
-        regex,
-        match => "*".repeat(match.length)
-      );
-  }
-
-  return result;
 }
 
 async function getUserById(env, userId) {
@@ -118,7 +87,8 @@ async function getUserById(env, userId) {
 }
 
 async function cleanupExpiredBans(env) {
-  const now = Math.floor(Date.now() / 1000);
+  const now =
+    Math.floor(Date.now() / 1000);
 
   await env.DB.prepare(`
     UPDATE chat_bans
@@ -131,17 +101,11 @@ async function cleanupExpiredBans(env) {
     .run();
 }
 
-/*
- * Admin ist grundsätzlich immun.
- */
-async function getActiveBan(env, user) {
-  if (!user || isAdmin(user)) {
-    return null;
-  }
-
+async function getActiveBan(env, userId) {
   await cleanupExpiredBans(env);
 
-  const now = Math.floor(Date.now() / 1000);
+  const now =
+    Math.floor(Date.now() / 1000);
 
   return await env.DB.prepare(`
     SELECT
@@ -156,98 +120,106 @@ async function getActiveBan(env, user) {
         expires_at IS NULL
         OR expires_at > ?
       )
-    ORDER BY banned_at DESC, id DESC
+    ORDER BY banned_at DESC
     LIMIT 1
   `)
-    .bind(user.id, now)
+    .bind(
+      userId,
+      now
+    )
     .first();
 }
 
 async function ensureNotBanned(env, user) {
   if (isAdmin(user)) {
-    return { ok: true };
+    return {
+      ok: true
+    };
   }
 
-  const ban = await getActiveBan(env, user);
+  const ban =
+    await getActiveBan(
+      env,
+      user.id
+    );
 
   if (!ban) {
-    return { ok: true };
+    return {
+      ok: true
+    };
   }
 
   return {
     ok: false,
+
     response: json({
       ok: false,
-      error: "Du bist derzeit vom Chat ausgeschlossen.",
+
+      error:
+        "Du bist derzeit vom Chat ausgeschlossen.",
+
       ban: {
         id: ban.id,
-        reason: ban.reason || null,
+        reason: ban.reason,
         banned_at: ban.banned_at,
         expires_at: ban.expires_at,
-        permanent: ban.expires_at === null
+        permanent:
+          ban.expires_at === null
       }
     }, 403)
   };
 }
 
-/*
- * =====================================================
- * BLOCK-PRÜFUNG
- * =====================================================
- *
- * Admin kann niemals wirksam blockiert werden.
- *
- * Auch alte/manipulierte DB-Einträge gegen einen
- * Admin werden hier ignoriert.
- */
-async function hasBlockBetween(env, userAId, userBId) {
-  const userA = await getUserById(env, userAId);
-  const userB = await getUserById(env, userBId);
-
-  if (!userA || !userB) {
-    return false;
-  }
-
-  if (isAdmin(userA) || isAdmin(userB)) {
-    return false;
-  }
-
-  const block = await env.DB.prepare(`
-    SELECT id
-    FROM chat_blocks
-    WHERE
-      (
-        blocker_id = ?
-        AND blocked_id = ?
+async function hasBlockBetween(
+  env,
+  userA,
+  userB
+) {
+  const block =
+    await env.DB.prepare(`
+      SELECT id
+      FROM chat_blocks
+      WHERE
+        (
+          blocker_id = ?
+          AND blocked_id = ?
+        )
+        OR
+        (
+          blocker_id = ?
+          AND blocked_id = ?
+        )
+      LIMIT 1
+    `)
+      .bind(
+        userA,
+        userB,
+        userB,
+        userA
       )
-      OR
-      (
-        blocker_id = ?
-        AND blocked_id = ?
-      )
-    LIMIT 1
-  `)
-    .bind(
-      userAId,
-      userBId,
-      userBId,
-      userAId
-    )
-    .first();
+      .first();
 
   return Boolean(block);
 }
 
-async function isRoomMember(env, roomId, userId) {
-  const member = await env.DB.prepare(`
-    SELECT 1 AS found
-    FROM whisper_members
-    WHERE room_id = ?
-      AND user_id = ?
-    LIMIT 1
-  `)
-    .bind(roomId, userId)
-    .first();
+async function isRoomMember(
+  env,
+  roomId,
+  userId
+) {
+  const member =
+    await env.DB.prepare(`
+      SELECT 1 AS found
+      FROM whisper_members
+      WHERE room_id = ?
+        AND user_id = ?
+      LIMIT 1
+    `)
+      .bind(
+        roomId,
+        userId
+      )
+      .first();
 
   return Boolean(member);
 }
@@ -267,83 +239,83 @@ async function getRoom(env, roomId) {
     .first();
 }
 
-async function getRoomMembers(env, roomId) {
-  const result = await env.DB.prepare(`
-    SELECT
-      u.id,
-      u.username,
-      u.server,
-      u.role,
-      wm.joined_at
-    FROM whisper_members wm
-    JOIN users u
-      ON u.id = wm.user_id
-    WHERE wm.room_id = ?
-    ORDER BY wm.joined_at ASC
-  `)
-    .bind(roomId)
-    .all();
+async function getRoomMembers(
+  env,
+  roomId
+) {
+  const result =
+    await env.DB.prepare(`
+      SELECT
+        u.id,
+        u.username,
+        u.server,
+        u.role,
+        wm.joined_at
+      FROM whisper_members wm
+      JOIN users u
+        ON u.id = wm.user_id
+      WHERE wm.room_id = ?
+      ORDER BY wm.joined_at ASC
+    `)
+      .bind(roomId)
+      .all();
 
   return result.results || [];
 }
 
-async function getPendingInviteCount(env, roomId) {
-  const row = await env.DB.prepare(`
-    SELECT COUNT(*) AS total
-    FROM whisper_invites
-    WHERE room_id = ?
-      AND status = 'pending'
-  `)
-    .bind(roomId)
-    .first();
+async function getPendingInviteCount(
+  env,
+  roomId
+) {
+  const row =
+    await env.DB.prepare(`
+      SELECT COUNT(*) AS total
+      FROM whisper_invites
+      WHERE room_id = ?
+        AND status = 'pending'
+    `)
+      .bind(roomId)
+      .first();
 
   return Number(row?.total || 0);
 }
 
-/*
- * =====================================================
- * GET
- * =====================================================
- *
- * Ohne room_id:
- * eigene Räume + Einladungen
- *
- * Mit room_id:
- * Nachrichten eines Whisper-Raums
- *
- * KEIN Admin-Bypass.
- */
 export async function onRequestGet(context) {
   try {
     const { request, env } = context;
 
     const user =
-      await getCurrentUser(request, env);
+      await getCurrentUser(
+        request,
+        env
+      );
 
     if (!user) {
       return json({
         ok: false,
-        error: "Du musst eingeloggt sein."
+        error:
+          "Du musst eingeloggt sein."
       }, 401);
     }
 
     const banCheck =
-      await ensureNotBanned(env, user);
+      await ensureNotBanned(
+        env,
+        user
+      );
 
     if (!banCheck.ok) {
       return banCheck.response;
     }
 
-    const url = new URL(request.url);
+    const url =
+      new URL(request.url);
 
     const roomIdRaw =
-      url.searchParams.get("room_id");
+      url.searchParams.get(
+        "room_id"
+      );
 
-    /*
-     * =============================================
-     * RAUMLISTE + EINLADUNGEN
-     * =============================================
-     */
     if (!roomIdRaw) {
       const roomsResult =
         await env.DB.prepare(`
@@ -363,28 +335,41 @@ export async function onRequestGet(context) {
 
       const rooms = [];
 
-      for (const room of roomsResult.results || []) {
+      for (
+        const room
+        of roomsResult.results || []
+      ) {
         const members =
-          await getRoomMembers(env, room.id);
+          await getRoomMembers(
+            env,
+            room.id
+          );
 
         rooms.push({
           id: room.id,
-          name: room.name || null,
-          created_by: room.created_by,
-          created_at: room.created_at,
+          name:
+            room.name || null,
+          created_by:
+            room.created_by,
+          created_at:
+            room.created_at,
 
-          members: members.map(member => ({
-            id: member.id,
-            username: member.username,
-            server: member.server,
-            role: member.role,
-            is_admin: member.role === "admin"
-          })),
+          members:
+            members.map(
+              member => ({
+                id: member.id,
+                username:
+                  member.username,
+                server:
+                  member.server,
+                role:
+                  member.role,
+                is_admin:
+                  member.role ===
+                  "admin"
+              })
+            ),
 
-          /*
-           * Wird später durch echtes Read-State-System
-           * ersetzt.
-           */
           unread: 0
         });
       }
@@ -403,24 +388,24 @@ export async function onRequestGet(context) {
             inviter.server
               AS inviter_server,
 
-            inviter.role
-              AS inviter_role,
-
             wr.name
               AS room_name
 
           FROM whisper_invites wi
 
           JOIN users inviter
-            ON inviter.id = wi.inviter_id
+            ON inviter.id =
+              wi.inviter_id
 
           JOIN whisper_rooms wr
-            ON wr.id = wi.room_id
+            ON wr.id =
+              wi.room_id
 
           WHERE wi.invited_user_id = ?
             AND wi.status = 'pending'
 
-          ORDER BY wi.created_at DESC
+          ORDER BY
+            wi.created_at DESC
         `)
           .bind(user.id)
           .all();
@@ -431,26 +416,40 @@ export async function onRequestGet(context) {
         rooms,
 
         invites:
-          (invitesResult.results || []).map(invite => ({
-            id: invite.id,
-            room_id: invite.room_id,
-            room_name: invite.room_name,
+          (
+            invitesResult.results ||
+            []
+          ).map(
+            invite => ({
+              id:
+                invite.id,
 
-            inviter: {
-              id: invite.inviter_id,
-              username: invite.inviter_username,
-              server: invite.inviter_server,
-              role: invite.inviter_role,
-              is_admin:
-                invite.inviter_role === "admin"
-            },
+              room_id:
+                invite.room_id,
 
-            created_at: invite.created_at
-          }))
+              room_name:
+                invite.room_name,
+
+              inviter: {
+                id:
+                  invite.inviter_id,
+
+                username:
+                  invite.inviter_username,
+
+                server:
+                  invite.inviter_server
+              },
+
+              created_at:
+                invite.created_at
+            })
+          )
       });
     }
 
-    const roomId = Number(roomIdRaw);
+    const roomId =
+      Number(roomIdRaw);
 
     if (
       !Number.isInteger(roomId) ||
@@ -458,29 +457,26 @@ export async function onRequestGet(context) {
     ) {
       return json({
         ok: false,
-        error: "Ungültiger Whisper-Raum."
+        error:
+          "Ungültiger Whisper-Raum."
       }, 400);
     }
 
     const room =
-      await getRoom(env, roomId);
+      await getRoom(
+        env,
+        roomId
+      );
 
     if (!room) {
       return json({
         ok: false,
-        error: "Whisper-Raum wurde nicht gefunden."
+        error:
+          "Whisper-Raum wurde nicht gefunden."
       }, 404);
     }
 
-    /*
-     * =================================================
-     * PRIVATSPHÄRE
-     * =================================================
-     *
-     * KEIN Admin-Sonderzugriff.
-     *
-     * Auch Umbra muss Mitglied sein.
-     */
+    // Kein Admin-Bypass für private Chats.
     const member =
       await isRoomMember(
         env,
@@ -498,36 +494,25 @@ export async function onRequestGet(context) {
 
     const limitRaw =
       Number(
-        url.searchParams.get("limit") || 100
+        url.searchParams.get(
+          "limit"
+        ) || 100
       );
 
     const limit =
-      Number.isFinite(limitRaw)
-        ? Math.max(
-            1,
-            Math.min(
-              Math.floor(limitRaw),
-              200
-            )
-          )
-        : 100;
+      Math.max(
+        1,
+        Math.min(
+          limitRaw,
+          200
+        )
+      );
 
     const members =
-      await getRoomMembers(env, roomId);
-
-    /*
-     * Zusätzliche Integritätsprüfung:
-     * Ein Whisper-Raum darf keine Server mischen.
-     */
-    for (const roomMember of members) {
-      if (roomMember.server !== user.server) {
-        return json({
-          ok: false,
-          error:
-            "Dieser Whisper-Chat enthält eine ungültige Serverkombination."
-        }, 403);
-      }
-    }
+      await getRoomMembers(
+        env,
+        roomId
+      );
 
     const messagesResult =
       await env.DB.prepare(`
@@ -543,31 +528,12 @@ export async function onRequestGet(context) {
 
           u.username,
           u.server,
-          u.role,
-
-          reply.id
-            AS reply_id,
-
-          reply.message
-            AS reply_message,
-
-          reply.deleted_at
-            AS reply_deleted_at,
-
-          reply_user.username
-            AS reply_username
+          u.role
 
         FROM whisper_messages wm
 
         JOIN users u
           ON u.id = wm.user_id
-
-        LEFT JOIN whisper_messages reply
-          ON reply.id = wm.reply_to
-          AND reply.room_id = wm.room_id
-
-        LEFT JOIN users reply_user
-          ON reply_user.id = reply.user_id
 
         WHERE wm.room_id = ?
 
@@ -577,107 +543,108 @@ export async function onRequestGet(context) {
 
         LIMIT ?
       `)
-        .bind(roomId, limit)
+        .bind(
+          roomId,
+          limit
+        )
         .all();
 
     const rawMessages =
-      (messagesResult.results || []).reverse();
+      (
+        messagesResult.results ||
+        []
+      ).reverse();
 
     return json({
       ok: true,
 
       room: {
-        id: room.id,
-        name: room.name,
-        created_by: room.created_by,
-        created_at: room.created_at,
+        id:
+          room.id,
 
-        /*
-         * Whisper-Standardsprache:
-         * DE1 = Deutsch
-         * alle anderen Server = Englisch
-         */
-        default_language:
-          user.server === "Deutschland 1"
-            ? "de"
-            : "en",
+        name:
+          room.name,
+
+        created_by:
+          room.created_by,
+
+        created_at:
+          room.created_at,
 
         members:
-          members.map(member => ({
-            id: member.id,
-            username: member.username,
-            server: member.server,
-            role: member.role,
-            is_admin:
-              member.role === "admin"
-          }))
+          members.map(
+            member => ({
+              id:
+                member.id,
+
+              username:
+                member.username,
+
+              server:
+                member.server,
+
+              role:
+                member.role,
+
+              is_admin:
+                member.role ===
+                "admin"
+            })
+          )
       },
 
       messages:
-        rawMessages.map(message => ({
-          id: message.id,
-          room_id: message.room_id,
+        rawMessages.map(
+          message => ({
+            id:
+              message.id,
 
-          user: {
-            id: message.user_id,
-            username: message.username,
-            server: message.server,
-            role: message.role,
-            is_admin:
-              message.role === "admin"
-          },
+            room_id:
+              message.room_id,
 
-          /*
-           * Gelöschte Nachrichten bleiben als
-           * Platzhalter im Verlauf vorhanden.
-           */
-          message:
-            message.deleted_at
-              ? null
-              : message.message,
+            user: {
+              id:
+                message.user_id,
 
-          /*
-           * Nur tatsächliche Mitglieder dieses
-           * privaten Raums erreichen diesen Code.
-           *
-           * Daher darf hier der echte Originaltext
-           * für "Originalnachricht anzeigen"
-           * mitgeliefert werden.
-           */
-          original_message:
-            message.deleted_at
-              ? null
-              : (
-                  message.original_message ||
-                  message.message
-                ),
+              username:
+                message.username,
 
-          reply_to:
-            message.reply_id
-              ? {
-                  id: message.reply_id,
+              server:
+                message.server,
 
-                  username:
-                    message.reply_username,
+              role:
+                message.role,
 
-                  message:
-                    message.reply_deleted_at
-                      ? null
-                      : message.reply_message,
+              is_admin:
+                message.role ===
+                "admin"
+            },
 
-                  deleted:
-                    Boolean(
-                      message.reply_deleted_at
-                    )
-                }
-              : null,
+            message:
+              message.deleted_at
+                ? null
+                : message.message,
 
-          created_at:
-            message.created_at,
+            original_message:
+              message.deleted_at
+                ? null
+                : (
+                    message.original_message ||
+                    message.message
+                  ),
 
-          deleted:
-            Boolean(message.deleted_at)
-        }))
+            reply_to:
+              message.reply_to,
+
+            created_at:
+              message.created_at,
+
+            deleted:
+              Boolean(
+                message.deleted_at
+              )
+          })
+        )
     });
 
   } catch (error) {
@@ -694,32 +661,29 @@ export async function onRequestGet(context) {
   }
 }
 
-/*
- * =====================================================
- * POST
- * =====================================================
- *
- * actions:
- * create
- * send
- * invite
- */
 export async function onRequestPost(context) {
   try {
     const { request, env } = context;
 
     const user =
-      await getCurrentUser(request, env);
+      await getCurrentUser(
+        request,
+        env
+      );
 
     if (!user) {
       return json({
         ok: false,
-        error: "Du musst eingeloggt sein."
+        error:
+          "Du musst eingeloggt sein."
       }, 401);
     }
 
     const banCheck =
-      await ensureNotBanned(env, user);
+      await ensureNotBanned(
+        env,
+        user
+      );
 
     if (!banCheck.ok) {
       return banCheck.response;
@@ -728,23 +692,23 @@ export async function onRequestPost(context) {
     let body;
 
     try {
-      body = await request.json();
+      body =
+        await request.json();
     } catch {
       return json({
         ok: false,
-        error: "Ungültige Anfrage."
+        error:
+          "Ungültige Anfrage."
       }, 400);
     }
 
     const action =
       typeof body.action === "string"
-        ? body.action.trim().toLowerCase()
+        ? body.action.toLowerCase()
         : "";
 
     /*
-     * =============================================
      * CREATE
-     * =============================================
      */
     if (action === "create") {
       const name =
@@ -773,17 +737,19 @@ export async function onRequestPost(context) {
         }, 400);
       }
 
-      const uniqueInviteIds = [
-        ...new Set(
-          body.invited_user_ids
-            .map(Number)
-            .filter(id =>
-              Number.isInteger(id) &&
-              id > 0 &&
-              id !== user.id
-            )
-        )
-      ];
+      const uniqueInviteIds =
+        [
+          ...new Set(
+            body.invited_user_ids
+              .map(Number)
+              .filter(
+                id =>
+                  Number.isInteger(id) &&
+                  id > 0 &&
+                  id !== user.id
+              )
+          )
+        ];
 
       if (
         uniqueInviteIds.length < 1 ||
@@ -798,7 +764,10 @@ export async function onRequestPost(context) {
 
       const invitedUsers = [];
 
-      for (const invitedId of uniqueInviteIds) {
+      for (
+        const invitedId
+        of uniqueInviteIds
+      ) {
         const invitedUser =
           await getUserById(
             env,
@@ -813,9 +782,6 @@ export async function onRequestPost(context) {
           }, 404);
         }
 
-        /*
-         * Whisper bleibt servergebunden.
-         */
         if (
           invitedUser.server !==
           user.server
@@ -827,35 +793,36 @@ export async function onRequestPost(context) {
           }, 403);
         }
 
-        /*
-         * hasBlockBetween berücksichtigt
-         * Admin-Immunität bereits zentral.
-         */
-        const blocked =
-          await hasBlockBetween(
-            env,
-            user.id,
-            invitedUser.id
-          );
+        if (
+          !isAdmin(user) &&
+          !isAdmin(invitedUser)
+        ) {
+          const blocked =
+            await hasBlockBetween(
+              env,
+              user.id,
+              invitedUser.id
+            );
 
-        if (blocked) {
-          return json({
-            ok: false,
-            error:
-              `Mit ${invitedUser.username} kann derzeit kein Whisper-Chat gestartet werden.`
-          }, 403);
+          if (blocked) {
+            return json({
+              ok: false,
+              error:
+                `Mit ${invitedUser.username} kann derzeit kein Whisper-Chat gestartet werden.`
+            }, 403);
+          }
         }
 
-        /*
-         * Admin kann niemals als gebannt gelten.
-         */
         const invitedBan =
           await getActiveBan(
             env,
-            invitedUser
+            invitedUser.id
           );
 
-        if (invitedBan) {
+        if (
+          invitedBan &&
+          !isAdmin(invitedUser)
+        ) {
           return json({
             ok: false,
             error:
@@ -869,7 +836,9 @@ export async function onRequestPost(context) {
       }
 
       const now =
-        Math.floor(Date.now() / 1000);
+        Math.floor(
+          Date.now() / 1000
+        );
 
       const roomResult =
         await env.DB.prepare(`
@@ -890,9 +859,6 @@ export async function onRequestPost(context) {
       const roomId =
         roomResult.meta.last_row_id;
 
-      /*
-       * Nur Ersteller wird sofort Mitglied.
-       */
       await env.DB.prepare(`
         INSERT INTO whisper_members (
           room_id,
@@ -908,10 +874,10 @@ export async function onRequestPost(context) {
         )
         .run();
 
-      /*
-       * Alle anderen erhalten nur eine Einladung.
-       */
-      for (const invitedUser of invitedUsers) {
+      for (
+        const invitedUser
+        of invitedUsers
+      ) {
         await env.DB.prepare(`
           INSERT INTO whisper_invites (
             room_id,
@@ -935,23 +901,32 @@ export async function onRequestPost(context) {
         ok: true,
 
         room: {
-          id: roomId,
-          name: name || null,
-          server: user.server,
-          created_at: now,
+          id:
+            roomId,
 
-          default_language:
-            user.server ===
-            "Deutschland 1"
-              ? "de"
-              : "en",
+          name:
+            name || null,
+
+          server:
+            user.server,
+
+          created_at:
+            now,
 
           members: [
             {
-              id: user.id,
-              username: user.username,
-              server: user.server,
-              role: user.role,
+              id:
+                user.id,
+
+              username:
+                user.username,
+
+              server:
+                user.server,
+
+              role:
+                user.role,
+
               is_admin:
                 isAdmin(user)
             }
@@ -975,9 +950,7 @@ export async function onRequestPost(context) {
     }
 
     /*
-     * =============================================
      * SEND
-     * =============================================
      */
     if (action === "send") {
       const roomId =
@@ -1029,10 +1002,10 @@ export async function onRequestPost(context) {
           roomId
         );
 
-      /*
-       * Raum muss vollständig serverrein sein.
-       */
-      for (const roomMember of members) {
+      for (
+        const roomMember
+        of members
+      ) {
         if (
           roomMember.server !==
           user.server
@@ -1045,8 +1018,9 @@ export async function onRequestPost(context) {
         }
 
         if (
-          roomMember.id !==
-          user.id
+          roomMember.id !== user.id &&
+          !isAdmin(user) &&
+          !isAdmin(roomMember)
         ) {
           const blocked =
             await hasBlockBetween(
@@ -1065,12 +1039,12 @@ export async function onRequestPost(context) {
         }
       }
 
-      const originalMessage =
+      const message =
         normalizeText(
           body.message
         );
 
-      if (!originalMessage) {
+      if (!message) {
         return json({
           ok: false,
           error:
@@ -1079,7 +1053,7 @@ export async function onRequestPost(context) {
       }
 
       if (
-        originalMessage.length >
+        message.length >
         MAX_MESSAGE_LENGTH
       ) {
         return json({
@@ -1090,19 +1064,16 @@ export async function onRequestPost(context) {
       }
 
       const now =
-        Math.floor(Date.now() / 1000);
+        Math.floor(
+          Date.now() / 1000
+        );
 
-      /*
-       * Maximal 5 Whisper-Nachrichten
-       * innerhalb von 10 Sekunden.
-       */
       const flood =
         await env.DB.prepare(`
           SELECT COUNT(*) AS total
           FROM whisper_messages
           WHERE user_id = ?
             AND created_at >= ?
-            AND deleted_at IS NULL
         `)
           .bind(
             user.id,
@@ -1122,15 +1093,9 @@ export async function onRequestPost(context) {
         }, 429);
       }
 
-      /*
-       * Direktes Duplikat verhindern.
-       *
-       * Vergleich erfolgt mit original_message,
-       * damit Filterung die Prüfung nicht verfälscht.
-       */
       const previous =
         await env.DB.prepare(`
-          SELECT original_message
+          SELECT message
           FROM whisper_messages
           WHERE room_id = ?
             AND user_id = ?
@@ -1147,13 +1112,8 @@ export async function onRequestPost(context) {
           .first();
 
       if (
-        previous?.original_message &&
-        previous.original_message
-          .trim()
-          .toLowerCase() ===
-        originalMessage
-          .trim()
-          .toLowerCase()
+        previous &&
+        previous.message === message
       ) {
         return json({
           ok: false,
@@ -1207,15 +1167,6 @@ export async function onRequestPost(context) {
         }
       }
 
-      /*
-       * Sichtbarer Text wird gefiltert.
-       * Exakter Text bleibt intern erhalten.
-       */
-      const censoredMessage =
-        censorMessage(
-          originalMessage
-        );
-
       const result =
         await env.DB.prepare(`
           INSERT INTO whisper_messages (
@@ -1231,8 +1182,8 @@ export async function onRequestPost(context) {
           .bind(
             roomId,
             user.id,
-            censoredMessage,
-            originalMessage,
+            message,
+            message,
             replyTo,
             now
           )
@@ -1265,15 +1216,9 @@ export async function onRequestPost(context) {
               isAdmin(user)
           },
 
-          message:
-            censoredMessage,
-
-          /*
-           * Absender ist selbst Mitglied dieses
-           * privaten Raums.
-           */
+          message,
           original_message:
-            originalMessage,
+            message,
 
           reply_to:
             replyTo,
@@ -1285,9 +1230,7 @@ export async function onRequestPost(context) {
     }
 
     /*
-     * =============================================
      * INVITE
-     * =============================================
      */
     if (action === "invite") {
       const roomId =
@@ -1299,7 +1242,9 @@ export async function onRequestPost(context) {
       if (
         !Number.isInteger(roomId) ||
         roomId <= 0 ||
-        !Number.isInteger(targetUserId) ||
+        !Number.isInteger(
+          targetUserId
+        ) ||
         targetUserId <= 0
       ) {
         return json({
@@ -1325,8 +1270,7 @@ export async function onRequestPost(context) {
       }
 
       if (
-        targetUserId ===
-        user.id
+        targetUserId === user.id
       ) {
         return json({
           ok: false,
@@ -1363,10 +1307,13 @@ export async function onRequestPost(context) {
       const targetBan =
         await getActiveBan(
           env,
-          target
+          target.id
         );
 
-      if (targetBan) {
+      if (
+        targetBan &&
+        !isAdmin(target)
+      ) {
         return json({
           ok: false,
           error:
@@ -1374,19 +1321,24 @@ export async function onRequestPost(context) {
         }, 403);
       }
 
-      const blocked =
-        await hasBlockBetween(
-          env,
-          user.id,
-          target.id
-        );
+      if (
+        !isAdmin(user) &&
+        !isAdmin(target)
+      ) {
+        const blocked =
+          await hasBlockBetween(
+            env,
+            user.id,
+            target.id
+          );
 
-      if (blocked) {
-        return json({
-          ok: false,
-          error:
-            "Zwischen euch besteht eine Blockierung."
-        }, 403);
+        if (blocked) {
+          return json({
+            ok: false,
+            error:
+              "Zwischen euch besteht eine Blockierung."
+          }, 403);
+        }
       }
 
       const alreadyMember =
@@ -1433,42 +1385,6 @@ export async function onRequestPost(context) {
           roomId
         );
 
-      /*
-       * Auch hier prüfen wir den gesamten Raum.
-       */
-      for (const roomMember of members) {
-        if (
-          roomMember.server !==
-          user.server
-        ) {
-          return json({
-            ok: false,
-            error:
-              "Dieser Whisper-Chat enthält eine ungültige Serverkombination."
-          }, 403);
-        }
-
-        if (
-          roomMember.id !==
-          target.id
-        ) {
-          const memberBlocked =
-            await hasBlockBetween(
-              env,
-              target.id,
-              roomMember.id
-            );
-
-          if (memberBlocked) {
-            return json({
-              ok: false,
-              error:
-                `Eine Einladung ist wegen einer Blockierung mit ${roomMember.username} nicht möglich.`
-            }, 403);
-          }
-        }
-      }
-
       const pendingCount =
         await getPendingInviteCount(
           env,
@@ -1488,7 +1404,9 @@ export async function onRequestPost(context) {
       }
 
       const now =
-        Math.floor(Date.now() / 1000);
+        Math.floor(
+          Date.now() / 1000
+        );
 
       const result =
         await env.DB.prepare(`
@@ -1527,13 +1445,7 @@ export async function onRequestPost(context) {
               target.username,
 
             server:
-              target.server,
-
-            role:
-              target.role,
-
-            is_admin:
-              isAdmin(target)
+              target.server
           },
 
           status:
@@ -1568,19 +1480,15 @@ export async function onRequestPost(context) {
   }
 }
 
-/*
- * =====================================================
- * PUT
- * =====================================================
- *
- * Einladung annehmen / ablehnen.
- */
 export async function onRequestPut(context) {
   try {
     const { request, env } = context;
 
     const user =
-      await getCurrentUser(request, env);
+      await getCurrentUser(
+        request,
+        env
+      );
 
     if (!user) {
       return json({
@@ -1618,9 +1526,7 @@ export async function onRequestPut(context) {
 
     const response =
       typeof body.response === "string"
-        ? body.response
-            .trim()
-            .toLowerCase()
+        ? body.response.toLowerCase()
         : "";
 
     if (
@@ -1706,12 +1612,8 @@ export async function onRequestPut(context) {
       }, 409);
     }
 
-    /*
-     * Ablehnen bleibt jederzeit möglich.
-     */
     if (
-      response ===
-      "declined"
+      response === "declined"
     ) {
       await env.DB.prepare(`
         UPDATE whisper_invites
@@ -1731,30 +1633,6 @@ export async function onRequestPut(context) {
       });
     }
 
-    /*
-     * =============================================
-     * ACCEPT
-     * =============================================
-     */
-
-    const room =
-      await getRoom(
-        env,
-        invite.room_id
-      );
-
-    if (!room) {
-      return json({
-        ok: false,
-        error:
-          "Whisper-Chat wurde nicht gefunden."
-      }, 404);
-    }
-
-    /*
-     * Einladender und Eingeladener müssen
-     * weiterhin auf demselben Server sein.
-     */
     if (
       invite.inviter_server !==
       user.server
@@ -1766,47 +1644,25 @@ export async function onRequestPut(context) {
       }, 403);
     }
 
-    const inviter =
-      await getUserById(
-        env,
-        invite.inviter_id
-      );
+    if (
+      !isAdmin(user) &&
+      invite.inviter_role !==
+      "admin"
+    ) {
+      const blocked =
+        await hasBlockBetween(
+          env,
+          user.id,
+          invite.inviter_id
+        );
 
-    if (!inviter) {
-      return json({
-        ok: false,
-        error:
-          "Der einladende Spieler existiert nicht mehr."
-      }, 404);
-    }
-
-    const inviterBan =
-      await getActiveBan(
-        env,
-        inviter
-      );
-
-    if (inviterBan) {
-      return json({
-        ok: false,
-        error:
-          "Der einladende Spieler ist derzeit vom Chat ausgeschlossen."
-      }, 403);
-    }
-
-    const inviterBlocked =
-      await hasBlockBetween(
-        env,
-        user.id,
-        invite.inviter_id
-      );
-
-    if (inviterBlocked) {
-      return json({
-        ok: false,
-        error:
-          "Die Einladung kann wegen einer Blockierung nicht angenommen werden."
-      }, 403);
+      if (blocked) {
+        return json({
+          ok: false,
+          error:
+            "Die Einladung kann wegen einer Blockierung nicht angenommen werden."
+        }, 403);
+      }
     }
 
     const members =
@@ -1826,11 +1682,10 @@ export async function onRequestPut(context) {
       }, 409);
     }
 
-    /*
-     * Der neue Spieler muss mit ALLEN vorhandenen
-     * Mitgliedern kompatibel sein.
-     */
-    for (const member of members) {
+    for (
+      const member
+      of members
+    ) {
       if (
         member.server !==
         user.server
@@ -1843,8 +1698,9 @@ export async function onRequestPut(context) {
       }
 
       if (
-        member.id !==
-        user.id
+        member.id !== user.id &&
+        member.role !== "admin" &&
+        !isAdmin(user)
       ) {
         const blocked =
           await hasBlockBetween(
@@ -1872,7 +1728,9 @@ export async function onRequestPut(context) {
 
     if (!alreadyMember) {
       const now =
-        Math.floor(Date.now() / 1000);
+        Math.floor(
+          Date.now() / 1000
+        );
 
       await env.DB.prepare(`
         INSERT INTO whisper_members (
@@ -1923,26 +1781,4 @@ export async function onRequestPut(context) {
         "Die Einladung konnte nicht bearbeitet werden."
     }, 500);
   }
-}
-
-/*
- * =====================================================
- * DELETE
- * =====================================================
- *
- * Aktuell bewusst deaktiviert.
- *
- * Mitglieder können sich nicht gegenseitig entfernen.
- * Admin bekommt ebenfalls keinen Sonderzugriff auf
- * private Whisper-Räume.
- *
- * Einen sauberen "Whisper verlassen"-Mechanismus
- * können wir später separat ergänzen.
- */
-export async function onRequestDelete() {
-  return json({
-    ok: false,
-    error:
-      "Diese Whisper-Aktion wird derzeit nicht unterstützt."
-  }, 405);
 }
