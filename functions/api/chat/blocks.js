@@ -25,7 +25,9 @@ function getCookie(request, name) {
 async function getCurrentUser(request, env) {
   const token = getCookie(request, "ps_session");
 
-  if (!token) return null;
+  if (!token) {
+    return null;
+  }
 
   return await env.DB.prepare(`
     SELECT
@@ -34,116 +36,172 @@ async function getCurrentUser(request, env) {
       users.server,
       users.role
     FROM sessions
-    JOIN users ON users.id = sessions.user_id
-    WHERE sessions.token = ?
+    JOIN users
+      ON users.id = sessions.user_id
+    WHERE sessions.id = ?
       AND sessions.expires_at > ?
     LIMIT 1
   `)
-    .bind(token, Math.floor(Date.now() / 1000))
+    .bind(
+      token,
+      Math.floor(Date.now() / 1000)
+    )
     .first();
 }
 
-function getServerCode(server) {
-  const servers = {
-    "Deutschland 1": "DE1",
-    "Europa 1": "EU1",
-    "Europa 2": "EU2",
-    "Europa 3": "EU3",
-    "Europa 4": "EU4",
-    "Arabien 1": "AR1",
-    "Lateinamerika 1": "LA1",
-    "USA 1": "USA1"
-  };
-
-  return servers[server] || server;
+function isAdmin(user) {
+  return Boolean(
+    user &&
+    user.role === "admin"
+  );
 }
 
-async function findUser(env, id) {
+async function getUserById(env, userId) {
   return await env.DB.prepare(`
-    SELECT id, username, server, role
+    SELECT
+      id,
+      username,
+      server,
+      role
     FROM users
     WHERE id = ?
     LIMIT 1
   `)
-    .bind(id)
+    .bind(userId)
     .first();
 }
 
 /*
+ * =====================================================
  * GET
+ * =====================================================
  *
- * Zeigt ausschließlich die eigene Blockierliste.
+ * Eigene Blockierliste laden.
  */
 export async function onRequestGet(context) {
   try {
     const { request, env } = context;
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(
+        request,
+        env
+      );
 
     if (!user) {
       return json({
         ok: false,
-        error: "Du musst eingeloggt sein."
+        error:
+          "Du musst eingeloggt sein."
       }, 401);
     }
 
-    const result = await env.DB.prepare(`
-      SELECT
-        b.id,
-        b.blocked_id,
-        b.created_at,
+    const result =
+      await env.DB.prepare(`
+        SELECT
+          cb.id,
+          cb.blocked_id,
+          cb.created_at,
 
-        u.username,
-        u.server,
-        u.role
+          u.username,
+          u.server,
+          u.role
 
-      FROM chat_blocks b
+        FROM chat_blocks cb
 
-      JOIN users u
-        ON u.id = b.blocked_id
+        JOIN users u
+          ON u.id = cb.blocked_id
 
-      WHERE b.blocker_id = ?
+        WHERE cb.blocker_id = ?
 
-      ORDER BY
-        LOWER(u.username) ASC
-    `)
-      .bind(user.id)
-      .all();
+        ORDER BY
+          LOWER(u.username) ASC
+      `)
+        .bind(user.id)
+        .all();
 
-    const blocks = (result.results || []).map(item => ({
-      id: item.id,
+    /*
+     * Zusätzliche Absicherung:
+     * Admins sollen niemals als blockierte Spieler
+     * an den Client geliefert werden.
+     */
+    const blocks =
+      (result.results || [])
+        .filter(
+          row =>
+            row.role !== "admin"
+        )
+        .map(row => ({
+          id:
+            row.id,
 
-      user: {
-        id: item.blocked_id,
-        username: item.username,
-        server: item.server,
-        server_code: getServerCode(item.server),
-        role: item.role
-      },
+          created_at:
+            row.created_at,
 
-      created_at: item.created_at
-    }));
+          user: {
+            id:
+              row.blocked_id,
+
+            username:
+              row.username,
+
+            server:
+              row.server,
+
+            role:
+              row.role,
+
+            is_admin:
+              false
+          }
+        }));
 
     return json({
       ok: true,
+
+      current_user: {
+        id:
+          user.id,
+
+        username:
+          user.username,
+
+        server:
+          user.server,
+
+        role:
+          user.role,
+
+        is_admin:
+          isAdmin(user)
+      },
+
       blocks
     });
+
   } catch (error) {
-    console.error("GET /api/chat/blocks error:", error);
+    console.error(
+      "GET /api/chat/blocks error:",
+      error
+    );
 
     return json({
       ok: false,
-      error: "Die Blockierliste konnte nicht geladen werden."
+      error:
+        "Die Blockierliste konnte nicht geladen werden."
     }, 500);
   }
 }
 
 /*
+ * =====================================================
  * POST
+ * =====================================================
  *
- * Blockiert einen Spieler.
+ * Spieler blockieren.
  *
  * Erwartet:
+ *
  * {
  *   "user_id": 123
  * }
@@ -152,198 +210,348 @@ export async function onRequestPost(context) {
   try {
     const { request, env } = context;
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(
+        request,
+        env
+      );
 
     if (!user) {
       return json({
         ok: false,
-        error: "Du musst eingeloggt sein."
+        error:
+          "Du musst eingeloggt sein."
       }, 401);
     }
 
     let body;
 
     try {
-      body = await request.json();
+      body =
+        await request.json();
     } catch {
       return json({
         ok: false,
-        error: "Ungültige Anfrage."
+        error:
+          "Ungültige Anfrage."
       }, 400);
     }
 
-    const blockedUserId = Number(body.user_id);
+    const blockedUserId =
+      Number(body.user_id);
 
     if (
-      !Number.isInteger(blockedUserId) ||
+      !Number.isInteger(
+        blockedUserId
+      ) ||
       blockedUserId <= 0
     ) {
       return json({
         ok: false,
-        error: "Ungültiger Spieler."
+        error:
+          "Ungültige Spieler-ID."
       }, 400);
     }
 
-    if (blockedUserId === user.id) {
+    /*
+     * Man kann sich nicht selbst blockieren.
+     */
+    if (
+      blockedUserId ===
+      user.id
+    ) {
       return json({
         ok: false,
-        error: "Du kannst dich nicht selbst blockieren."
+        error:
+          "Du kannst dich nicht selbst blockieren."
       }, 400);
     }
 
-    const blockedUser = await findUser(
-      env,
-      blockedUserId
-    );
+    const target =
+      await getUserById(
+        env,
+        blockedUserId
+      );
 
-    if (!blockedUser) {
+    if (!target) {
       return json({
         ok: false,
-        error: "Spieler wurde nicht gefunden."
+        error:
+          "Spieler wurde nicht gefunden."
       }, 404);
     }
 
     /*
-     * Umbra/Admin soll für seine Moderation weiterhin
-     * erreichbar bleiben.
+     * =================================================
+     * ADMIN-IMMUNITÄT
+     * =================================================
      *
-     * Deshalb kann ein normaler Nutzer den Admin nicht
-     * persönlich blockieren.
+     * Ein Account mit role = admin kann niemals
+     * blockiert werden.
+     *
+     * Die Prüfung erfolgt ausschließlich über
+     * die Rolle und NICHT über den Spielernamen.
      */
-    if (blockedUser.role === "admin") {
+    if (isAdmin(target)) {
       return json({
         ok: false,
-        error: "Der Administrator kann nicht blockiert werden."
+        error:
+          "Der Administrator kann nicht blockiert werden."
       }, 403);
     }
 
-    const existing = await env.DB.prepare(`
-      SELECT id
-      FROM chat_blocks
-      WHERE blocker_id = ?
-        AND blocked_id = ?
-      LIMIT 1
-    `)
-      .bind(user.id, blockedUserId)
-      .first();
+    /*
+     * Persönliche Blocks sollen nur zwischen Spielern
+     * desselben Pirate-Storm-Servers möglich sein.
+     */
+    if (
+      target.server !==
+      user.server
+    ) {
+      return json({
+        ok: false,
+        error:
+          "Du kannst nur Spieler deines eigenen Servers blockieren."
+      }, 403);
+    }
+
+    const existing =
+      await env.DB.prepare(`
+        SELECT id
+        FROM chat_blocks
+        WHERE blocker_id = ?
+          AND blocked_id = ?
+        LIMIT 1
+      `)
+        .bind(
+          user.id,
+          target.id
+        )
+        .first();
 
     if (existing) {
       return json({
         ok: true,
-        already_blocked: true,
-        message: "Dieser Spieler ist bereits blockiert."
+
+        already_blocked:
+          true,
+
+        block: {
+          id:
+            existing.id,
+
+          user: {
+            id:
+              target.id,
+
+            username:
+              target.username,
+
+            server:
+              target.server,
+
+            role:
+              target.role,
+
+            is_admin:
+              false
+          }
+        },
+
+        message:
+          `${target.username} ist bereits blockiert.`
       });
     }
 
-    const now = Math.floor(Date.now() / 1000);
+    const now =
+      Math.floor(
+        Date.now() / 1000
+      );
 
-    const result = await env.DB.prepare(`
-      INSERT INTO chat_blocks (
-        blocker_id,
-        blocked_id,
-        created_at
-      )
-      VALUES (?, ?, ?)
-    `)
-      .bind(
-        user.id,
-        blockedUserId,
-        now
-      )
-      .run();
+    const result =
+      await env.DB.prepare(`
+        INSERT INTO chat_blocks (
+          blocker_id,
+          blocked_id,
+          created_at
+        )
+        VALUES (?, ?, ?)
+      `)
+        .bind(
+          user.id,
+          target.id,
+          now
+        )
+        .run();
 
     return json({
       ok: true,
 
+      already_blocked:
+        false,
+
       block: {
-        id: result.meta.last_row_id,
+        id:
+          result.meta.last_row_id,
+
+        created_at:
+          now,
 
         user: {
-          id: blockedUser.id,
-          username: blockedUser.username,
-          server: blockedUser.server,
-          server_code: getServerCode(
-            blockedUser.server
-          )
-        },
+          id:
+            target.id,
 
-        created_at: now
+          username:
+            target.username,
+
+          server:
+            target.server,
+
+          role:
+            target.role,
+
+          is_admin:
+            false
+        }
       },
 
       message:
-        `${blockedUser.username} wurde blockiert.`
+        `${target.username} wurde blockiert.`
     }, 201);
+
   } catch (error) {
-    console.error("POST /api/chat/blocks error:", error);
+    console.error(
+      "POST /api/chat/blocks error:",
+      error
+    );
 
     return json({
       ok: false,
-      error: "Der Spieler konnte nicht blockiert werden."
+      error:
+        "Der Spieler konnte nicht blockiert werden."
     }, 500);
   }
 }
 
 /*
+ * =====================================================
  * DELETE
+ * =====================================================
  *
- * Hebt eine eigene Blockierung auf.
+ * Blockierung aufheben.
  *
- * Aufruf:
- * DELETE /api/chat/blocks?user_id=123
+ * Unterstützt:
+ *
+ * /api/chat/blocks?user_id=123
+ *
+ * oder JSON:
+ *
+ * {
+ *   "user_id": 123
+ * }
  */
 export async function onRequestDelete(context) {
   try {
     const { request, env } = context;
 
-    const user = await getCurrentUser(request, env);
+    const user =
+      await getCurrentUser(
+        request,
+        env
+      );
 
     if (!user) {
       return json({
         ok: false,
-        error: "Du musst eingeloggt sein."
+        error:
+          "Du musst eingeloggt sein."
       }, 401);
     }
 
-    const url = new URL(request.url);
+    const url =
+      new URL(request.url);
 
-    const blockedUserId = Number(
-      url.searchParams.get("user_id")
-    );
+    let blockedUserId =
+      Number(
+        url.searchParams.get(
+          "user_id"
+        )
+      );
+
+    /*
+     * Falls keine ID in der URL steht,
+     * versuchen wir den JSON-Body.
+     */
+    if (
+      !Number.isInteger(
+        blockedUserId
+      ) ||
+      blockedUserId <= 0
+    ) {
+      try {
+        const body =
+          await request.json();
+
+        blockedUserId =
+          Number(body.user_id);
+      } catch {
+        // Kein JSON-Body vorhanden.
+      }
+    }
 
     if (
-      !Number.isInteger(blockedUserId) ||
+      !Number.isInteger(
+        blockedUserId
+      ) ||
       blockedUserId <= 0
     ) {
       return json({
         ok: false,
-        error: "Ungültiger Spieler."
+        error:
+          "Ungültige Spieler-ID."
       }, 400);
     }
 
-    const existing = await env.DB.prepare(`
-      SELECT
-        b.id,
-        u.username
-      FROM chat_blocks b
-      JOIN users u
-        ON u.id = b.blocked_id
-      WHERE b.blocker_id = ?
-        AND b.blocked_id = ?
-      LIMIT 1
-    `)
-      .bind(
-        user.id,
-        blockedUserId
-      )
-      .first();
+    const existing =
+      await env.DB.prepare(`
+        SELECT
+          cb.id,
+          cb.blocked_id,
+
+          u.username,
+          u.role
+
+        FROM chat_blocks cb
+
+        JOIN users u
+          ON u.id =
+            cb.blocked_id
+
+        WHERE cb.blocker_id = ?
+          AND cb.blocked_id = ?
+
+        LIMIT 1
+      `)
+        .bind(
+          user.id,
+          blockedUserId
+        )
+        .first();
 
     if (!existing) {
       return json({
         ok: false,
-        error: "Dieser Spieler ist nicht blockiert."
+        error:
+          "Dieser Spieler ist nicht blockiert."
       }, 404);
     }
 
+    /*
+     * Sollte durch alte/manipulierte Daten ein Admin
+     * in chat_blocks stehen, wird der Datensatz zwar
+     * entfernt, aber niemals als gültige Blockierung
+     * behandelt.
+     */
     await env.DB.prepare(`
       DELETE FROM chat_blocks
       WHERE blocker_id = ?
@@ -357,15 +565,26 @@ export async function onRequestDelete(context) {
 
     return json({
       ok: true,
+
+      user_id:
+        blockedUserId,
+
       message:
-        `${existing.username} wurde entsperrt.`
+        existing.role === "admin"
+          ? "Ungültige Admin-Blockierung wurde entfernt."
+          : `${existing.username} wurde entblockiert.`
     });
+
   } catch (error) {
-    console.error("DELETE /api/chat/blocks error:", error);
+    console.error(
+      "DELETE /api/chat/blocks error:",
+      error
+    );
 
     return json({
       ok: false,
-      error: "Die Blockierung konnte nicht aufgehoben werden."
+      error:
+        "Die Blockierung konnte nicht aufgehoben werden."
     }, 500);
   }
 }
