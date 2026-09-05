@@ -134,7 +134,26 @@ async function getCurrentUser(
 function isAdmin(user) {
   return Boolean(
     user &&
-    user.role === "admin"
+    user.role ===
+    "admin"
+  );
+}
+
+function isModerator(user) {
+  return Boolean(
+    user &&
+    user.role ===
+    "moderator"
+  );
+}
+
+function isStaff(user) {
+  return Boolean(
+    user &&
+    (
+      isAdmin(user) ||
+      isModerator(user)
+    )
   );
 }
 
@@ -188,7 +207,9 @@ async function cleanupExpiredBans(
       AND expires_at IS NOT NULL
       AND expires_at <= ?
   `)
-    .bind(now)
+    .bind(
+      now
+    )
     .run();
 }
 
@@ -204,12 +225,14 @@ async function isActivelyBanned(
 
   const row =
     await env.DB.prepare(`
-      SELECT id
+      SELECT
+        id
 
       FROM chat_bans
 
       WHERE user_id = ?
         AND active = 1
+
         AND (
           expires_at IS NULL
           OR expires_at > ?
@@ -223,7 +246,9 @@ async function isActivelyBanned(
       )
       .first();
 
-  return Boolean(row);
+  return Boolean(
+    row
+  );
 }
 
 
@@ -251,16 +276,13 @@ async function isActivelyBanned(
  * NORMALER SPIELER:
  * sieht nur registrierte Spieler des eigenen Servers.
  *
- * ADMIN:
- * sieht ebenfalls Spieler des eigenen Serverkontexts.
- * Für fremde Server wird später im Frontend der
- * passende Server übergeben.
+ * MODERATOR / ADMIN:
+ * dürfen einen anderen öffentlichen Serverkontext
+ * auswählen.
  *
  * Optional:
  *
  * ?server=Europa%201
- *
- * ist ausschließlich für Admin erlaubt.
  * =====================================================
  */
 
@@ -289,11 +311,23 @@ export async function onRequestGet(
       }, 401);
     }
 
+
     /*
-     * Gebannte Spieler dürfen die Usersuche als
-     * Chatfunktion nicht verwenden.
+     * =================================================
+     * BAN CHECK
+     * =================================================
+     *
+     * Staff braucht die Usersuche für Moderation.
+     *
+     * Normale gebannte Nutzer dürfen sie dagegen
+     * nicht mehr als Chatfunktion verwenden.
      */
-    if (!isAdmin(user)) {
+
+    if (
+      !isStaff(
+        user
+      )
+    ) {
       await cleanupExpiredBans(
         env
       );
@@ -304,7 +338,9 @@ export async function onRequestGet(
           user.id
         );
 
-      if (banned) {
+      if (
+        banned
+      ) {
         return json({
           ok:
             false,
@@ -318,10 +354,12 @@ export async function onRequestGet(
       }
     }
 
+
     const url =
       new URL(
         request.url
       );
+
 
     const query =
       cleanText(
@@ -330,6 +368,7 @@ export async function onRequestGet(
         )
       );
 
+
     let rawLimit =
       Number(
         url.searchParams.get(
@@ -337,6 +376,7 @@ export async function onRequestGet(
         ) ||
         DEFAULT_LIMIT
       );
+
 
     if (
       !Number.isInteger(
@@ -347,6 +387,7 @@ export async function onRequestGet(
         DEFAULT_LIMIT;
     }
 
+
     const limit =
       Math.max(
         1,
@@ -356,13 +397,16 @@ export async function onRequestGet(
         )
       );
 
+
     /*
      * =================================================
      * SERVER
      * =================================================
      */
+
     let server =
       user.server;
+
 
     const requestedServer =
       cleanText(
@@ -371,11 +415,18 @@ export async function onRequestGet(
         )
       );
 
+
     if (
       requestedServer
     ) {
+      /*
+       * Nur Staff darf einen fremden Server
+       * durchsuchen.
+       */
       if (
-        !isAdmin(user)
+        !isStaff(
+          user
+        )
       ) {
         return json({
           ok:
@@ -385,6 +436,7 @@ export async function onRequestGet(
             "Du kannst nur Spieler deines eigenen Servers durchsuchen."
         }, 403);
       }
+
 
       if (
         !SERVER_MAP[
@@ -400,20 +452,28 @@ export async function onRequestGet(
         }, 400);
       }
 
+
       server =
         requestedServer;
     }
+
 
     /*
      * =================================================
      * USERS QUERY
      * =================================================
      *
-     * Admin wird mit angezeigt, unabhängig von seinem
-     * registrierten Server.
+     * Im ausgewählten Serverkontext erscheinen:
+     *
+     * - User des Servers
+     * - alle Moderatoren
+     * - Admin
+     *
+     * Dadurch kann Staff andere Staff-Mitglieder
+     * eindeutig erkennen.
      *
      * Gebannte normale Spieler werden aus der
-     * Auswahl entfernt.
+     * normalen Auswahl entfernt.
      *
      * Eigener Account wird nicht vorgeschlagen.
      *
@@ -424,6 +484,18 @@ export async function onRequestGet(
 
     const searchLike =
       `%${query}%`;
+
+
+    const now =
+      Math.floor(
+        Date.now() / 1000
+      );
+
+
+    const onlineCutoff =
+      now -
+      10 * 60;
+
 
     const result =
       await env.DB.prepare(`
@@ -452,20 +524,26 @@ export async function onRequestGet(
 
           AND (
             u.server = ?
-            OR u.role =
-              'admin'
+
+            OR u.role IN (
+              'admin',
+              'moderator'
+            )
           )
 
           AND (
             ? = ''
+
             OR LOWER(
               u.username
             ) LIKE LOWER(?)
           )
 
           AND (
-            u.role =
-              'admin'
+            u.role IN (
+              'admin',
+              'moderator'
+            )
 
             OR NOT EXISTS (
               SELECT 1
@@ -485,7 +563,9 @@ export async function onRequestGet(
           )
 
           AND (
-            u.role =
+            ? = 1
+
+            OR u.role =
               'admin'
 
             OR NOT EXISTS (
@@ -514,7 +594,12 @@ export async function onRequestGet(
             WHEN u.role =
               'admin'
             THEN 0
-            ELSE 1
+
+            WHEN u.role =
+              'moderator'
+            THEN 1
+
+            ELSE 2
           END,
 
           CASE
@@ -531,10 +616,7 @@ export async function onRequestGet(
         LIMIT ?
       `)
         .bind(
-          Math.floor(
-            Date.now() / 1000
-          ) -
-          10 * 60,
+          onlineCutoff,
 
           user.id,
 
@@ -544,25 +626,27 @@ export async function onRequestGet(
 
           searchLike,
 
-          Math.floor(
-            Date.now() / 1000
-          ),
+          now,
+
+          isStaff(user)
+            ? 1
+            : 0,
 
           user.id,
+
           user.id,
 
-          Math.floor(
-            Date.now() / 1000
-          ) -
-          10 * 60,
+          onlineCutoff,
 
           limit
         )
         .all();
 
+
     const players =
       (
-        result.results || []
+        result.results ||
+        []
       ).map(
         row => ({
           id:
@@ -587,12 +671,26 @@ export async function onRequestGet(
             row.role ===
             "admin",
 
+          is_moderator:
+            row.role ===
+            "moderator",
+
+          is_staff:
+            row.role ===
+              "admin" ||
+            row.role ===
+              "moderator",
+
           online:
             Boolean(
               row.online
-            )
+            ),
+
+          last_seen:
+            row.last_seen
         })
       );
+
 
     return json({
       ok:
@@ -601,6 +699,41 @@ export async function onRequestGet(
       server,
 
       query,
+
+      current_user: {
+        id:
+          user.id,
+
+        username:
+          user.username,
+
+        server:
+          user.server,
+
+        server_code:
+          getServerCode(
+            user.server,
+            user.role
+          ),
+
+        role:
+          user.role,
+
+        is_admin:
+          isAdmin(
+            user
+          ),
+
+        is_moderator:
+          isModerator(
+            user
+          ),
+
+        is_staff:
+          isStaff(
+            user
+          )
+      },
 
       count:
         players.length,
