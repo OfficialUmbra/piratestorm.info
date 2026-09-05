@@ -20,49 +20,92 @@ const BAN_DURATIONS = {
 };
 
 function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store"
+  return new Response(
+    JSON.stringify(data),
+    {
+      status,
+      headers: {
+        "Content-Type":
+          "application/json; charset=utf-8",
+
+        "Cache-Control":
+          "no-store"
+      }
     }
-  });
+  );
 }
 
-function getCookie(request, name) {
-  const cookie = request.headers.get("Cookie") || "";
+function getCookie(
+  request,
+  name
+) {
+  const cookie =
+    request.headers.get("Cookie") || "";
 
-  for (const part of cookie.split(";")) {
-    const [key, ...value] = part.trim().split("=");
+  for (
+    const part
+    of cookie.split(";")
+  ) {
+    const [
+      key,
+      ...value
+    ] =
+      part
+        .trim()
+        .split("=");
 
-    if (key === name) {
-      return decodeURIComponent(value.join("="));
+    if (
+      key === name
+    ) {
+      return decodeURIComponent(
+        value.join("=")
+      );
     }
   }
 
   return null;
 }
 
-async function getCurrentUser(request, env) {
-  const token = getCookie(request, "ps_session");
+async function getCurrentUser(
+  request,
+  env
+) {
+  const sessionId =
+    getCookie(
+      request,
+      "ps_session"
+    );
 
-  if (!token) {
+  if (!sessionId) {
     return null;
   }
 
+  const now =
+    Math.floor(
+      Date.now() / 1000
+    );
+
   return await env.DB.prepare(`
     SELECT
-      users.id,
-      users.username,
-      users.server,
-      users.role
-    FROM sessions
-    JOIN users ON users.id = sessions.user_id
-    WHERE sessions.id = ?
-      AND sessions.expires_at > ?
+      u.id,
+      u.username,
+      u.server,
+      u.role
+
+    FROM sessions s
+
+    JOIN users u
+      ON u.id = s.user_id
+
+    WHERE s.id = ?
+      AND s.expires_at > ?
+
     LIMIT 1
   `)
-    .bind(token, Math.floor(Date.now() / 1000))
+    .bind(
+      sessionId,
+      now
+    )
     .first();
 }
 
@@ -74,11 +117,18 @@ function isAdmin(user) {
 }
 
 function getServerCode(server) {
-  return SERVER_MAP[server] || server;
+  return (
+    SERVER_MAP[server] ||
+    server ||
+    ""
+  );
 }
 
-function normalizeReason(value) {
-  if (typeof value !== "string") {
+function normalizeText(value) {
+  if (
+    typeof value !==
+    "string"
+  ) {
     return "";
   }
 
@@ -88,43 +138,84 @@ function normalizeReason(value) {
     .trim();
 }
 
-async function getUserById(env, id) {
+function toPositiveInt(value) {
+  const number =
+    Number(value);
+
+  if (
+    !Number.isInteger(number) ||
+    number <= 0
+  ) {
+    return null;
+  }
+
+  return number;
+}
+
+/*
+ * =====================================================
+ * USER LOOKUP
+ * =====================================================
+ */
+async function getUserById(
+  env,
+  id
+) {
   return await env.DB.prepare(`
     SELECT
       id,
       username,
       server,
       role
+
     FROM users
+
     WHERE id = ?
+
     LIMIT 1
   `)
     .bind(id)
     .first();
 }
 
-async function requireAdmin(request, env) {
+/*
+ * =====================================================
+ * ADMIN AUTH
+ * =====================================================
+ */
+async function requireAdmin(
+  request,
+  env
+) {
   const user =
-    await getCurrentUser(request, env);
+    await getCurrentUser(
+      request,
+      env
+    );
 
   if (!user) {
     return {
       ok: false,
-      response: json({
-        ok: false,
-        error: "Du musst eingeloggt sein."
-      }, 401)
+
+      response:
+        json({
+          ok: false,
+          error:
+            "Du musst eingeloggt sein."
+        }, 401)
     };
   }
 
   if (!isAdmin(user)) {
     return {
       ok: false,
-      response: json({
-        ok: false,
-        error:
-          "Nur der Administrator darf diese Aktion ausführen."
-      }, 403)
+
+      response:
+        json({
+          ok: false,
+          error:
+            "Nur der Administrator darf diese Aktion ausführen."
+        }, 403)
     };
   }
 
@@ -134,21 +225,31 @@ async function requireAdmin(request, env) {
   };
 }
 
+/*
+ * =====================================================
+ * TARGET VALIDATION
+ * =====================================================
+ */
 async function validateTarget(
   env,
   admin,
   targetUserId
 ) {
   if (
-    !Number.isInteger(targetUserId) ||
+    !Number.isInteger(
+      targetUserId
+    ) ||
     targetUserId <= 0
   ) {
     return {
       ok: false,
-      response: json({
-        ok: false,
-        error: "Ungültiger Spieler."
-      }, 400)
+
+      response:
+        json({
+          ok: false,
+          error:
+            "Ungültiger Spieler."
+        }, 400)
     };
   }
 
@@ -161,45 +262,61 @@ async function validateTarget(
   if (!target) {
     return {
       ok: false,
-      response: json({
-        ok: false,
-        error:
-          "Spieler wurde nicht gefunden."
-      }, 404)
+
+      response:
+        json({
+          ok: false,
+          error:
+            "Spieler wurde nicht gefunden."
+        }, 404)
     };
   }
 
   /*
-   * ADMIN-SCHUTZ
+   * =================================================
+   * ADMIN-IMMUNITÄT
+   * =================================================
    *
-   * Kein Admin-Account kann:
+   * Ausschließlich role === "admin" entscheidet.
+   *
+   * Ein Admin kann nicht:
+   *
    * - gekickt
    * - gebannt
    * - entbannt
    * - anderweitig moderiert
-   * werden.
    *
-   * Entscheidend ist ausschließlich role=admin.
+   * werden.
    */
-  if (target.role === "admin") {
+  if (
+    target.role ===
+    "admin"
+  ) {
     return {
       ok: false,
-      response: json({
-        ok: false,
-        error:
-          "Der Administrator kann nicht moderiert werden."
-      }, 403)
+
+      response:
+        json({
+          ok: false,
+          error:
+            "Der Administrator kann nicht moderiert werden."
+        }, 403)
     };
   }
 
-  if (target.id === admin.id) {
+  if (
+    Number(target.id) ===
+    Number(admin.id)
+  ) {
     return {
       ok: false,
-      response: json({
-        ok: false,
-        error:
-          "Du kannst diese Aktion nicht gegen dich selbst ausführen."
-      }, 403)
+
+      response:
+        json({
+          ok: false,
+          error:
+            "Du kannst diese Aktion nicht gegen dich selbst ausführen."
+        }, 403)
     };
   }
 
@@ -209,13 +326,22 @@ async function validateTarget(
   };
 }
 
+/*
+ * =====================================================
+ * ALTE BANNS DEAKTIVIEREN
+ * =====================================================
+ */
 async function expireOldBans(env) {
   const now =
-    Math.floor(Date.now() / 1000);
+    Math.floor(
+      Date.now() / 1000
+    );
 
   await env.DB.prepare(`
     UPDATE chat_bans
+
     SET active = 0
+
     WHERE active = 1
       AND expires_at IS NOT NULL
       AND expires_at <= ?
@@ -224,6 +350,11 @@ async function expireOldBans(env) {
     .run();
 }
 
+/*
+ * =====================================================
+ * MODERATION LOG
+ * =====================================================
+ */
 async function addModerationLog(
   env,
   adminId,
@@ -232,25 +363,238 @@ async function addModerationLog(
   details
 ) {
   const now =
-    Math.floor(Date.now() / 1000);
+    Math.floor(
+      Date.now() / 1000
+    );
+
+  try {
+    await env.DB.prepare(`
+      INSERT INTO chat_moderation_log (
+        admin_id,
+        target_user_id,
+        action,
+        details,
+        created_at
+      )
+
+      VALUES (?, ?, ?, ?, ?)
+    `)
+      .bind(
+        adminId,
+        targetUserId,
+        action,
+        JSON.stringify(
+          details || {}
+        ),
+        now
+      )
+      .run();
+
+  } catch (error) {
+    /*
+     * Eine Moderationsaktion soll nicht daran
+     * scheitern, dass ausschließlich das Log
+     * einen Fehler hat.
+     */
+    console.error(
+      "Moderation log error:",
+      error
+    );
+  }
+}
+
+/*
+ * =====================================================
+ * INTERNE MODERATIONSNOTIZ
+ * =====================================================
+ *
+ * Wird ausschließlich gespeichert, wenn tatsächlich
+ * Text übergeben wurde.
+ *
+ * Unterstützte Body-Felder:
+ *
+ * internal_note
+ * moderation_note
+ *
+ * Beispiel:
+ *
+ * {
+ *   "internal_note":
+ *     "Bereits mehrfach wegen Spam aufgefallen."
+ * }
+ */
+async function addModerationNote(
+  env,
+  adminId,
+  targetUserId,
+  relatedType,
+  relatedId,
+  note
+) {
+  const cleanNote =
+    normalizeText(note);
+
+  if (!cleanNote) {
+    return;
+  }
+
+  const now =
+    Math.floor(
+      Date.now() / 1000
+    );
 
   await env.DB.prepare(`
-    INSERT INTO chat_moderation_log (
-      admin_id,
+    INSERT INTO chat_moderation_notes (
       target_user_id,
-      action,
-      details,
+      admin_id,
+      related_type,
+      related_id,
+      note,
       created_at
     )
-    VALUES (?, ?, ?, ?, ?)
+
+    VALUES (?, ?, ?, ?, ?, ?)
   `)
     .bind(
-      adminId,
       targetUserId,
-      action,
-      JSON.stringify(details || {}),
+      adminId,
+      relatedType || null,
+      relatedId || null,
+      cleanNote,
       now
     )
+    .run();
+}
+
+/*
+ * =====================================================
+ * ÖFFENTLICHE SYSTEMMELDUNG
+ * =====================================================
+ *
+ * Wichtig:
+ *
+ * Hier werden bewusst NICHT gespeichert:
+ *
+ * - Moderationsgrund
+ * - Banndauer
+ * - interne Notiz
+ *
+ * Sichtbar ist öffentlich ausschließlich:
+ *
+ * "Spieler wurde aus dem Chat gekickt."
+ *
+ * bzw.
+ *
+ * "Spieler wurde aus dem Chat gebannt."
+ *
+ *
+ * Wir erzeugen zwei Systemmeldungen:
+ *
+ * 1. Globalchat
+ * 2. eigener Serverchat des Spielers
+ *
+ * Dadurch sehen Spieler die Moderationsaktion in
+ * beiden relevanten öffentlichen Bereichen.
+ */
+async function addPublicModerationMessages(
+  env,
+  eventType,
+  target
+) {
+  if (
+    eventType !== "kick" &&
+    eventType !== "ban"
+  ) {
+    return;
+  }
+
+  const now =
+    Math.floor(
+      Date.now() / 1000
+    );
+
+  /*
+   * Global
+   */
+  await env.DB.prepare(`
+    INSERT INTO chat_system_messages (
+      room_type,
+      server,
+      event_type,
+      target_user_id,
+      target_username,
+      created_at
+    )
+
+    VALUES (
+      'global',
+      NULL,
+      ?,
+      ?,
+      ?,
+      ?
+    )
+  `)
+    .bind(
+      eventType,
+      target.id,
+      target.username,
+      now
+    )
+    .run();
+
+  /*
+   * Serverchat
+   */
+  if (target.server) {
+    await env.DB.prepare(`
+      INSERT INTO chat_system_messages (
+        room_type,
+        server,
+        event_type,
+        target_user_id,
+        target_username,
+        created_at
+      )
+
+      VALUES (
+        'server',
+        ?,
+        ?,
+        ?,
+        ?,
+        ?
+      )
+    `)
+      .bind(
+        target.server,
+        eventType,
+        target.id,
+        target.username,
+        now
+      )
+      .run();
+  }
+}
+
+/*
+ * =====================================================
+ * PRESENCE ENTFERNEN
+ * =====================================================
+ *
+ * Kick/Bann soll unmittelbar die bestehende
+ * Online-Presence entfernen.
+ */
+async function removePresence(
+  env,
+  userId
+) {
+  await env.DB.prepare(`
+    DELETE FROM chat_presence
+
+    WHERE user_id = ?
+  `)
+    .bind(userId)
     .run();
 }
 
@@ -261,19 +605,33 @@ async function addModerationLog(
  *
  * Nur Admin.
  *
- * Zeigt standardmäßig alle AKTIVEN Banns.
+ * Standard:
  *
- * Optional:
+ * /api/chat/bans
+ *
+ * entspricht:
  *
  * /api/chat/bans?status=active
+ *
+ *
+ * Verlauf:
+ *
  * /api/chat/bans?status=all
  */
-export async function onRequestGet(context) {
+export async function onRequestGet(
+  context
+) {
   try {
-    const { request, env } = context;
+    const {
+      request,
+      env
+    } = context;
 
     const auth =
-      await requireAdmin(request, env);
+      await requireAdmin(
+        request,
+        env
+      );
 
     if (!auth.ok) {
       return auth.response;
@@ -282,11 +640,14 @@ export async function onRequestGet(context) {
     await expireOldBans(env);
 
     const url =
-      new URL(request.url);
+      new URL(
+        request.url
+      );
 
     const status =
-      url.searchParams.get("status") ||
-      "active";
+      url.searchParams.get(
+        "status"
+      ) || "active";
 
     if (
       status !== "active" &&
@@ -299,117 +660,150 @@ export async function onRequestGet(context) {
       }, 400);
     }
 
-    const limitRaw =
+    const rawLimit =
       Number(
-        url.searchParams.get("limit") ||
-        100
+        url.searchParams.get(
+          "limit"
+        ) || 100
       );
 
     const limit =
-      Math.max(
-        1,
-        Math.min(limitRaw, 200)
-      );
+      Number.isFinite(rawLimit)
+        ? Math.max(
+            1,
+            Math.min(
+              Math.floor(
+                rawLimit
+              ),
+              200
+            )
+          )
+        : 100;
 
-    let query;
-    let bindings;
+    let result;
 
-    if (status === "active") {
-      query = `
-        SELECT
-          b.id,
-          b.user_id,
-          b.banned_by,
-          b.reason,
-          b.banned_at,
-          b.expires_at,
-          b.active,
+    if (
+      status === "active"
+    ) {
+      result =
+        await env.DB.prepare(`
+          SELECT
+            b.id,
+            b.user_id,
+            b.banned_by,
+            b.reason,
+            b.banned_at,
+            b.expires_at,
+            b.active,
 
-          target.username
-            AS target_username,
+            target.username
+              AS target_username,
 
-          target.server
-            AS target_server,
+            target.server
+              AS target_server,
 
-          target.role
-            AS target_role,
+            target.role
+              AS target_role,
 
-          admin.username
-            AS admin_username
+            admin.username
+              AS admin_username
 
-        FROM chat_bans b
+          FROM chat_bans b
 
-        JOIN users target
-          ON target.id = b.user_id
+          JOIN users target
+            ON target.id =
+              b.user_id
 
-        JOIN users admin
-          ON admin.id = b.banned_by
+          JOIN users admin
+            ON admin.id =
+              b.banned_by
 
-        WHERE b.active = 1
+          WHERE b.active = 1
 
-        ORDER BY
-          b.banned_at DESC
+          ORDER BY
+            b.banned_at DESC,
+            b.id DESC
 
-        LIMIT ?
-      `;
+          LIMIT ?
+        `)
+          .bind(limit)
+          .all();
 
-      bindings = [limit];
     } else {
-      query = `
-        SELECT
-          b.id,
-          b.user_id,
-          b.banned_by,
-          b.reason,
-          b.banned_at,
-          b.expires_at,
-          b.active,
+      result =
+        await env.DB.prepare(`
+          SELECT
+            b.id,
+            b.user_id,
+            b.banned_by,
+            b.reason,
+            b.banned_at,
+            b.expires_at,
+            b.active,
 
-          target.username
-            AS target_username,
+            target.username
+              AS target_username,
 
-          target.server
-            AS target_server,
+            target.server
+              AS target_server,
 
-          target.role
-            AS target_role,
+            target.role
+              AS target_role,
 
-          admin.username
-            AS admin_username
+            admin.username
+              AS admin_username
 
-        FROM chat_bans b
+          FROM chat_bans b
 
-        JOIN users target
-          ON target.id = b.user_id
+          JOIN users target
+            ON target.id =
+              b.user_id
 
-        JOIN users admin
-          ON admin.id = b.banned_by
+          JOIN users admin
+            ON admin.id =
+              b.banned_by
 
-        ORDER BY
-          b.banned_at DESC
+          ORDER BY
+            b.banned_at DESC,
+            b.id DESC
 
-        LIMIT ?
-      `;
-
-      bindings = [limit];
+          LIMIT ?
+        `)
+          .bind(limit)
+          .all();
     }
 
-    const result =
-      await env.DB
-        .prepare(query)
-        .bind(...bindings)
-        .all();
-
     const now =
-      Math.floor(Date.now() / 1000);
+      Math.floor(
+        Date.now() / 1000
+      );
 
     const bans =
-      (result.results || []).map(
-        item => ({
-          id: item.id,
+      (
+        result.results || []
+      ).map(item => {
+        const permanent =
+          item.expires_at ===
+          null;
+
+        const stillActive =
+          Boolean(
+            item.active
+          ) &&
+          (
+            permanent ||
+            Number(
+              item.expires_at
+            ) > now
+          );
+
+        return {
+          id:
+            item.id,
 
           user: {
-            id: item.user_id,
+            id:
+              item.user_id,
 
             username:
               item.target_username,
@@ -420,18 +814,22 @@ export async function onRequestGet(context) {
             server_code:
               getServerCode(
                 item.target_server
-              )
+              ),
+
+            role:
+              item.target_role
           },
 
           banned_by: {
-            id: item.banned_by,
+            id:
+              item.banned_by,
 
             username:
               item.admin_username
           },
 
           reason:
-            item.reason,
+            item.reason || null,
 
           banned_at:
             item.banned_at,
@@ -439,17 +837,23 @@ export async function onRequestGet(context) {
           expires_at:
             item.expires_at,
 
-          permanent:
-            item.expires_at === null,
+          permanent,
 
           active:
-            Boolean(item.active) &&
-            (
-              item.expires_at === null ||
-              item.expires_at > now
-            )
-        })
-      );
+            stillActive,
+
+          remaining_seconds:
+            stillActive &&
+            !permanent
+              ? Math.max(
+                  0,
+                  Number(
+                    item.expires_at
+                  ) - now
+                )
+              : null
+        };
+      });
 
     return json({
       ok: true,
@@ -481,26 +885,29 @@ export async function onRequestGet(context) {
  *
  * Nur Admin.
  *
- * Zwei Aktionen:
  *
- * 1. Kick
+ * KICK:
  *
  * {
  *   "action": "kick",
  *   "user_id": 123,
- *   "reason": "Spam"
+ *   "reason": "Spam",
+ *   "internal_note": "Optional"
  * }
  *
- * 2. Bann
+ *
+ * BANN:
  *
  * {
  *   "action": "ban",
  *   "user_id": 123,
  *   "duration": "24h",
- *   "reason": "Beleidigungen"
+ *   "reason": "Beleidigungen",
+ *   "internal_note": "Optional"
  * }
  *
- * Erlaubte duration:
+ *
+ * Erlaubte Banndauern:
  *
  * 10m
  * 30m
@@ -510,12 +917,20 @@ export async function onRequestGet(context) {
  * 7d
  * permanent
  */
-export async function onRequestPost(context) {
+export async function onRequestPost(
+  context
+) {
   try {
-    const { request, env } = context;
+    const {
+      request,
+      env
+    } = context;
 
     const auth =
-      await requireAdmin(request, env);
+      await requireAdmin(
+        request,
+        env
+      );
 
     if (!auth.ok) {
       return auth.response;
@@ -529,6 +944,7 @@ export async function onRequestPost(context) {
     try {
       body =
         await request.json();
+
     } catch {
       return json({
         ok: false,
@@ -538,8 +954,11 @@ export async function onRequestPost(context) {
     }
 
     const action =
-      typeof body.action === "string"
-        ? body.action.toLowerCase()
+      typeof body.action ===
+      "string"
+        ? body.action
+            .trim()
+            .toLowerCase()
         : "";
 
     if (
@@ -554,7 +973,9 @@ export async function onRequestPost(context) {
     }
 
     const targetUserId =
-      Number(body.user_id);
+      Number(
+        body.user_id
+      );
 
     const validation =
       await validateTarget(
@@ -571,9 +992,19 @@ export async function onRequestPost(context) {
       validation.target;
 
     const reason =
-      normalizeReason(body.reason);
+      normalizeText(
+        body.reason
+      );
 
-    if (reason.length > 500) {
+    const internalNote =
+      normalizeText(
+        body.internal_note ||
+        body.moderation_note
+      );
+
+    if (
+      reason.length > 500
+    ) {
       return json({
         ok: false,
         error:
@@ -581,31 +1012,87 @@ export async function onRequestPost(context) {
       }, 400);
     }
 
+    if (
+      internalNote.length >
+      2000
+    ) {
+      return json({
+        ok: false,
+        error:
+          "Die interne Moderationsnotiz darf maximal 2000 Zeichen enthalten."
+      }, 400);
+    }
+
     const now =
-      Math.floor(Date.now() / 1000);
+      Math.floor(
+        Date.now() / 1000
+      );
 
     /*
-     * =============================================
+     * =================================================
      * KICK
-     * =============================================
+     * =================================================
      */
-    if (action === "kick") {
-      await env.DB.prepare(`
-        INSERT INTO chat_kicks (
-          user_id,
-          kicked_by,
-          reason,
-          created_at
-        )
-        VALUES (?, ?, ?, ?)
-      `)
-        .bind(
-          target.id,
+    if (
+      action === "kick"
+    ) {
+      const kickResult =
+        await env.DB.prepare(`
+          INSERT INTO chat_kicks (
+            user_id,
+            kicked_by,
+            reason,
+            created_at
+          )
+
+          VALUES (?, ?, ?, ?)
+        `)
+          .bind(
+            target.id,
+            admin.id,
+            reason || null,
+            now
+          )
+          .run();
+
+      const kickId =
+        kickResult?.meta
+          ?.last_row_id ||
+        null;
+
+      /*
+       * Spieler sofort aus Online-Presence entfernen.
+       */
+      await removePresence(
+        env,
+        target.id
+      );
+
+      /*
+       * Öffentliche Systemmeldungen.
+       *
+       * Keine Dauer.
+       * Kein Grund.
+       */
+      await addPublicModerationMessages(
+        env,
+        "kick",
+        target
+      );
+
+      /*
+       * Interne Notiz.
+       */
+      if (internalNote) {
+        await addModerationNote(
+          env,
           admin.id,
-          reason || null,
-          now
-        )
-        .run();
+          target.id,
+          "kick",
+          kickId,
+          internalNote
+        );
+      }
 
       await addModerationLog(
         env,
@@ -613,8 +1100,14 @@ export async function onRequestPost(context) {
         target.id,
         "kick",
         {
+          kick_id:
+            kickId,
+
           reason:
             reason || null,
+
+          internal_note:
+            internalNote || null,
 
           username:
             target.username,
@@ -629,6 +1122,23 @@ export async function onRequestPost(context) {
 
         action:
           "kick",
+
+        kick: {
+          id:
+            kickId,
+
+          user_id:
+            target.id,
+
+          kicked_by:
+            admin.id,
+
+          reason:
+            reason || null,
+
+          created_at:
+            now
+        },
 
         user: {
           id:
@@ -652,21 +1162,24 @@ export async function onRequestPost(context) {
     }
 
     /*
-     * =============================================
+     * =================================================
      * BANN
-     * =============================================
+     * =================================================
      */
-
     const duration =
-      typeof body.duration === "string"
+      typeof body.duration ===
+      "string"
         ? body.duration
+            .trim()
+            .toLowerCase()
         : "";
 
     if (
-      !Object.prototype.hasOwnProperty.call(
-        BAN_DURATIONS,
-        duration
-      )
+      !Object.prototype
+        .hasOwnProperty.call(
+          BAN_DURATIONS,
+          duration
+        )
     ) {
       return json({
         ok: false,
@@ -689,23 +1202,27 @@ export async function onRequestPost(context) {
     await expireOldBans(env);
 
     /*
-     * Wenn bereits ein aktiver Bann besteht,
-     * verhindern wir einen zweiten parallelen Bann.
+     * Parallel aktive Banns verhindern.
      */
     const existing =
       await env.DB.prepare(`
         SELECT
           id,
           expires_at
+
         FROM chat_bans
+
         WHERE user_id = ?
           AND active = 1
           AND (
             expires_at IS NULL
             OR expires_at > ?
           )
+
         ORDER BY
-          banned_at DESC
+          banned_at DESC,
+          id DESC
+
         LIMIT 1
       `)
         .bind(
@@ -729,13 +1246,16 @@ export async function onRequestPost(context) {
             existing.expires_at,
 
           permanent:
-            existing.expires_at === null
+            existing.expires_at ===
+            null
         }
       }, 409);
     }
 
     const seconds =
-      BAN_DURATIONS[duration];
+      BAN_DURATIONS[
+        duration
+      ];
 
     const expiresAt =
       seconds === null
@@ -752,7 +1272,15 @@ export async function onRequestPost(context) {
           expires_at,
           active
         )
-        VALUES (?, ?, ?, ?, ?, 1)
+
+        VALUES (
+          ?,
+          ?,
+          ?,
+          ?,
+          ?,
+          1
+        )
       `)
         .bind(
           target.id,
@@ -763,6 +1291,50 @@ export async function onRequestPost(context) {
         )
         .run();
 
+    const banId =
+      result?.meta
+        ?.last_row_id ||
+      null;
+
+    /*
+     * Gebannter Spieler verschwindet sofort aus
+     * der Online-Anzeige.
+     */
+    await removePresence(
+      env,
+      target.id
+    );
+
+    /*
+     * Öffentliche Systemmeldung.
+     *
+     * Absichtlich nur:
+     *
+     * "X wurde aus dem Chat gebannt."
+     *
+     * Keine Dauer.
+     * Kein Grund.
+     */
+    await addPublicModerationMessages(
+      env,
+      "ban",
+      target
+    );
+
+    /*
+     * Interne Admin-Notiz.
+     */
+    if (internalNote) {
+      await addModerationNote(
+        env,
+        admin.id,
+        target.id,
+        "ban",
+        banId,
+        internalNote
+      );
+    }
+
     await addModerationLog(
       env,
       admin.id,
@@ -770,7 +1342,7 @@ export async function onRequestPost(context) {
       "ban",
       {
         ban_id:
-          result.meta.last_row_id,
+          banId,
 
         username:
           target.username,
@@ -782,6 +1354,9 @@ export async function onRequestPost(context) {
 
         reason:
           reason || null,
+
+        internal_note:
+          internalNote || null,
 
         expires_at:
           expiresAt,
@@ -799,7 +1374,7 @@ export async function onRequestPost(context) {
 
       ban: {
         id:
-          result.meta.last_row_id,
+          banId,
 
         user: {
           id:
@@ -833,9 +1408,7 @@ export async function onRequestPost(context) {
       },
 
       message:
-        expiresAt === null
-          ? `${target.username} wurde permanent vom Chat gebannt.`
-          : `${target.username} wurde zeitweise vom Chat gebannt.`
+        `${target.username} wurde aus dem Chat gebannt.`
     }, 201);
 
   } catch (error) {
@@ -857,20 +1430,29 @@ export async function onRequestPost(context) {
  * DELETE
  * =====================================================
  *
- * Nur Admin.
- *
- * Hebt einen aktiven Bann vorzeitig auf.
- *
- * Beispiel:
+ * Aktiven Bann vorzeitig aufheben.
  *
  * DELETE /api/chat/bans?id=12
+ *
+ *
+ * WICHTIG:
+ *
+ * Beim Unban gibt es KEINE öffentliche Systemmeldung.
  */
-export async function onRequestDelete(context) {
+export async function onRequestDelete(
+  context
+) {
   try {
-    const { request, env } = context;
+    const {
+      request,
+      env
+    } = context;
 
     const auth =
-      await requireAdmin(request, env);
+      await requireAdmin(
+        request,
+        env
+      );
 
     if (!auth.ok) {
       return auth.response;
@@ -882,17 +1464,18 @@ export async function onRequestDelete(context) {
     await expireOldBans(env);
 
     const url =
-      new URL(request.url);
-
-    const banId =
-      Number(
-        url.searchParams.get("id")
+      new URL(
+        request.url
       );
 
-    if (
-      !Number.isInteger(banId) ||
-      banId <= 0
-    ) {
+    const banId =
+      toPositiveInt(
+        url.searchParams.get(
+          "id"
+        )
+      );
+
+    if (!banId) {
       return json({
         ok: false,
         error:
@@ -917,13 +1500,16 @@ export async function onRequestDelete(context) {
         FROM chat_bans b
 
         JOIN users u
-          ON u.id = b.user_id
+          ON u.id =
+            b.user_id
 
         WHERE b.id = ?
 
         LIMIT 1
       `)
-        .bind(banId)
+        .bind(
+          banId
+        )
         .first();
 
     if (!ban) {
@@ -935,11 +1521,13 @@ export async function onRequestDelete(context) {
     }
 
     /*
-     * Auch hier erneut Adminschutz.
-     * Selbst alte/manipulierte Datensätze können nicht
-     * zur Moderation eines Admin-Accounts benutzt werden.
+     * Auch alte/manipulierte Daten dürfen niemals
+     * zur Moderation eines Admin-Accounts führen.
      */
-    if (ban.role === "admin") {
+    if (
+      ban.role ===
+      "admin"
+    ) {
       return json({
         ok: false,
         error:
@@ -947,7 +1535,9 @@ export async function onRequestDelete(context) {
       }, 403);
     }
 
-    if (!ban.active) {
+    if (
+      !ban.active
+    ) {
       return json({
         ok: false,
         error:
@@ -956,14 +1546,21 @@ export async function onRequestDelete(context) {
     }
 
     const now =
-      Math.floor(Date.now() / 1000);
+      Math.floor(
+        Date.now() / 1000
+      );
 
     await env.DB.prepare(`
       UPDATE chat_bans
+
       SET active = 0
+
       WHERE id = ?
+        AND active = 1
     `)
-      .bind(banId)
+      .bind(
+        banId
+      )
       .run();
 
     await addModerationLog(
@@ -1030,4 +1627,17 @@ export async function onRequestDelete(context) {
         "Der Bann konnte nicht aufgehoben werden."
     }, 500);
   }
+}
+
+/*
+ * =====================================================
+ * PUT
+ * =====================================================
+ */
+export async function onRequestPut() {
+  return json({
+    ok: false,
+    error:
+      "Diese Methode wird nicht unterstützt."
+  }, 405);
 }
