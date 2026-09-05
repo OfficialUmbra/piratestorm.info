@@ -9,25 +9,51 @@ function json(data, status = 200) {
 }
 
 function getCookie(request, name) {
-  const cookie = request.headers.get("Cookie") || "";
+  const cookie =
+    request.headers.get("Cookie") || "";
 
-  for (const part of cookie.split(";")) {
-    const [key, ...value] = part.trim().split("=");
+  for (
+    const part
+    of cookie.split(";")
+  ) {
+    const [
+      key,
+      ...value
+    ] =
+      part
+        .trim()
+        .split("=");
 
-    if (key === name) {
-      return decodeURIComponent(value.join("="));
+    if (
+      key === name
+    ) {
+      return decodeURIComponent(
+        value.join("=")
+      );
     }
   }
 
   return null;
 }
 
-async function getCurrentUser(request, env) {
-  const token = getCookie(request, "ps_session");
+async function getCurrentUser(
+  request,
+  env
+) {
+  const token =
+    getCookie(
+      request,
+      "ps_session"
+    );
 
   if (!token) {
     return null;
   }
+
+  const now =
+    Math.floor(
+      Date.now() / 1000
+    );
 
   return await env.DB.prepare(`
     SELECT
@@ -35,16 +61,21 @@ async function getCurrentUser(request, env) {
       users.username,
       users.server,
       users.role
+
     FROM sessions
+
     JOIN users
-      ON users.id = sessions.user_id
+      ON users.id =
+        sessions.user_id
+
     WHERE sessions.id = ?
       AND sessions.expires_at > ?
+
     LIMIT 1
   `)
     .bind(
       token,
-      Math.floor(Date.now() / 1000)
+      now
     )
     .first();
 }
@@ -52,50 +83,61 @@ async function getCurrentUser(request, env) {
 function isAdmin(user) {
   return Boolean(
     user &&
-    user.role === "admin"
+    user.role ===
+      "admin"
   );
 }
 
-function safeParseDetails(value) {
+function isModerator(user) {
+  return Boolean(
+    user &&
+    user.role ===
+      "moderator"
+  );
+}
+
+function canModerate(user) {
+  return Boolean(
+    user &&
+    (
+      isAdmin(user) ||
+      isModerator(user)
+    )
+  );
+}
+
+function safeParseDetails(
+  value
+) {
   if (!value) {
     return null;
   }
 
-  if (typeof value !== "string") {
+  if (
+    typeof value !==
+    "string"
+  ) {
     return value;
   }
 
   try {
-    return JSON.parse(value);
+    return JSON.parse(
+      value
+    );
+
   } catch {
     return value;
   }
 }
 
-/*
- * =====================================================
- * GET
- * =====================================================
- *
- * Moderationsprotokoll laden.
- *
- * Ausschließlich für Administratoren.
- *
- * Unterstützte Filter:
- *
- * /api/chat/modlog
- *
- * /api/chat/modlog?limit=100
- *
- * /api/chat/modlog?action=ban
- *
- * /api/chat/modlog?user_id=123
- *
- * Filter können kombiniert werden.
- */
-export async function onRequestGet(context) {
+export async function onRequestGet(
+  context
+) {
   try {
-    const { request, env } = context;
+    const {
+      request,
+      env
+    } = context;
 
     const user =
       await getCurrentUser(
@@ -106,100 +148,98 @@ export async function onRequestGet(context) {
     if (!user) {
       return json({
         ok: false,
+
         error:
           "Du musst eingeloggt sein."
       }, 401);
     }
 
-    /*
-     * Nur role=admin darf das Moderationsprotokoll
-     * einsehen.
-     */
-    if (!isAdmin(user)) {
+    if (
+      !canModerate(
+        user
+      )
+    ) {
       return json({
         ok: false,
+
         error:
-          "Nur der Administrator darf das Moderationsprotokoll einsehen."
+          "Nur Administratoren und Moderatoren dürfen das Moderationsprotokoll einsehen."
       }, 403);
     }
 
     const url =
-      new URL(request.url);
-
-    /*
-     * =============================================
-     * LIMIT
-     * =============================================
-     */
+      new URL(
+        request.url
+      );
 
     const requestedLimit =
       Number(
-        url.searchParams.get("limit") ||
+        url.searchParams.get(
+          "limit"
+        ) ||
         100
       );
 
     const limit =
-      Number.isFinite(requestedLimit)
+      Number.isFinite(
+        requestedLimit
+      )
         ? Math.max(
             1,
             Math.min(
-              Math.floor(requestedLimit),
+              Math.floor(
+                requestedLimit
+              ),
               250
             )
           )
         : 100;
 
-    /*
-     * =============================================
-     * ACTION-FILTER
-     * =============================================
-     */
-
     const actionRaw =
-      url.searchParams.get("action");
+      url.searchParams.get(
+        "action"
+      );
 
     const action =
-      typeof actionRaw === "string"
+      typeof actionRaw ===
+        "string"
         ? actionRaw.trim()
         : "";
 
-    /*
-     * =============================================
-     * USER-FILTER
-     * =============================================
-     */
-
     const userIdRaw =
-      url.searchParams.get("user_id");
+      url.searchParams.get(
+        "user_id"
+      );
 
-    let targetUserId = null;
+    let targetUserId =
+      null;
 
     if (
       userIdRaw !== null &&
       userIdRaw !== ""
     ) {
       const parsed =
-        Number(userIdRaw);
+        Number(
+          userIdRaw
+        );
 
       if (
-        !Number.isInteger(parsed) ||
+        !Number.isInteger(
+          parsed
+        ) ||
         parsed <= 0
       ) {
         return json({
           ok: false,
+
           error:
             "Ungültige Spieler-ID."
         }, 400);
       }
 
-      targetUserId = parsed;
+      targetUserId =
+        parsed;
     }
-
-    /*
-     * =============================================
-     * SQL dynamisch zusammensetzen
-     * =============================================
-     */
 
     let query = `
       SELECT
@@ -231,7 +271,8 @@ export async function onRequestGet(context) {
       FROM chat_moderation_log log
 
       JOIN users admin
-        ON admin.id = log.admin_id
+        ON admin.id =
+          log.admin_id
 
       LEFT JOIN users target
         ON target.id =
@@ -242,20 +283,50 @@ export async function onRequestGet(context) {
 
     const bindings = [];
 
-    if (action) {
+    if (
+      action
+    ) {
       query += `
         AND log.action = ?
       `;
 
-      bindings.push(action);
+      bindings.push(
+        action
+      );
     }
 
-    if (targetUserId !== null) {
+    if (
+      targetUserId !==
+      null
+    ) {
       query += `
         AND log.target_user_id = ?
       `;
 
-      bindings.push(targetUserId);
+      bindings.push(
+        targetUserId
+      );
+    }
+
+    if (
+      isModerator(
+        user
+      )
+    ) {
+      query += `
+        AND (
+          target.role IS NULL
+          OR target.role = 'user'
+        )
+      `;
+
+    } else {
+      query += `
+        AND (
+          target.role IS NULL
+          OR target.role != 'admin'
+        )
+      `;
     }
 
     query += `
@@ -266,22 +337,25 @@ export async function onRequestGet(context) {
       LIMIT ?
     `;
 
-    bindings.push(limit);
+    bindings.push(
+      limit
+    );
 
     const result =
       await env.DB
-        .prepare(query)
-        .bind(...bindings)
+        .prepare(
+          query
+        )
+        .bind(
+          ...bindings
+        )
         .all();
 
-    /*
-     * =============================================
-     * RESPONSE
-     * =============================================
-     */
-
     const entries =
-      (result.results || []).map(
+      (
+        result.results ||
+        []
+      ).map(
         entry => ({
           id:
             entry.id,
@@ -307,7 +381,11 @@ export async function onRequestGet(context) {
 
             is_admin:
               entry.admin_role ===
-              "admin"
+              "admin",
+
+            is_moderator:
+              entry.admin_role ===
+              "moderator"
           },
 
           target:
@@ -327,9 +405,17 @@ export async function onRequestGet(context) {
 
                   is_admin:
                     entry.target_role ===
-                    "admin"
+                    "admin",
+
+                  is_moderator:
+                    entry.target_role ===
+                    "moderator"
                 }
               : null,
+
+          target_username:
+            entry.target_username ||
+            null,
 
           details:
             safeParseDetails(
@@ -355,12 +441,20 @@ export async function onRequestGet(context) {
           user.role,
 
         is_admin:
-          true
+          isAdmin(
+            user
+          ),
+
+        is_moderator:
+          isModerator(
+            user
+          )
       },
 
       filters: {
         action:
-          action || null,
+          action ||
+          null,
 
         user_id:
           targetUserId,
@@ -382,27 +476,17 @@ export async function onRequestGet(context) {
 
     return json({
       ok: false,
+
       error:
         "Das Moderationsprotokoll konnte nicht geladen werden."
     }, 500);
   }
 }
 
-/*
- * =====================================================
- * ALLE ANDEREN METHODEN SPERREN
- * =====================================================
- *
- * Das Moderationsprotokoll wird ausschließlich von
- * den jeweiligen Moderations-Endpunkten geschrieben.
- *
- * Es darf deshalb nicht direkt über diese API
- * manipuliert werden.
- */
-
 export async function onRequestPost() {
   return json({
     ok: false,
+
     error:
       "Das Moderationsprotokoll kann nicht direkt erstellt werden."
   }, 405);
@@ -411,6 +495,7 @@ export async function onRequestPost() {
 export async function onRequestPut() {
   return json({
     ok: false,
+
     error:
       "Das Moderationsprotokoll kann nicht direkt bearbeitet werden."
   }, 405);
@@ -419,6 +504,7 @@ export async function onRequestPut() {
 export async function onRequestDelete() {
   return json({
     ok: false,
+
     error:
       "Das Moderationsprotokoll kann nicht direkt gelöscht werden."
   }, 405);
