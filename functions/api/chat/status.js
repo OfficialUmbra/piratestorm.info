@@ -203,37 +203,39 @@ async function getPendingKick(
     .first();
 }
 
+async function getPendingWarning(env, userId) {
+  return await env.DB.prepare(`
+    SELECT
+      w.id,
+      w.user_id,
+      w.warned_by,
+      w.reason,
+      w.created_at,
+      w.acknowledged_at,
+      issuer.username AS warned_by_username
+
+    FROM chat_warnings w
+
+    LEFT JOIN users issuer
+      ON issuer.id = w.warned_by
+
+    WHERE w.user_id = ?
+      AND w.acknowledged_at IS NULL
+
+    ORDER BY
+      w.created_at DESC,
+      w.id DESC
+
+    LIMIT 1
+  `)
+    .bind(userId)
+    .first();
+}
+
 /*
  * =====================================================
  * GET
  * =====================================================
- *
- * Wird später von V24 regelmäßig abgefragt.
- *
- * Beispiel Bann:
- *
- * {
- *   "ok": true,
- *   "banned": true,
- *   "ban": {
- *      "reason": "Spam",
- *      "expires_at": ...,
- *      "remaining_seconds": 583
- *   }
- * }
- *
- * Beispiel Kick:
- *
- * {
- *   "ok": true,
- *   "kicked": true,
- *   "kick": {...}
- * }
- *
- * ADMIN:
- *
- * Admins sind vollständig immun gegen Chat-Banns
- * und Chat-Kicks.
  */
 export async function onRequestGet(context) {
   try {
@@ -300,6 +302,12 @@ export async function onRequestGet(context) {
           false,
 
         kick:
+          null,
+
+        warned:
+          false,
+
+        warning:
           null
       });
     }
@@ -324,7 +332,14 @@ export async function onRequestGet(context) {
         user.id
       );
 
-    let banData = null;
+    const warning =
+      await getPendingWarning(
+        env,
+        user.id
+      );
+
+    let banData =
+      null;
 
     if (ban) {
       const permanent =
@@ -370,7 +385,8 @@ export async function onRequestGet(context) {
       };
     }
 
-    let kickData = null;
+    let kickData =
+      null;
 
     if (kick) {
       kickData = {
@@ -394,6 +410,30 @@ export async function onRequestGet(context) {
       };
     }
 
+    const warningData =
+      warning
+        ? {
+            id:
+              warning.id,
+
+            reason:
+              warning.reason ||
+              null,
+
+            created_at:
+              warning.created_at,
+
+            warned_by: {
+              id:
+                warning.warned_by,
+
+              username:
+                warning.warned_by_username ||
+                null
+            }
+          }
+        : null;
+
     return json({
       ok: true,
 
@@ -414,7 +454,11 @@ export async function onRequestGet(context) {
           user.role,
 
         is_admin:
-          false
+          false,
+
+        is_moderator:
+          user.role ===
+          "moderator"
       },
 
       banned:
@@ -427,7 +471,13 @@ export async function onRequestGet(context) {
         Boolean(kick),
 
       kick:
-        kickData
+        kickData,
+
+      warned:
+        Boolean(warning),
+
+      warning:
+        warningData
     });
 
   } catch (error) {
@@ -449,19 +499,10 @@ export async function onRequestGet(context) {
  * POST
  * =====================================================
  *
- * Aktuell:
+ * Unterstützte Aktionen:
  *
  * acknowledge_kick
- *
- * Nachdem V24 dem Spieler das Kick-Popup angezeigt
- * hat, bestätigt das Frontend den Kick.
- *
- * Beispiel:
- *
- * {
- *   "action": "acknowledge_kick",
- *   "kick_id": 12
- * }
+ * acknowledge_warning
  */
 export async function onRequestPost(context) {
   try {
@@ -485,7 +526,8 @@ export async function onRequestPost(context) {
     }
 
     /*
-     * Admins können nicht wirksam gekickt werden.
+     * Admins können weder wirksam gekickt
+     * noch verwarnt werden.
      */
     if (isAdmin(user)) {
       return json({
@@ -495,7 +537,7 @@ export async function onRequestPost(context) {
           true,
 
         message:
-          "Administratoren sind von Chat-Kicks ausgenommen."
+          "Administratoren sind von Chat-Kicks und Verwarnungen ausgenommen."
       });
     }
 
@@ -522,7 +564,9 @@ export async function onRequestPost(context) {
 
     if (
       action !==
-      "acknowledge_kick"
+        "acknowledge_kick" &&
+      action !==
+        "acknowledge_warning"
     ) {
       return json({
         ok: false,
@@ -531,13 +575,131 @@ export async function onRequestPost(context) {
       }, 400);
     }
 
+    /*
+     * =================================================
+     * VERWARNUNG BESTÄTIGEN
+     * =================================================
+     */
+    if (
+      action ===
+      "acknowledge_warning"
+    ) {
+      const warningId =
+        Number(
+          body.warning_id
+        );
+
+      if (
+        !Number.isInteger(
+          warningId
+        ) ||
+        warningId <= 0
+      ) {
+        return json({
+          ok: false,
+          error:
+            "Ungültige Verwarnungs-ID."
+        }, 400);
+      }
+
+      const warning =
+        await env.DB.prepare(`
+          SELECT
+            id,
+            user_id,
+            acknowledged_at
+
+          FROM chat_warnings
+
+          WHERE id = ?
+            AND user_id = ?
+
+          LIMIT 1
+        `)
+          .bind(
+            warningId,
+            user.id
+          )
+          .first();
+
+      if (!warning) {
+        return json({
+          ok: false,
+          error:
+            "Verwarnung wurde nicht gefunden."
+        }, 404);
+      }
+
+      /*
+       * Bereits bestätigt:
+       * Endpoint bleibt idempotent.
+       */
+      if (
+        warning.acknowledged_at !==
+          null &&
+        warning.acknowledged_at !==
+          undefined
+      ) {
+        return json({
+          ok: true,
+
+          warning_id:
+            warning.id,
+
+          already_acknowledged:
+            true
+        });
+      }
+
+      const acknowledgedAt =
+        Math.floor(
+          Date.now() / 1000
+        );
+
+      await env.DB.prepare(`
+        UPDATE chat_warnings
+
+        SET acknowledged_at = ?
+
+        WHERE id = ?
+          AND user_id = ?
+          AND acknowledged_at IS NULL
+      `)
+        .bind(
+          acknowledgedAt,
+          warning.id,
+          user.id
+        )
+        .run();
+
+      return json({
+        ok: true,
+
+        warning_id:
+          warning.id,
+
+        already_acknowledged:
+          false,
+
+        acknowledged_at:
+          acknowledgedAt
+      });
+    }
+
+    /*
+     * =================================================
+     * KICK BESTÄTIGEN
+     * =================================================
+     */
     const kickId =
       Number(
         body.kick_id
       );
 
     if (
-      !Number.isInteger(kickId) ||
+      !Number.isInteger(
+        kickId
+      ) ||
       kickId <= 0
     ) {
       return json({
@@ -663,7 +825,7 @@ export async function onRequestPost(context) {
     return json({
       ok: false,
       error:
-        "Der Kick konnte nicht bestätigt werden."
+        "Der Chat-Status konnte nicht aktualisiert werden."
     }, 500);
   }
 }
