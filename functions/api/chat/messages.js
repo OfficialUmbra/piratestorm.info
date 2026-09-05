@@ -49,7 +49,7 @@ async function getCurrentUser(request, env) {
     FROM sessions
     JOIN users
       ON users.id = sessions.user_id
-    WHERE sessions.token = ?
+    WHERE sessions.id = ?
       AND sessions.expires_at > ?
     LIMIT 1
   `)
@@ -112,12 +112,7 @@ async function cleanExpiredBans(env, userId) {
  * AKTIVEN CHAT-BAN PRÜFEN
  * =====================================================
  *
- * WICHTIG:
  * Admin-Accounts sind grundsätzlich immun.
- *
- * Selbst wenn durch alte Daten versehentlich ein
- * chat_bans-Eintrag für einen Admin existiert,
- * wird dieser hier niemals angewendet.
  */
 async function getActiveBan(env, user) {
   if (!user || isAdmin(user)) {
@@ -179,8 +174,7 @@ function validateRoom(
   }
 
   /*
-   * Admin darf jeden existierenden
-   * Serverchat betreten.
+   * Admin darf jeden existierenden Serverchat betreten.
    */
   if (isAdmin(user)) {
     const server =
@@ -217,8 +211,6 @@ function validateRoom(
   /*
    * Normale Nutzer werden IMMER auf ihren
    * registrierten Server gezwungen.
-   *
-   * Manipulierte URL-/Body-Werte werden ignoriert.
    */
   return {
     ok: true,
@@ -242,17 +234,6 @@ function normalizeMessage(value) {
  * =====================================================
  * WORTFILTER
  * =====================================================
- *
- * Das ist weiterhin nur unsere erste Basis.
- *
- * original_message:
- * exakter eingegebener Text
- *
- * message:
- * öffentlich sichtbare gefilterte Version
- *
- * Später verbessern wir den Filter zusätzlich gegen
- * Schreibweisen wie Sonderzeichen/Leerzeichen usw.
  */
 function censorMessage(text) {
   const blockedWords = [
@@ -301,9 +282,6 @@ async function checkFloodProtection(
   const now =
     Math.floor(Date.now() / 1000);
 
-  /*
-   * Maximal 5 Nachrichten in 10 Sekunden.
-   */
   const result =
     await env.DB.prepare(`
       SELECT COUNT(*) AS amount
@@ -328,10 +306,6 @@ async function checkFloodProtection(
     };
   }
 
-  /*
-   * Direktes mehrfaches Senden derselben
-   * Nachricht verhindern.
-   */
   const lastMessage =
     await env.DB.prepare(`
       SELECT original_message
@@ -411,11 +385,6 @@ export async function onRequestGet(context) {
       }, 401);
     }
 
-    /*
-     * Für Admins werden zwar eventuell vorhandene
-     * alte Bans bereinigt, sie werden aber niemals
-     * angewendet.
-     */
     await cleanExpiredBans(
       env,
       user.id
@@ -480,9 +449,7 @@ export async function onRequestGet(context) {
     let bindings;
 
     /*
-     * =================================================
      * GLOBALCHAT
-     * =================================================
      */
     if (room.roomType === "global") {
       query = `
@@ -521,7 +488,6 @@ export async function onRequestGet(context) {
 
           AND (
             u.role = 'admin'
-
             OR NOT EXISTS (
               SELECT 1
               FROM chat_blocks b
@@ -544,9 +510,7 @@ export async function onRequestGet(context) {
     }
 
     /*
-     * =================================================
      * SERVERCHAT
-     * =================================================
      */
     else {
       query = `
@@ -660,14 +624,6 @@ export async function onRequestGet(context) {
                 : null
           },
 
-          /*
-           * Aktuell weiterhin die gefilterte
-           * sichtbare Nachricht.
-           *
-           * original_message wird bewusst noch
-           * nicht pauschal an alle Clients
-           * ausgeliefert.
-           */
           message:
             message.message,
 
@@ -739,13 +695,6 @@ export async function onRequestGet(context) {
           )
       },
 
-      /*
-       * GET darf weiterhin geladen werden, damit
-       * ein gebannter Nutzer seine Ban-Information
-       * erhalten kann.
-       *
-       * Senden bleibt unten vollständig gesperrt.
-       */
       banned:
         Boolean(ban),
 
@@ -813,10 +762,6 @@ export async function onRequestPost(context) {
       user.id
     );
 
-    /*
-     * Admin ist hier durch getActiveBan()
-     * automatisch immun.
-     */
     const ban =
       await getActiveBan(
         env,
@@ -930,9 +875,9 @@ export async function onRequestPost(context) {
       flood.lastMessage
         .trim()
         .toLowerCase() ===
-        originalMessage
-          .trim()
-          .toLowerCase()
+      originalMessage
+        .trim()
+        .toLowerCase()
     ) {
       return json({
         ok: false,
@@ -942,9 +887,7 @@ export async function onRequestPost(context) {
     }
 
     /*
-     * =================================================
      * REPLY
-     * =================================================
      */
     let replyTo = null;
 
@@ -1010,13 +953,6 @@ export async function onRequestPost(context) {
         }, 400);
       }
 
-      /*
-       * Wenn der Spieler den Autor der Zielnachricht
-       * blockiert hat, soll auch keine versteckte
-       * Nachricht als Reply-Ziel benutzt werden.
-       *
-       * Admin-Nachrichten sind davon ausgenommen.
-       */
       if (
         replyMessage.role !==
         "admin"
@@ -1166,9 +1102,6 @@ export async function onRequestPost(context) {
  * =====================================================
  *
  * Nur Admin darf öffentliche Chatnachrichten löschen.
- *
- * Normale Spieler können ihre eigenen Nachrichten
- * weder löschen noch bearbeiten.
  */
 export async function onRequestDelete(context) {
   try {
@@ -1308,7 +1241,6 @@ export async function onRequestDelete(context) {
  * =====================================================
  *
  * Chatnachrichten können nicht bearbeitet werden.
- *
  * Das gilt auch für Admins.
  */
 export async function onRequestPut() {
