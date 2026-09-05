@@ -48,7 +48,7 @@ async function getCurrentUser(request, env) {
       users.role
     FROM sessions
     JOIN users ON users.id = sessions.user_id
-    WHERE sessions.token = ?
+    WHERE sessions.id = ?
       AND sessions.expires_at > ?
     LIMIT 1
   `)
@@ -91,7 +91,6 @@ async function getChatMessage(env, messageId) {
       u.username,
       u.server AS user_server,
       u.role
-
     FROM chat_messages m
 
     JOIN users u
@@ -238,6 +237,7 @@ async function getContextMessages(env, message) {
       message.created_at,
       message.id
     ];
+
   } else {
     beforeQuery = `
       SELECT
@@ -714,6 +714,7 @@ export async function onRequestGet(context) {
           AS reported_role,
 
         m.room_type,
+
         m.server
           AS room_server,
 
@@ -759,6 +760,7 @@ export async function onRequestGet(context) {
       `;
 
       bindings = [limit];
+
     } else {
       query = `
         ${baseQuery}
