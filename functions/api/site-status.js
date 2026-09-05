@@ -85,6 +85,7 @@ async function getCurrentUser(request, env) {
       ON users.id = sessions.user_id
     WHERE sessions.id = ?
       AND sessions.expires_at > ?
+      AND LOWER(TRIM(users.username)) NOT LIKE 'deleteduser_%'
       AND LOWER(TRIM(users.username)) NOT LIKE 'deleted user%'
       AND LOWER(TRIM(users.username)) NOT LIKE 'deleted_user%'
       AND LOWER(TRIM(users.username)) NOT LIKE 'deleted-user%'
@@ -113,7 +114,8 @@ async function getRegisteredCount(env) {
   const row = await env.DB.prepare(`
     SELECT COUNT(*) AS total
     FROM users
-    WHERE LOWER(TRIM(username)) NOT LIKE 'deleted user%'
+    WHERE LOWER(TRIM(username)) NOT LIKE 'deleteduser_%'
+      AND LOWER(TRIM(username)) NOT LIKE 'deleted user%'
       AND LOWER(TRIM(username)) NOT LIKE 'deleted_user%'
       AND LOWER(TRIM(username)) NOT LIKE 'deleted-user%'
   `).first();
@@ -126,15 +128,6 @@ async function getPresenceCounts(env) {
     Math.floor(Date.now() / 1000) -
     ONLINE_TIMEOUT_SECONDS;
 
-  /*
-    Mitglieder zählen wir anhand ihrer user_id eindeutig.
-
-    Gäste zählen wir anhand der nur für die aktuelle geöffnete
-    Webseite erzeugten temporären visitor_id.
-
-    Zusätzlich werden Presence-Einträge von bereits gelöschten
-    Accounts nicht mehr als eingeloggte Mitglieder gezählt.
-  */
   const row = await env.DB.prepare(`
     SELECT
       COUNT(
@@ -156,6 +149,7 @@ async function getPresenceCounts(env) {
 
     LEFT JOIN users
       ON users.id = site_presence.user_id
+      AND LOWER(TRIM(users.username)) NOT LIKE 'deleteduser_%'
       AND LOWER(TRIM(users.username)) NOT LIKE 'deleted user%'
       AND LOWER(TRIM(users.username)) NOT LIKE 'deleted_user%'
       AND LOWER(TRIM(users.username)) NOT LIKE 'deleted-user%'
@@ -241,7 +235,7 @@ export async function onRequestGet(context) {
 /*
   POST
   ----
-  Heartbeat für die aktuell geöffnete Webseite.
+  Heartbeat für die aktuelle geöffnete Webseite.
 
   Body:
 
@@ -303,17 +297,6 @@ export async function onRequestPost(context) {
     const now =
       Math.floor(Date.now() / 1000);
 
-    /*
-      Falls der eingeloggte Nutzer vorher als Gast mit derselben
-      temporären Page-ID vorhanden war, wird der Eintrag einfach
-      zum Member-Eintrag aktualisiert.
-
-      Falls sich ein Nutzer ausloggt, wird derselbe Eintrag beim
-      nächsten Heartbeat wieder zu einem Gast.
-
-      Ein gelöschter Account wird durch getCurrentUser()
-      nicht mehr als eingeloggter Nutzer erkannt.
-    */
     await env.DB.prepare(`
       INSERT INTO site_presence (
         visitor_id,
@@ -340,15 +323,6 @@ export async function onRequestPost(context) {
         now
       )
       .run();
-
-    /*
-      Ein eingeloggter Nutzer kann theoretisch mehrere Tabs offen
-      haben.
-
-      Das ist okay:
-      Bei der Anzeige zählen wir Mitglieder mit DISTINCT user_id
-      trotzdem nur einmal.
-    */
 
     await cleanupOldPresence(env);
 
@@ -409,11 +383,9 @@ export async function onRequestPost(context) {
     "visitor_id": "page_xxxxx"
   }
 
-  Das Frontend versucht diesen Request beim Verlassen der Seite
-  mit fetch(..., { keepalive: true }) zu senden.
-
-  Falls der Browser ihn nicht mehr abschicken kann, verschwindet
-  der Eintrag automatisch spätestens nach fünf Minuten.
+  Falls der Browser den Request beim Schließen der Seite
+  nicht mehr abschicken kann, verschwindet der Eintrag
+  automatisch spätestens nach fünf Minuten.
 */
 export async function onRequestDelete(context) {
   const { request, env } = context;
