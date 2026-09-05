@@ -168,6 +168,11 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 @media(max-width:900px){.admin-user-head{display:none}.admin-user-row{grid-template-columns:1fr}.admin-user-row>span,.admin-user-row>b{display:block}.admin-user-actions{margin-top:3px}}
 </style>
 
+
+<style>
+/* V26.3 – Footer child-safe translation */
+#footerCopy{max-width:1100px;margin:0 auto;line-height:1.55}
+</style>
 </head>
 <body>
 <header>
@@ -429,7 +434,8 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
   <span>·</span>
   <button data-legal-jump="contact" data-footer-legal="contact">Kontakt</button>
 </div>
-Unofficial community project. Pirate Storm and related trademarks/assets belong to Bigpoint. Die Live-Besucherzahlen nutzen /api/site-status und erfassen Gäste sowie eingeloggte Mitglieder anonymisiert per Presence-Heartbeat. Live values are based on in-game screenshots from August 2026; historical references are marked separately.</footer>
+<div id="footerCopy">Unofficial community project. Pirate Storm and related trademarks/assets belong to Bigpoint. Die Live-Besucherzahlen nutzen /api/site-status und erfassen Gäste sowie eingeloggte Mitglieder anonymisiert per Presence-Heartbeat. Live values are based on in-game screenshots from August 2026; historical references are marked separately.</div>
+</footer>
 
 <script>
 const t={
@@ -1304,7 +1310,7 @@ function translate(){
   heroText.textContent=t[lang].heroText;
   brandSub.textContent=lang==='de'?'Inoffizielles Community-Projekt':'Unofficial community project';
   search.placeholder=lang==='de'?'Schiffe, Decks, Sets, Kanonen, Items … durchsuchen':'Search ships, decks, sets, cannons, items …';
-  footerText.textContent=lang==='de'?'Inoffizielles Community-Projekt. Pirate Storm sowie zugehörige Marken und Inhalte gehören Bigpoint. Live-Werte basieren auf Ingame-Screenshots vom August 2026; historische Referenzen sind separat markiert.':'Unofficial community project. Pirate Storm and related trademarks/content belong to Bigpoint. Live values are based on in-game screenshots from August 2026; historical references are marked separately.';
+  const footerCopy=document.getElementById('footerCopy');if(footerCopy)footerCopy.textContent=lang==='de'?'Inoffizielles Community-Projekt. Pirate Storm sowie zugehörige Marken und Inhalte gehören Bigpoint. Live-Werte basieren auf Ingame-Screenshots vom August 2026; historische Referenzen sind separat markiert.':'Unofficial community project. Pirate Storm and related trademarks/content belong to Bigpoint. Live values are based on in-game screenshots from August 2026; historical references are marked separately.';
   if(document.getElementById('forumSub')) forumSub.textContent=lang==='de'?'PirateStorm Community – echte Beiträge, Kommentare und Likes für alle Spieler.':'PirateStorm community – shared posts, comments and likes for all players.';
   if(document.getElementById('loginTitle')) loginTitle.textContent=lang==='de'?'Anmelden / Registrieren':'Sign in / Register';
   if(document.getElementById('forumRegister')) forumRegister.textContent=lang==='de'?'Registrieren':'Register';
@@ -1562,9 +1568,18 @@ updateOnline(); setInterval(updateOnline,30000);
         const r=await fetch(`/api/admin/users?limit=200&sort=newest&q=${encodeURIComponent(q)}`,{cache:"no-store"});
         const d=await r.json();
         if(!r.ok||!d.ok)throw new Error(d.error||"Fehler");
-        list.innerHTML=`<div class="forum-note">${d.pagination?.total ?? d.users.length} registrierte Accounts</div>
+        const allUsers=Array.isArray(d.users)?d.users:[];
+        const isDeletedUser=u=>{
+          const name=String(u?.username||"").trim().toLowerCase();
+          return Boolean(u?.deleted_at)||name==="deleted user"||name.startsWith("deleted user ")||name.startsWith("deleted_user")||name.startsWith("deleted-user");
+        };
+        const visibleUsers=allUsers.filter(u=>!isDeletedUser(u));
+        const apiTotal=Number(d.pagination?.total);
+        const hiddenOnPage=allUsers.length-visibleUsers.length;
+        const visibleTotal=Number.isFinite(apiTotal)?Math.max(0,apiTotal-hiddenOnPage):visibleUsers.length;
+        list.innerHTML=`<div class="forum-note">${visibleTotal} registrierte Accounts</div>
           <div class="admin-user-head"><span>Spielername</span><span>Server</span><span>Registriert</span><span>Forum-Status</span><span>Aktionen</span></div>`+
-          d.users.map(u=>{
+          visibleUsers.map(u=>{
             const protectedUser=u.protected||u.role==="admin";
             const actions=protectedUser
               ? `<span class="forum-meta">Geschützt</span>`
@@ -1632,6 +1647,7 @@ updateOnline(); setInterval(updateOnline,30000);
           if(!r.ok||!d.ok)throw new Error(d.error||"Account konnte nicht gelöscht werden.");
           alert(`${name} wurde gelöscht und anonymisiert.`);
           await load($v26("v26UserSearch")?.value||"");
+          await v26SiteHeartbeat();
         }
       }catch(err){
         alert(err.message);
