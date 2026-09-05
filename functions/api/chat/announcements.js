@@ -9,60 +9,55 @@ function json(data, status = 200) {
 }
 
 function getCookie(request, name) {
-  const cookie =
-    request.headers.get("Cookie") || "";
+  const cookie = request.headers.get("Cookie") || "";
 
   for (const part of cookie.split(";")) {
-    const [key, ...value] =
-      part.trim().split("=");
+    const [key, ...value] = part.trim().split("=");
 
     if (key === name) {
-      return decodeURIComponent(
-        value.join("=")
-      );
+      return decodeURIComponent(value.join("="));
     }
   }
 
   return null;
 }
 
-async function getCurrentUser(
-  request,
-  env
-) {
-  const token =
+async function getCurrentUser(request, env) {
+  const sessionId =
     getCookie(
       request,
       "ps_session"
     );
 
-  if (!token) {
+  if (!sessionId) {
     return null;
   }
 
+  const now =
+    Math.floor(
+      Date.now() / 1000
+    );
+
   return await env.DB.prepare(`
     SELECT
-      users.id,
-      users.username,
-      users.server,
-      users.role
+      u.id,
+      u.username,
+      u.server,
+      u.role
 
-    FROM sessions
+    FROM sessions s
 
-    JOIN users
-      ON users.id =
-        sessions.user_id
+    JOIN users u
+      ON u.id = s.user_id
 
-    WHERE sessions.id = ?
-      AND sessions.expires_at > ?
+    WHERE s.id = ?
+      AND s.expires_at > ?
 
     LIMIT 1
   `)
     .bind(
-      token,
-      Math.floor(
-        Date.now() / 1000
-      )
+      sessionId,
+      now
     )
     .first();
 }
@@ -74,50 +69,59 @@ function isAdmin(user) {
   );
 }
 
-function normalizeMessage(value) {
+function cleanText(value) {
+  return typeof value === "string"
+    ? value.trim()
+    : "";
+}
+
+function toPositiveInt(value) {
+  const number =
+    Number(value);
+
   if (
-    typeof value !== "string"
+    !Number.isInteger(number) ||
+    number <= 0
   ) {
-    return "";
+    return null;
   }
 
-  return value
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
-    .trim();
+  return number;
 }
 
 async function addModerationLog(
   env,
   adminId,
   action,
-  details
+  details = null
 ) {
-  const now =
-    Math.floor(
-      Date.now() / 1000
+  try {
+    await env.DB.prepare(`
+      INSERT INTO chat_moderation_log (
+        admin_id,
+        target_user_id,
+        action,
+        details,
+        created_at
+      )
+
+      VALUES (?, NULL, ?, ?, ?)
+    `)
+      .bind(
+        adminId,
+        action,
+        details
+          ? JSON.stringify(details)
+          : null,
+        Math.floor(Date.now() / 1000)
+      )
+      .run();
+  } catch (error) {
+    console.error(
+      "Announcement moderation log error:",
+      error
     );
-
-  await env.DB.prepare(`
-    INSERT INTO chat_moderation_log (
-      admin_id,
-      target_user_id,
-      action,
-      details,
-      created_at
-    )
-
-    VALUES (?, NULL, ?, ?, ?)
-  `)
-    .bind(
-      adminId,
-      action,
-      JSON.stringify(
-        details || {}
-      ),
-      now
-    )
-    .run();
+  }
 }
 
 /*
@@ -125,21 +129,22 @@ async function addModerationLog(
  * GET
  * =====================================================
  *
- * Lädt die aktuell aktive Ankündigung.
+ * Normal:
  *
- * Jeder eingeloggte Spieler darf die aktive
- * Ankündigung sehen.
+ * GET /api/chat/announcements
  *
- * Optional für Admin:
+ * -> aktuelle aktive Ankündigung
  *
- * /api/chat/announcements?all=1
  *
- * Dann werden auch ältere/inaktive
- * Ankündigungen geladen.
+ * Admin-Verlauf:
+ *
+ * GET /api/chat/announcements?all=1
+ *
+ * Optional:
+ *
+ * ?limit=50
  */
-export async function onRequestGet(
-  context
-) {
+export async function onRequestGet(context) {
   try {
     const {
       request,
@@ -161,59 +166,18 @@ export async function onRequestGet(
     }
 
     const url =
-      new URL(
-        request.url
-      );
+      new URL(request.url);
 
-    const showAll =
-      url.searchParams.get(
-        "all"
-      ) === "1";
+    const all =
+      url.searchParams.get("all") === "1";
 
     /*
-     * Nur Admin darf die komplette Historie
-     * sehen.
+     * =================================================
+     * AKTUELLE ANKÜNDIGUNG
+     * =================================================
      */
-    if (
-      showAll &&
-      !isAdmin(user)
-    ) {
-      return json({
-        ok: false,
-        error:
-          "Nur der Administrator darf alle Ankündigungen einsehen."
-      }, 403);
-    }
-
-    /*
-     * =============================================
-     * ADMIN-HISTORIE
-     * =============================================
-     */
-    if (showAll) {
-      const limitRaw =
-        Number(
-          url.searchParams.get(
-            "limit"
-          ) || 100
-        );
-
-      const limit =
-        Number.isFinite(
-          limitRaw
-        )
-          ? Math.max(
-              1,
-              Math.min(
-                Math.floor(
-                  limitRaw
-                ),
-                200
-              )
-            )
-          : 100;
-
-      const result =
+    if (!all) {
+      const announcement =
         await env.DB.prepare(`
           SELECT
             a.id,
@@ -223,108 +187,85 @@ export async function onRequestGet(
             a.created_at,
 
             u.username
-              AS admin_username,
-
-            u.server
-              AS admin_server,
-
-            u.role
-              AS admin_role
+              AS admin_username
 
           FROM chat_announcements a
 
-          JOIN users u
-            ON u.id =
-              a.admin_id
+          LEFT JOIN users u
+            ON u.id = a.admin_id
+
+          WHERE a.active = 1
 
           ORDER BY
             a.created_at DESC,
             a.id DESC
 
-          LIMIT ?
+          LIMIT 1
         `)
-          .bind(limit)
-          .all();
-
-      const announcements =
-        (
-          result.results ||
-          []
-        ).map(
-          announcement => ({
-            id:
-              announcement.id,
-
-            message:
-              announcement.message,
-
-            active:
-              Boolean(
-                announcement.active
-              ),
-
-            created_at:
-              announcement.created_at,
-
-            admin: {
-              id:
-                announcement.admin_id,
-
-              username:
-                announcement.admin_username,
-
-              server:
-                announcement.admin_server,
-
-              role:
-                announcement.admin_role,
-
-              is_admin:
-                announcement.admin_role ===
-                "admin"
-            }
-          })
-        );
+          .first();
 
       return json({
         ok: true,
 
-        current_user: {
-          id:
-            user.id,
+        announcement:
+          announcement
+            ? {
+                id:
+                  announcement.id,
 
-          username:
-            user.username,
+                admin_id:
+                  announcement.admin_id,
 
-          server:
-            user.server,
+                admin_username:
+                  announcement.admin_username || null,
 
-          role:
-            user.role,
+                message:
+                  announcement.message,
 
-          is_admin:
-            true
-        },
+                active:
+                  Boolean(announcement.active),
 
-        count:
-          announcements.length,
-
-        announcements
+                created_at:
+                  announcement.created_at
+              }
+            : null
       });
     }
 
     /*
-     * =============================================
-     * AKTUELLE ANKÜNDIGUNG
-     * =============================================
+     * =================================================
+     * VERLAUF
+     * =================================================
      *
-     * Es sollte normalerweise nur eine aktive
-     * Ankündigung geben.
-     *
-     * Sicherheitshalber nehmen wir immer die
-     * neueste aktive.
+     * Nur Admin.
      */
-    const announcement =
+    if (!isAdmin(user)) {
+      return json({
+        ok: false,
+        error:
+          "Nur Administratoren dürfen den Ankündigungsverlauf sehen."
+      }, 403);
+    }
+
+    let limit =
+      Number(
+        url.searchParams.get("limit") || 50
+      );
+
+    if (
+      !Number.isInteger(limit) ||
+      limit < 1
+    ) {
+      limit = 50;
+    }
+
+    limit =
+      Math.min(
+        limit,
+        200
+      );
+
+    const result =
       await env.DB.prepare(`
         SELECT
           a.id,
@@ -334,67 +275,52 @@ export async function onRequestGet(
           a.created_at,
 
           u.username
-            AS admin_username,
-
-          u.server
-            AS admin_server,
-
-          u.role
-            AS admin_role
+            AS admin_username
 
         FROM chat_announcements a
 
-        JOIN users u
-          ON u.id =
-            a.admin_id
-
-        WHERE a.active = 1
+        LEFT JOIN users u
+          ON u.id = a.admin_id
 
         ORDER BY
           a.created_at DESC,
           a.id DESC
 
-        LIMIT 1
+        LIMIT ?
       `)
-        .first();
+        .bind(limit)
+        .all();
+
+    const announcements =
+      (
+        result.results || []
+      ).map(row => ({
+        id:
+          row.id,
+
+        admin_id:
+          row.admin_id,
+
+        admin_username:
+          row.admin_username || null,
+
+        message:
+          row.message,
+
+        active:
+          Boolean(row.active),
+
+        created_at:
+          row.created_at
+      }));
 
     return json({
       ok: true,
 
-      announcement:
-        announcement
-          ? {
-              id:
-                announcement.id,
+      count:
+        announcements.length,
 
-              message:
-                announcement.message,
-
-              active:
-                true,
-
-              created_at:
-                announcement.created_at,
-
-              admin: {
-                id:
-                  announcement.admin_id,
-
-                username:
-                  announcement.admin_username,
-
-                server:
-                  announcement.admin_server,
-
-                role:
-                  announcement.admin_role,
-
-                is_admin:
-                  announcement.admin_role ===
-                  "admin"
-              }
-            }
-          : null
+      announcements
     });
 
   } catch (error) {
@@ -406,7 +332,7 @@ export async function onRequestGet(
     return json({
       ok: false,
       error:
-        "Die Ankündigung konnte nicht geladen werden."
+        "Die Ankündigungen konnten nicht geladen werden."
     }, 500);
   }
 }
@@ -416,33 +342,30 @@ export async function onRequestGet(
  * POST
  * =====================================================
  *
- * Nur Admin.
+ * Neue Ankündigung erstellen.
  *
- * Erstellt eine neue Ankündigung.
+ * Body:
  *
  * {
- *   "message": "Willkommen im Chat!"
+ *   "message": "Serverwartung um 20 Uhr."
  * }
  *
- * Vorherige aktive Ankündigungen werden automatisch
- * deaktiviert.
+ * Die vorherige aktive Ankündigung wird deaktiviert.
  */
-export async function onRequestPost(
-  context
-) {
+export async function onRequestPost(context) {
   try {
     const {
       request,
       env
     } = context;
 
-    const admin =
+    const user =
       await getCurrentUser(
         request,
         env
       );
 
-    if (!admin) {
+    if (!user) {
       return json({
         ok: false,
         error:
@@ -450,11 +373,11 @@ export async function onRequestPost(
       }, 401);
     }
 
-    if (!isAdmin(admin)) {
+    if (!isAdmin(user)) {
       return json({
         ok: false,
         error:
-          "Nur der Administrator darf Ankündigungen erstellen."
+          "Nur Administratoren dürfen Ankündigungen erstellen."
       }, 403);
     }
 
@@ -472,7 +395,7 @@ export async function onRequestPost(
     }
 
     const message =
-      normalizeMessage(
+      cleanText(
         body.message
       );
 
@@ -485,13 +408,12 @@ export async function onRequestPost(
     }
 
     if (
-      message.length >
-      500
+      message.length > 500
     ) {
       return json({
         ok: false,
         error:
-          "Die Ankündigung darf maximal 500 Zeichen enthalten."
+          "Die Ankündigung darf maximal 500 Zeichen lang sein."
       }, 400);
     }
 
@@ -501,7 +423,7 @@ export async function onRequestPost(
       );
 
     /*
-     * Vorhandene aktive Ankündigungen deaktivieren.
+     * Vorherige aktive Ankündigungen deaktivieren.
      */
     await env.DB.prepare(`
       UPDATE chat_announcements
@@ -512,10 +434,7 @@ export async function onRequestPost(
     `)
       .run();
 
-    /*
-     * Neue Ankündigung erstellen.
-     */
-    const result =
+    const created =
       await env.DB.prepare(`
         INSERT INTO chat_announcements (
           admin_id,
@@ -525,24 +444,31 @@ export async function onRequestPost(
         )
 
         VALUES (?, ?, 1, ?)
+
+        RETURNING id
       `)
         .bind(
-          admin.id,
+          user.id,
           message,
           now
         )
-        .run();
+        .first();
 
-    const announcementId =
-      result.meta.last_row_id;
+    if (!created?.id) {
+      return json({
+        ok: false,
+        error:
+          "Die Ankündigung konnte nicht erstellt werden."
+      }, 500);
+    }
 
     await addModerationLog(
       env,
-      admin.id,
+      user.id,
       "create_announcement",
       {
         announcement_id:
-          announcementId,
+          created.id,
 
         message
       }
@@ -553,7 +479,13 @@ export async function onRequestPost(
 
       announcement: {
         id:
-          announcementId,
+          created.id,
+
+        admin_id:
+          user.id,
+
+        admin_username:
+          user.username,
 
         message,
 
@@ -561,28 +493,8 @@ export async function onRequestPost(
           true,
 
         created_at:
-          now,
-
-        admin: {
-          id:
-            admin.id,
-
-          username:
-            admin.username,
-
-          server:
-            admin.server,
-
-          role:
-            admin.role,
-
-          is_admin:
-            true
-        }
-      },
-
-      message:
-        "Ankündigung wurde veröffentlicht."
+          now
+      }
     }, 201);
 
   } catch (error) {
@@ -594,7 +506,192 @@ export async function onRequestPost(
     return json({
       ok: false,
       error:
-        "Die Ankündigung konnte nicht veröffentlicht werden."
+        "Die Ankündigung konnte nicht erstellt werden."
+    }, 500);
+  }
+}
+
+/*
+ * =====================================================
+ * PUT
+ * =====================================================
+ *
+ * Bestehende Ankündigung bearbeiten.
+ *
+ * Body:
+ *
+ * {
+ *   "id": 12,
+ *   "message": "Neuer Text"
+ * }
+ *
+ * Die Aktivität bleibt dabei erhalten.
+ */
+export async function onRequestPut(context) {
+  try {
+    const {
+      request,
+      env
+    } = context;
+
+    const user =
+      await getCurrentUser(
+        request,
+        env
+      );
+
+    if (!user) {
+      return json({
+        ok: false,
+        error:
+          "Du musst eingeloggt sein."
+      }, 401);
+    }
+
+    if (!isAdmin(user)) {
+      return json({
+        ok: false,
+        error:
+          "Nur Administratoren dürfen Ankündigungen bearbeiten."
+      }, 403);
+    }
+
+    let body;
+
+    try {
+      body =
+        await request.json();
+    } catch {
+      return json({
+        ok: false,
+        error:
+          "Ungültige Anfrage."
+      }, 400);
+    }
+
+    const announcementId =
+      toPositiveInt(
+        body.id
+      );
+
+    if (!announcementId) {
+      return json({
+        ok: false,
+        error:
+          "Ungültige Ankündigungs-ID."
+      }, 400);
+    }
+
+    const message =
+      cleanText(
+        body.message
+      );
+
+    if (!message) {
+      return json({
+        ok: false,
+        error:
+          "Die Ankündigung darf nicht leer sein."
+      }, 400);
+    }
+
+    if (
+      message.length > 500
+    ) {
+      return json({
+        ok: false,
+        error:
+          "Die Ankündigung darf maximal 500 Zeichen lang sein."
+      }, 400);
+    }
+
+    const existing =
+      await env.DB.prepare(`
+        SELECT
+          id,
+          admin_id,
+          message,
+          active,
+          created_at
+
+        FROM chat_announcements
+
+        WHERE id = ?
+
+        LIMIT 1
+      `)
+        .bind(
+          announcementId
+        )
+        .first();
+
+    if (!existing) {
+      return json({
+        ok: false,
+        error:
+          "Ankündigung wurde nicht gefunden."
+      }, 404);
+    }
+
+    await env.DB.prepare(`
+      UPDATE chat_announcements
+
+      SET message = ?
+
+      WHERE id = ?
+    `)
+      .bind(
+        message,
+        announcementId
+      )
+      .run();
+
+    await addModerationLog(
+      env,
+      user.id,
+      "edit_announcement",
+      {
+        announcement_id:
+          announcementId,
+
+        old_message:
+          existing.message,
+
+        new_message:
+          message
+      }
+    );
+
+    return json({
+      ok: true,
+
+      announcement: {
+        id:
+          announcementId,
+
+        admin_id:
+          existing.admin_id,
+
+        message,
+
+        active:
+          Boolean(existing.active),
+
+        created_at:
+          existing.created_at
+      }
+    });
+
+  } catch (error) {
+    console.error(
+      "PUT /api/chat/announcements error:",
+      error
+    );
+
+    return json({
+      ok: false,
+      error:
+        "Die Ankündigung konnte nicht bearbeitet werden."
     }, 500);
   }
 }
@@ -604,33 +701,32 @@ export async function onRequestPost(
  * DELETE
  * =====================================================
  *
- * Nur Admin.
- *
- * Deaktiviert eine Ankündigung.
+ * Ankündigung deaktivieren.
  *
  * Möglich:
  *
- * DELETE /api/chat/announcements?id=5
+ * DELETE /api/chat/announcements?id=12
  *
- * Ohne ID wird die aktuell aktive Ankündigung
- * deaktiviert.
+ * oder ohne ID:
+ *
+ * DELETE /api/chat/announcements
+ *
+ * Dann wird die aktuell aktive Ankündigung deaktiviert.
  */
-export async function onRequestDelete(
-  context
-) {
+export async function onRequestDelete(context) {
   try {
     const {
       request,
       env
     } = context;
 
-    const admin =
+    const user =
       await getCurrentUser(
         request,
         env
       );
 
-    if (!admin) {
+    if (!user) {
       return json({
         ok: false,
         error:
@@ -638,50 +734,26 @@ export async function onRequestDelete(
       }, 401);
     }
 
-    if (!isAdmin(admin)) {
+    if (!isAdmin(user)) {
       return json({
         ok: false,
         error:
-          "Nur der Administrator darf Ankündigungen deaktivieren."
+          "Nur Administratoren dürfen Ankündigungen löschen."
       }, 403);
     }
 
     const url =
-      new URL(
-        request.url
+      new URL(request.url);
+
+    let announcementId =
+      toPositiveInt(
+        url.searchParams.get("id")
       );
 
-    const rawId =
-      url.searchParams.get(
-        "id"
-      );
+    let existing;
 
-    let announcement;
-
-    /*
-     * =============================================
-     * BESTIMMTE ANKÜNDIGUNG
-     * =============================================
-     */
-    if (
-      rawId !== null &&
-      rawId !== ""
-    ) {
-      const id =
-        Number(rawId);
-
-      if (
-        !Number.isInteger(id) ||
-        id <= 0
-      ) {
-        return json({
-          ok: false,
-          error:
-            "Ungültige Ankündigungs-ID."
-        }, 400);
-      }
-
-      announcement =
+    if (announcementId) {
+      existing =
         await env.DB.prepare(`
           SELECT
             id,
@@ -696,17 +768,12 @@ export async function onRequestDelete(
 
           LIMIT 1
         `)
-          .bind(id)
+          .bind(
+            announcementId
+          )
           .first();
-    }
-
-    /*
-     * =============================================
-     * AKTUELL AKTIVE ANKÜNDIGUNG
-     * =============================================
-     */
-    else {
-      announcement =
+    } else {
+      existing =
         await env.DB.prepare(`
           SELECT
             id,
@@ -726,9 +793,12 @@ export async function onRequestDelete(
           LIMIT 1
         `)
           .first();
+
+      announcementId =
+        existing?.id || null;
     }
 
-    if (!announcement) {
+    if (!existing) {
       return json({
         ok: false,
         error:
@@ -737,13 +807,17 @@ export async function onRequestDelete(
     }
 
     if (
-      !announcement.active
+      !existing.active
     ) {
       return json({
-        ok: false,
-        error:
-          "Diese Ankündigung ist bereits inaktiv."
-      }, 409);
+        ok: true,
+
+        already_inactive:
+          true,
+
+        announcement_id:
+          existing.id
+      });
     }
 
     await env.DB.prepare(`
@@ -752,38 +826,34 @@ export async function onRequestDelete(
       SET active = 0
 
       WHERE id = ?
+        AND active = 1
     `)
       .bind(
-        announcement.id
+        existing.id
       )
       .run();
 
     await addModerationLog(
       env,
-      admin.id,
+      user.id,
       "deactivate_announcement",
       {
         announcement_id:
-          announcement.id,
+          existing.id,
 
         message:
-          announcement.message
+          existing.message
       }
     );
 
     return json({
       ok: true,
 
-      announcement: {
-        id:
-          announcement.id,
+      announcement_id:
+        existing.id,
 
-        active:
-          false
-      },
-
-      message:
-        "Ankündigung wurde deaktiviert."
+      active:
+        false
     });
 
   } catch (error) {
@@ -795,26 +865,7 @@ export async function onRequestDelete(
     return json({
       ok: false,
       error:
-        "Die Ankündigung konnte nicht deaktiviert werden."
+        "Die Ankündigung konnte nicht gelöscht werden."
     }, 500);
   }
-}
-
-/*
- * =====================================================
- * PUT
- * =====================================================
- *
- * Direkte Bearbeitung ist bewusst deaktiviert.
- *
- * Neue Ankündigung erstellen statt alte verändern,
- * damit das Moderationsprotokoll nachvollziehbar
- * bleibt.
- */
-export async function onRequestPut() {
-  return json({
-    ok: false,
-    error:
-      "Ankündigungen können nicht direkt bearbeitet werden. Erstelle stattdessen eine neue Ankündigung."
-  }, 405);
 }
