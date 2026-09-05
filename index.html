@@ -153,10 +153,19 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 
 
 <style>
-/* V26.1 compact legal footer */
-#footerLegalLinks{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;margin-bottom:9px}
-#footerLegalLinks button{font-size:12px}
-#footerLegalLinks span:first-child{opacity:.9}
+/* V26.2 compact legal footer + forum moderation */
+#footerText{display:block!important;visibility:visible!important;opacity:1!important;position:relative;z-index:5;text-align:center;padding:18px 18px 35px!important;border-top:1px solid rgba(255,255,255,.06)}
+#footerLegalLinks{display:flex!important;visibility:visible!important;align-items:center;justify-content:center;gap:7px;font-size:12px;margin:0 0 9px}
+#footerLegalLinks button{font-size:12px;color:#b9ced8;text-decoration:none}
+#footerLegalLinks button:hover{text-decoration:underline;color:#edf7fb}
+#footerLegalLinks span:first-child{opacity:.95}
+.admin-user-head,.admin-user-row{display:grid;grid-template-columns:minmax(140px,1.4fr) 75px minmax(105px,.9fr) minmax(150px,1.2fr) minmax(245px,1.8fr);gap:9px;align-items:center;padding:9px 7px;border-bottom:1px solid rgba(255,255,255,.07);font-size:12px}
+.admin-user-head{font-weight:900;color:#b8d7e4;background:#10212d;border-radius:8px 8px 0 0}
+.admin-user-actions{display:flex;gap:5px;flex-wrap:wrap}
+.admin-user-actions button{font-size:11px;padding:6px 7px}
+.forum-ban-notice{border:1px solid #7d5429;background:#251a0d;color:#ffe0ad;padding:11px 13px;border-radius:10px;margin:10px 0;line-height:1.5;font-size:12px}
+.forum-ban-notice b{color:#ffd27a}
+@media(max-width:900px){.admin-user-head{display:none}.admin-user-row{grid-template-columns:1fr}.admin-user-row>span,.admin-user-row>b{display:block}.admin-user-actions{margin-top:3px}}
 </style>
 
 </head>
@@ -931,6 +940,7 @@ function bindCalcs(){
 // Echtes Forum: Cloudflare Pages Functions + D1.
 let forumSort='newest';
 let forumCurrentUser=null;
+let forumBanState=null;
 let forumPosts=[];
 let forumLoading=false;
 let forumView='categories'; // categories -> category -> thread
@@ -1009,6 +1019,27 @@ async function apiJson(url,options={}){
   if(!response.ok||data.success===false)throw new Error(data.error||(lang==='de'?'Serverfehler.':'Server error.'));
   return data;
 }
+function forumBanText(ban=forumBanState){
+  if(!ban)return '';
+  const reason=ban.reason||'–';
+  if(ban.permanent||ban.expires_at===null){
+    return lang==='de'
+      ? `Du bist permanent im Forum gesperrt. Grund: ${reason}`
+      : `You are permanently banned from interacting in the forum. Reason: ${reason}`;
+  }
+  const s=Math.max(0,Number(ban.remaining_seconds||0));
+  const d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);
+  const remaining=[d?`${d}T`:null,h?`${h}Std`:null,`${m}Min`].filter(Boolean).join(' ');
+  return lang==='de'
+    ? `Du bist im Forum gesperrt. Grund: ${reason} · Verbleibend: ${remaining}`
+    : `You are banned from interacting in the forum. Reason: ${reason} · Remaining: ${remaining}`;
+}
+function updateForumBanFromResponse(data){
+  if(data && Object.prototype.hasOwnProperty.call(data,'forum_banned')){
+    forumBanState=data.forum_banned ? (data.forum_ban||null) : null;
+  }
+}
+
 function renderForumProfile(){
   const out=document.getElementById('loggedOutBox'),inn=document.getElementById('loggedInBox');if(!out||!inn)return;
   out.style.display=forumCurrentUser?'none':'block';inn.style.display=forumCurrentUser?'block':'none';
@@ -1058,6 +1089,7 @@ async function loadForumPosts(showLoading=true){
   if(showLoading)setForumStatus(lang==='de'?'Beiträge werden geladen …':'Loading posts …');
   try{
     const data=await apiJson('/api/posts',{method:'GET'});
+    updateForumBanFromResponse(data);
     forumPosts=data.posts||[];
     setForumStatus('');
     if(forumView==='thread'&&forumSelectedPostId)await ensureComments(forumSelectedPostId);
@@ -1066,7 +1098,7 @@ async function loadForumPosts(showLoading=true){
 }
 async function ensureComments(postId){
   const p=forumPosts.find(x=>Number(x.id)===Number(postId));if(!p||p.commentList)return;
-  try{const c=await apiJson(`/api/comments?post_id=${encodeURIComponent(postId)}`,{method:'GET'});p.commentList=c.comments||[];}
+  try{const c=await apiJson(`/api/comments?post_id=${encodeURIComponent(postId)}`,{method:'GET'});updateForumBanFromResponse(c);p.commentList=c.comments||[];}
   catch(e){p.commentList=[];}
 }
 function setForumView(view,category=null,postId=null){
@@ -1090,7 +1122,7 @@ function renderForum(){
   const feed=document.getElementById('forumFeed'),toolbar=document.getElementById('forumToolbar');if(!feed||!toolbar)return;
   const sortButtons=[forumNewest,forumTop,forumCommentsSort];
   sortButtons.forEach(x=>x.style.display=forumView==='category'?'inline-block':'none');
-  newPostBtn.style.display=forumView==='category'&&forumCurrentUser?'inline-block':'none';
+  newPostBtn.style.display=forumView==='category'&&forumCurrentUser&&!forumBanState?'inline-block':'none';
   manageCategoriesBtn.style.display=isForumAdmin()&&forumView==='categories'?'inline-block':'none';
   if(forumView==='categories'){
     forumHeading.textContent='💬 Forum';
@@ -1113,8 +1145,8 @@ function renderForum(){
   if(!p){setForumView('category',forumSelectedCategory);return;}
   forumHeading.textContent=`💬 ${forumDisplayText(p.title,`post-title-${p.id}`)}`;forumSub.textContent=forumCategoryLabel(forumSelectedCategory||p.category);
   const comments=p.commentList||[];
-  const commentsHtml=comments.map(c=>`<div class="forum-comment"><div class="forum-user">${avatarHtml(c)}<div><b>${esc(c.username)}</b>${adminBadge(c)} · ${esc(c.server)}<div class="forum-meta">${forumDate(c.created_at)}</div></div></div><div style="margin-top:6px;white-space:pre-wrap">${esc(forumDisplayText(c.content,`comment-${c.id}`))}</div><button class="like-btn ${forumLikedComments.has(Number(c.id))?'liked':''}" data-comment-like="${c.id}">👍 ${Number(c.likes||0)}</button>${isForumAdmin()?`<span class="admin-actions"><button class="forum-action" data-comment-edit="${c.id}">${lang==='de'?'Bearbeiten':'Edit'}</button><button class="forum-action" data-comment-delete="${c.id}">${lang==='de'?'Löschen':'Delete'}</button></span>`:''}</div>`).join('');
-  feed.innerHTML=`<article class="forum-post"><div class="forum-user">${avatarHtml(p)}<div><b>${esc(p.username)}</b>${adminBadge(p)} · ${esc(p.server)}<div class="forum-meta">${forumDate(p.created_at)} · ${esc(forumCategoryLabel(p.category))}</div></div></div><h3>${esc(forumDisplayText(p.title,`post-title-${p.id}`))}</h3><p>${esc(forumDisplayText(p.content,`post-content-${p.id}`))}</p><div class="forum-reactions"><button class="like-btn ${forumLikedPosts.has(Number(p.id))?'liked':''}" data-post-like="${p.id}">👍 ${Number(p.likes||0)}</button><span>💬 ${Number(p.comments||comments.length||0)}</span></div>${isForumAdmin()?`<div class="admin-actions"><button class="forum-action" data-post-edit="${p.id}">${lang==='de'?'Bearbeiten':'Edit'}</button><button class="forum-action" data-post-delete="${p.id}">${lang==='de'?'Löschen':'Delete'}</button></div>`:''}<div class="forum-comments">${commentsHtml}${forumCurrentUser?`<div class="comment-row"><input maxlength="5000" data-comment-input="${p.id}" placeholder="${lang==='de'?'Antwort schreiben …':'Write a reply …'}"><button class="forum-action" data-comment-send="${p.id}">${lang==='de'?'Senden':'Send'}</button></div>`:''}</div></article>`;
+  const commentsHtml=comments.map(c=>`<div class="forum-comment"><div class="forum-user">${avatarHtml(c)}<div><b>${esc(c.username)}</b>${adminBadge(c)} · ${esc(c.server)}<div class="forum-meta">${forumDate(c.created_at)}</div></div></div><div style="margin-top:6px;white-space:pre-wrap">${esc(forumDisplayText(c.content,`comment-${c.id}`))}</div><button class="like-btn ${forumLikedComments.has(Number(c.id))?'liked':''}" data-comment-like="${c.id}" ${forumBanState?'disabled title="Forum-Sperre"':''}>👍 ${Number(c.likes||0)}</button>${isForumAdmin()?`<span class="admin-actions"><button class="forum-action" data-comment-edit="${c.id}">${lang==='de'?'Bearbeiten':'Edit'}</button><button class="forum-action" data-comment-delete="${c.id}">${lang==='de'?'Löschen':'Delete'}</button></span>`:''}</div>`).join('');
+  feed.innerHTML=`<article class="forum-post">${forumBanState?`<div class="forum-ban-notice">🚫 <b>${lang==='de'?'Forum-Sperre':'Forum ban'}</b><br>${esc(forumBanText())}</div>`:''}<div class="forum-user">${avatarHtml(p)}<div><b>${esc(p.username)}</b>${adminBadge(p)} · ${esc(p.server)}<div class="forum-meta">${forumDate(p.created_at)} · ${esc(forumCategoryLabel(p.category))}</div></div></div><h3>${esc(forumDisplayText(p.title,`post-title-${p.id}`))}</h3><p>${esc(forumDisplayText(p.content,`post-content-${p.id}`))}</p><div class="forum-reactions"><button class="like-btn ${forumLikedPosts.has(Number(p.id))?'liked':''}" data-post-like="${p.id}" ${forumBanState?'disabled title="Forum-Sperre"':''}>👍 ${Number(p.likes||0)}</button><span>💬 ${Number(p.comments||comments.length||0)}</span></div>${isForumAdmin()?`<div class="admin-actions"><button class="forum-action" data-post-edit="${p.id}">${lang==='de'?'Bearbeiten':'Edit'}</button><button class="forum-action" data-post-delete="${p.id}">${lang==='de'?'Löschen':'Delete'}</button></div>`:''}<div class="forum-comments">${commentsHtml}${forumCurrentUser&&!forumBanState?`<div class="comment-row"><input maxlength="5000" data-comment-input="${p.id}" placeholder="${lang==='de'?'Antwort schreiben …':'Write a reply …'}"><button class="forum-action" data-comment-send="${p.id}">${lang==='de'?'Senden':'Send'}</button></div>`:''}</div></article>`;
 }
 async function forumLoginRequest(username,password,server){
   const data=await apiJson('/api/login',{method:'POST',body:JSON.stringify({username,password,server})});
@@ -1122,7 +1154,7 @@ async function forumLoginRequest(username,password,server){
 }
 forumRegister?.addEventListener('click',async()=>{const username=forumName.value.trim(),password=forumPassword.value,server=forumServer.value;if(username.length<2||password.length<6)return alert(lang==='de'?'Spielername und Passwort (mind. 6 Zeichen) eingeben.':'Enter a player name and password (min. 6 characters).');forumRegister.disabled=true;try{await apiJson('/api/register',{method:'POST',body:JSON.stringify({username,password,server})});await forumLoginRequest(username,password,server);forumPassword.value='';alert(lang==='de'?'Account erstellt und du bist angemeldet.':'Account created and you are signed in.');await loadForumPosts(false);}catch(e){alert(e.message);}finally{forumRegister.disabled=false;}});
 forumLogin?.addEventListener('click',async()=>{const username=forumName.value.trim(),password=forumPassword.value,server=forumServer.value;forumLogin.disabled=true;try{await forumLoginRequest(username,password,server);forumPassword.value='';await loadForumPosts(false);}catch(e){alert(e.message);}finally{forumLogin.disabled=false;}});
-forumLogout?.addEventListener('click',async()=>{try{await apiJson('/api/logout',{method:'POST',body:'{}'});}catch(e){}forumCurrentUser=null;forumLikedPosts.clear();forumLikedComments.clear();forumCompose.classList.remove('open');renderForum();});
+forumLogout?.addEventListener('click',async()=>{try{await apiJson('/api/logout',{method:'POST',body:'{}'});}catch(e){}forumCurrentUser=null;forumBanState=null;forumLikedPosts.clear();forumLikedComments.clear();forumCompose.classList.remove('open');renderForum();});
 manageCategoriesBtn?.addEventListener('click',()=>{if(!isForumAdmin())return;categoryManager.classList.toggle('open');renderCategoryAdmin();});
 createCategoryBtn?.addEventListener('click',async()=>{if(!isForumAdmin())return;const name=newCategoryName.value.trim();if(!name)return;try{await apiJson('/api/categories',{method:'POST',body:JSON.stringify({name})});newCategoryName.value='';await loadForumCategories();}catch(e){alert(e.message);}});
 categoryAdminList?.addEventListener('click',async e=>{if(!isForumAdmin())return;const save=e.target.closest('[data-category-save]'),del=e.target.closest('[data-category-delete]');try{if(save){const id=Number(save.dataset.categorySave),inp=categoryAdminList.querySelector(`[data-category-name="${id}"]`),name=inp?.value.trim();if(!name)return;await apiJson('/api/categories',{method:'PUT',body:JSON.stringify({id,name})});if(forumSelectedCategory){const old=forumCategories.find(c=>Number(c.id)===id)?.name;if(old===forumSelectedCategory)forumSelectedCategory=name;}await loadForumCategories();await loadForumPosts(false);}if(del){const id=Number(del.dataset.categoryDelete);if(!confirm(lang==='de'?'Überthema wirklich löschen? Es muss leer sein.':'Delete this category? It must be empty.'))return;await apiJson('/api/categories',{method:'DELETE',body:JSON.stringify({id})});await loadForumCategories();}}catch(err){alert(err.message);}});
@@ -1503,32 +1535,109 @@ updateOnline(); setInterval(updateOnline,30000);
         <input id="v26UserSearch" maxlength="100" placeholder="Spieler suchen …">
         <button class="forum-action" id="v26UserSearchBtn">Suchen</button>
       </div>
-      <div class="forum-note">Nur für Administratoren sichtbar.</div>
+      <div class="forum-note">Forum-Banns sperren nur Schreiben, Antworten und Likes. Lesen bleibt erlaubt. Admin-Accounts sind geschützt.</div>
       <div id="v26UserList" class="admin-users-list">Lade …</div>
     `);
 
+    const formatDate = value => {
+      if(value === null || value === undefined || value === "") return "–";
+      const n=Number(value);
+      const date=Number.isFinite(n)?new Date(n<1e12?n*1000:n):new Date(value);
+      return Number.isNaN(date.getTime())?String(value):date.toLocaleDateString("de-DE");
+    };
+    const banStatus = u => {
+      if(u.protected || u.role==="admin") return "🛡️ ADMIN";
+      if(!u.forum_banned || !u.forum_ban) return "✅ Aktiv";
+      if(u.forum_ban.permanent) return `🚫 Permanent${u.forum_ban.reason?` · ${escapeV26(u.forum_ban.reason)}`:""}`;
+      const s=Math.max(0,Number(u.forum_ban.remaining_seconds||0));
+      const d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);
+      return `🚫 ${d?d+"T ":""}${h?h+"Std ":""}${m}Min${u.forum_ban.reason?` · ${escapeV26(u.forum_ban.reason)}`:""}`;
+    };
+
     async function load(q=""){
-      const list = $v26("v26UserList");
-      if(!list) return;
-      list.textContent = "Lade …";
+      const list=$v26("v26UserList");
+      if(!list)return;
+      list.textContent="Lade …";
       try{
-        const r = await fetch(`/api/admin/users?limit=200&sort=newest&q=${encodeURIComponent(q)}`, {cache:"no-store"});
-        const d = await r.json();
-        if(!r.ok || !d.ok) throw new Error(d.error || "Fehler");
-        const formatDate = value => {
-          if(value === null || value === undefined || value === "") return "–";
-          const n = Number(value);
-          const date = Number.isFinite(n) ? new Date(n < 1e12 ? n*1000 : n) : new Date(value);
-          return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString("de-DE");
-        };
-        list.innerHTML = `<div class="forum-note">${d.pagination?.total ?? d.users.length} registrierte Accounts</div>` +
-          d.users.map(u => `<div class="admin-user-row"><b>${escapeV26(u.username)}</b><span>${escapeV26(u.server || "–")}</span><span>${formatDate(u.registered_at)}</span></div>`).join("");
+        const r=await fetch(`/api/admin/users?limit=200&sort=newest&q=${encodeURIComponent(q)}`,{cache:"no-store"});
+        const d=await r.json();
+        if(!r.ok||!d.ok)throw new Error(d.error||"Fehler");
+        list.innerHTML=`<div class="forum-note">${d.pagination?.total ?? d.users.length} registrierte Accounts</div>
+          <div class="admin-user-head"><span>Spielername</span><span>Server</span><span>Registriert</span><span>Forum-Status</span><span>Aktionen</span></div>`+
+          d.users.map(u=>{
+            const protectedUser=u.protected||u.role==="admin";
+            const actions=protectedUser
+              ? `<span class="forum-meta">Geschützt</span>`
+              : `<div class="admin-user-actions">
+                  ${u.forum_banned
+                    ? `<button class="forum-action" data-admin-unban="${u.id}" data-name="${escapeV26(u.username)}">Entbannen</button>`
+                    : `<button class="forum-action" data-admin-ban="${u.id}" data-name="${escapeV26(u.username)}">Forum bannen</button>`}
+                  <button class="forum-action danger-btn" data-admin-delete="${u.id}" data-name="${escapeV26(u.username)}">Account löschen</button>
+                </div>`;
+            return `<div class="admin-user-row">
+              <b>${escapeV26(u.username)}</b>
+              <span>${escapeV26(u.server||"–")}</span>
+              <span>${formatDate(u.registered_at)}</span>
+              <span>${banStatus(u)}</span>
+              <span>${actions}</span>
+            </div>`;
+          }).join("");
       }catch(e){
-        list.textContent = `Fehler: ${e.message}`;
+        list.textContent=`Fehler: ${e.message}`;
       }
     }
-    $v26("v26UserSearchBtn")?.addEventListener("click", () => load($v26("v26UserSearch")?.value || ""));
-    $v26("v26UserSearch")?.addEventListener("keydown", e => { if(e.key === "Enter") load(e.currentTarget.value); });
+
+    $v26("v26UserSearchBtn")?.addEventListener("click",()=>load($v26("v26UserSearch")?.value||""));
+    $v26("v26UserSearch")?.addEventListener("keydown",e=>{if(e.key==="Enter")load(e.currentTarget.value);});
+
+    $v26("v26UserList")?.addEventListener("click",async e=>{
+      const ban=e.target.closest("[data-admin-ban]");
+      const unban=e.target.closest("[data-admin-unban]");
+      const del=e.target.closest("[data-admin-delete]");
+      try{
+        if(ban){
+          const userId=Number(ban.dataset.adminBan);
+          const name=ban.dataset.name||"Spieler";
+          const duration=prompt(`Forum-Bann für ${name}\nDauer eingeben: 10m, 30m, 1h, 6h, 24h, 7d oder permanent`,"24h");
+          if(duration===null)return;
+          const allowed=["10m","30m","1h","6h","24h","7d","permanent"];
+          if(!allowed.includes(duration.trim().toLowerCase()))return alert("Ungültige Dauer.");
+          const reason=prompt(`Grund für den Forum-Bann von ${name}:`,"Regelverstoß");
+          if(reason===null)return;
+          if(reason.trim().length<3)return alert("Bitte einen Grund mit mindestens 3 Zeichen angeben.");
+          const r=await fetch("/api/forum/bans",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:userId,duration:duration.trim().toLowerCase(),reason:reason.trim()})});
+          const d=await r.json();
+          if(!r.ok||(!d.ok&&d.success===false))throw new Error(d.error||"Forum-Bann fehlgeschlagen.");
+          await load($v26("v26UserSearch")?.value||"");
+          return;
+        }
+        if(unban){
+          const userId=Number(unban.dataset.adminUnban);
+          const name=unban.dataset.name||"Spieler";
+          if(!confirm(`${name} wirklich im Forum entbannen?`))return;
+          const r=await fetch("/api/forum/bans",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:userId})});
+          const d=await r.json();
+          if(!r.ok||(!d.ok&&d.success===false))throw new Error(d.error||"Entbannen fehlgeschlagen.");
+          await load($v26("v26UserSearch")?.value||"");
+          return;
+        }
+        if(del){
+          const userId=Number(del.dataset.adminDelete);
+          const name=del.dataset.name||"Spieler";
+          if(!confirm(`Account "${name}" wirklich löschen?\n\nDer Account wird anonymisiert und ausgeloggt. Diese Aktion ist nicht rückgängig zu machen.`))return;
+          const typed=prompt(`Zur Sicherheit DELETE eingeben, um "${name}" zu löschen:`);
+          if(typed!=="DELETE")return;
+          const r=await fetch("/api/admin/delete-user",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:userId,confirmation:"DELETE"})});
+          const d=await r.json();
+          if(!r.ok||!d.ok)throw new Error(d.error||"Account konnte nicht gelöscht werden.");
+          alert(`${name} wurde gelöscht und anonymisiert.`);
+          await load($v26("v26UserSearch")?.value||"");
+        }
+      }catch(err){
+        alert(err.message);
+      }
+    });
+
     load();
   }
 
