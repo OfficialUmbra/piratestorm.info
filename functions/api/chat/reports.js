@@ -4,22 +4,47 @@ function json(data, status = 200) {
     {
       status,
       headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "no-store"
+        "Content-Type":
+          "application/json; charset=utf-8",
+
+        "Cache-Control":
+          "no-store"
       }
     }
   );
 }
 
-function getCookie(request, name) {
+
+/*
+ * =====================================================
+ * COOKIE
+ * =====================================================
+ */
+
+function getCookie(
+  request,
+  name
+) {
   const cookie =
-    request.headers.get("Cookie") || "";
+    request.headers.get(
+      "Cookie"
+    ) || "";
 
-  for (const part of cookie.split(";")) {
-    const [key, ...value] =
-      part.trim().split("=");
+  for (
+    const part
+    of cookie.split(";")
+  ) {
+    const [
+      key,
+      ...value
+    ] =
+      part
+        .trim()
+        .split("=");
 
-    if (key === name) {
+    if (
+      key === name
+    ) {
       return decodeURIComponent(
         value.join("=")
       );
@@ -29,8 +54,18 @@ function getCookie(request, name) {
   return null;
 }
 
+
+/*
+ * =====================================================
+ * TEXT / ID
+ * =====================================================
+ */
+
 function normalizeText(value) {
-  if (typeof value !== "string") {
+  if (
+    typeof value !==
+    "string"
+  ) {
     return "";
   }
 
@@ -40,8 +75,10 @@ function normalizeText(value) {
     .trim();
 }
 
+
 function toPositiveInt(value) {
-  const number = Number(value);
+  const number =
+    Number(value);
 
   if (
     !Number.isInteger(number) ||
@@ -53,12 +90,6 @@ function toPositiveInt(value) {
   return number;
 }
 
-function isAdmin(user) {
-  return Boolean(
-    user &&
-    user.role === "admin"
-  );
-}
 
 /*
  * =====================================================
@@ -109,13 +140,49 @@ async function getCurrentUser(
     .first();
 }
 
+
 /*
  * =====================================================
- * ADMIN AUTH
+ * ROLES
  * =====================================================
  */
 
-async function requireAdmin(
+function isAdmin(user) {
+  return Boolean(
+    user &&
+    user.role ===
+    "admin"
+  );
+}
+
+
+function isModerator(user) {
+  return Boolean(
+    user &&
+    user.role ===
+    "moderator"
+  );
+}
+
+
+function canModerate(user) {
+  return Boolean(
+    user &&
+    (
+      isAdmin(user) ||
+      isModerator(user)
+    )
+  );
+}
+
+
+/*
+ * =====================================================
+ * STAFF AUTH
+ * =====================================================
+ */
+
+async function requireModerator(
   request,
   env
 ) {
@@ -127,33 +194,48 @@ async function requireAdmin(
 
   if (!user) {
     return {
-      ok: false,
+      ok:
+        false,
 
-      response: json({
-        ok: false,
-        error:
-          "Du musst eingeloggt sein."
-      }, 401)
+      response:
+        json({
+          ok:
+            false,
+
+          error:
+            "Du musst eingeloggt sein."
+        }, 401)
     };
   }
 
-  if (!isAdmin(user)) {
+  if (
+    !canModerate(
+      user
+    )
+  ) {
     return {
-      ok: false,
+      ok:
+        false,
 
-      response: json({
-        ok: false,
-        error:
-          "Nur der Administrator darf Meldungen verwalten."
-      }, 403)
+      response:
+        json({
+          ok:
+            false,
+
+          error:
+            "Nur Administratoren und Moderatoren dürfen Meldungen verwalten."
+        }, 403)
     };
   }
 
   return {
-    ok: true,
+    ok:
+      true,
+
     user
   };
 }
+
 
 /*
  * =====================================================
@@ -178,9 +260,77 @@ async function getUserById(
 
     LIMIT 1
   `)
-    .bind(userId)
+    .bind(
+      userId
+    )
     .first();
 }
+
+
+/*
+ * =====================================================
+ * STAFF -> TARGET
+ * =====================================================
+ *
+ * Admin:
+ * User + Moderator
+ *
+ * Moderator:
+ * nur User
+ *
+ * Admin als Ziel:
+ * niemals
+ * =====================================================
+ */
+
+function canModerateTarget(
+  actor,
+  target
+) {
+  if (
+    !actor ||
+    !target
+  ) {
+    return false;
+  }
+
+  if (
+    Number(actor.id) ===
+    Number(target.id)
+  ) {
+    return false;
+  }
+
+  if (
+    target.role ===
+    "admin"
+  ) {
+    return false;
+  }
+
+  if (
+    isModerator(actor)
+  ) {
+    return (
+      target.role ===
+      "user"
+    );
+  }
+
+  if (
+    isAdmin(actor)
+  ) {
+    return (
+      target.role ===
+        "user" ||
+      target.role ===
+        "moderator"
+    );
+  }
+
+  return false;
+}
+
 
 /*
  * =====================================================
@@ -205,21 +355,26 @@ async function getPublicMessage(
       m.deleted_at,
 
       u.username,
-      u.server AS user_server,
+      u.server
+        AS user_server,
       u.role
 
     FROM chat_messages m
 
     JOIN users u
-      ON u.id = m.user_id
+      ON u.id =
+        m.user_id
 
     WHERE m.id = ?
 
     LIMIT 1
   `)
-    .bind(messageId)
+    .bind(
+      messageId
+    )
     .first();
 }
+
 
 /*
  * =====================================================
@@ -243,26 +398,33 @@ async function getWhisperMessage(
       wm.deleted_at,
 
       u.username,
-      u.server AS user_server,
+      u.server
+        AS user_server,
       u.role,
 
-      wr.name AS room_name
+      wr.name
+        AS room_name
 
     FROM whisper_messages wm
 
     JOIN users u
-      ON u.id = wm.user_id
+      ON u.id =
+        wm.user_id
 
     JOIN whisper_rooms wr
-      ON wr.id = wm.room_id
+      ON wr.id =
+        wm.room_id
 
     WHERE wm.id = ?
 
     LIMIT 1
   `)
-    .bind(messageId)
+    .bind(
+      messageId
+    )
     .first();
 }
+
 
 /*
  * =====================================================
@@ -296,7 +458,8 @@ async function addModerationLog(
     `)
       .bind(
         adminId,
-        targetUserId || null,
+        targetUserId ||
+        null,
         action,
         JSON.stringify(
           details || {}
@@ -304,6 +467,7 @@ async function addModerationLog(
         now
       )
       .run();
+
   } catch (error) {
     console.error(
       "Moderation log error:",
@@ -312,57 +476,99 @@ async function addModerationLog(
   }
 }
 
+
 /*
  * =====================================================
  * OPEN REPORT COUNT
  * =====================================================
  *
- * Das ist die Grundlage für:
+ * Moderator:
+ * nur offene Meldungen gegen normale User.
  *
- * Meldungen ③
- *
- * GET /api/chat/reports?count=1
- *
- * Antwort:
- *
- * {
- *   ok: true,
- *   open_count: 3
- * }
- *
- * Dadurch muss das Frontend NICHT regelmäßig
- * alle Report-Kontexte herunterladen.
+ * Admin:
+ * alle offenen Meldungen außer gegen Admins.
  * =====================================================
  */
 
-async function getOpenReportCount(env) {
+async function getOpenReportCount(
+  env,
+  actor
+) {
+  let query = `
+    SELECT
+      COUNT(*) AS total
+
+    FROM chat_reports r
+
+    JOIN users target
+      ON target.id =
+        r.reported_user_id
+
+    WHERE r.status = 'open'
+  `;
+
+  if (
+    isModerator(
+      actor
+    )
+  ) {
+    query += `
+      AND target.role = 'user'
+    `;
+  } else {
+    query += `
+      AND target.role != 'admin'
+    `;
+  }
+
   const row =
-    await env.DB.prepare(`
-      SELECT
-        COUNT(*) AS total
-
-      FROM chat_reports
-
-      WHERE status = 'open'
-    `)
+    await env.DB
+      .prepare(
+        query
+      )
       .first();
 
   return Number(
-    row?.total || 0
+    row?.total ||
+    0
   );
 }
+
+
+/*
+ * =====================================================
+ * FORMAT CONTEXT USER
+ * =====================================================
+ */
+
+function formatContextUser(row) {
+  return {
+    id:
+      row.user_id,
+
+    username:
+      row.username,
+
+    server:
+      row.server,
+
+    role:
+      row.role,
+
+    is_admin:
+      row.role ===
+      "admin",
+
+    is_moderator:
+      row.role ===
+      "moderator"
+  };
+}
+
 
 /*
  * =====================================================
  * PUBLIC CONTEXT
- * =====================================================
- *
- * 5 Nachrichten davor
- * gemeldete Nachricht
- * 5 Nachrichten danach
- *
- * original_message wird absichtlich mitgeliefert,
- * weil dieser Endpoint ausschließlich für Admins ist.
  * =====================================================
  */
 
@@ -394,11 +600,15 @@ async function getPublicContext(
         FROM chat_messages m
 
         JOIN users u
-          ON u.id = m.user_id
+          ON u.id =
+            m.user_id
 
-        WHERE m.room_type = 'global'
+        WHERE m.room_type =
+          'global'
+
           AND (
             m.created_at < ?
+
             OR (
               m.created_at = ?
               AND m.id < ?
@@ -435,11 +645,15 @@ async function getPublicContext(
         FROM chat_messages m
 
         JOIN users u
-          ON u.id = m.user_id
+          ON u.id =
+            m.user_id
 
-        WHERE m.room_type = 'global'
+        WHERE m.room_type =
+          'global'
+
           AND (
             m.created_at > ?
+
             OR (
               m.created_at = ?
               AND m.id > ?
@@ -477,12 +691,17 @@ async function getPublicContext(
         FROM chat_messages m
 
         JOIN users u
-          ON u.id = m.user_id
+          ON u.id =
+            m.user_id
 
-        WHERE m.room_type = 'server'
+        WHERE m.room_type =
+          'server'
+
           AND m.server = ?
+
           AND (
             m.created_at < ?
+
             OR (
               m.created_at = ?
               AND m.id < ?
@@ -520,12 +739,17 @@ async function getPublicContext(
         FROM chat_messages m
 
         JOIN users u
-          ON u.id = m.user_id
+          ON u.id =
+            m.user_id
 
-        WHERE m.room_type = 'server'
+        WHERE m.room_type =
+          'server'
+
           AND m.server = ?
+
           AND (
             m.created_at > ?
+
             OR (
               m.created_at = ?
               AND m.id > ?
@@ -549,24 +773,25 @@ async function getPublicContext(
 
   const beforeRows =
     [
-      ...(before.results || [])
+      ...(
+        before.results ||
+        []
+      )
     ].reverse();
 
   const afterRows =
-    after.results || [];
+    after.results ||
+    [];
 
   function format(row) {
     return {
-      id: row.id,
+      id:
+        row.id,
 
-      user: {
-        id: row.user_id,
-        username: row.username,
-        server: row.server,
-        role: row.role,
-        is_admin:
-          row.role === "admin"
-      },
+      user:
+        formatContextUser(
+          row
+        ),
 
       message:
         row.message,
@@ -579,25 +804,44 @@ async function getPublicContext(
         row.created_at,
 
       deleted:
-        Boolean(row.deleted_at)
+        Boolean(
+          row.deleted_at
+        )
     };
   }
 
   return [
-    ...beforeRows.map(format),
+    ...beforeRows.map(
+      format
+    ),
 
     {
-      id: message.id,
+      id:
+        message.id,
 
-      reported: true,
+      reported:
+        true,
 
       user: {
-        id: message.user_id,
-        username: message.username,
-        server: message.user_server,
-        role: message.role,
+        id:
+          message.user_id,
+
+        username:
+          message.username,
+
+        server:
+          message.user_server,
+
+        role:
+          message.role,
+
         is_admin:
-          message.role === "admin"
+          message.role ===
+          "admin",
+
+        is_moderator:
+          message.role ===
+          "moderator"
       },
 
       message:
@@ -611,12 +855,17 @@ async function getPublicContext(
         message.created_at,
 
       deleted:
-        Boolean(message.deleted_at)
+        Boolean(
+          message.deleted_at
+        )
     },
 
-    ...afterRows.map(format)
+    ...afterRows.map(
+      format
+    )
   ];
 }
+
 
 /*
  * =====================================================
@@ -645,11 +894,14 @@ async function getWhisperContext(
       FROM whisper_messages wm
 
       JOIN users u
-        ON u.id = wm.user_id
+        ON u.id =
+          wm.user_id
 
       WHERE wm.room_id = ?
+
         AND (
           wm.created_at < ?
+
           OR (
             wm.created_at = ?
             AND wm.id < ?
@@ -687,11 +939,14 @@ async function getWhisperContext(
       FROM whisper_messages wm
 
       JOIN users u
-        ON u.id = wm.user_id
+        ON u.id =
+          wm.user_id
 
       WHERE wm.room_id = ?
+
         AND (
           wm.created_at > ?
+
           OR (
             wm.created_at = ?
             AND wm.id > ?
@@ -714,24 +969,25 @@ async function getWhisperContext(
 
   const beforeRows =
     [
-      ...(before.results || [])
+      ...(
+        before.results ||
+        []
+      )
     ].reverse();
 
   const afterRows =
-    after.results || [];
+    after.results ||
+    [];
 
   function format(row) {
     return {
-      id: row.id,
+      id:
+        row.id,
 
-      user: {
-        id: row.user_id,
-        username: row.username,
-        server: row.server,
-        role: row.role,
-        is_admin:
-          row.role === "admin"
-      },
+      user:
+        formatContextUser(
+          row
+        ),
 
       message:
         row.message,
@@ -744,25 +1000,44 @@ async function getWhisperContext(
         row.created_at,
 
       deleted:
-        Boolean(row.deleted_at)
+        Boolean(
+          row.deleted_at
+        )
     };
   }
 
   return [
-    ...beforeRows.map(format),
+    ...beforeRows.map(
+      format
+    ),
 
     {
-      id: message.id,
+      id:
+        message.id,
 
-      reported: true,
+      reported:
+        true,
 
       user: {
-        id: message.user_id,
-        username: message.username,
-        server: message.user_server,
-        role: message.role,
+        id:
+          message.user_id,
+
+        username:
+          message.username,
+
+        server:
+          message.user_server,
+
+        role:
+          message.role,
+
         is_admin:
-          message.role === "admin"
+          message.role ===
+          "admin",
+
+        is_moderator:
+          message.role ===
+          "moderator"
       },
 
       message:
@@ -776,12 +1051,17 @@ async function getWhisperContext(
         message.created_at,
 
       deleted:
-        Boolean(message.deleted_at)
+        Boolean(
+          message.deleted_at
+        )
     },
 
-    ...afterRows.map(format)
+    ...afterRows.map(
+      format
+    )
   ];
 }
+
 
 /*
  * =====================================================
@@ -806,7 +1086,8 @@ async function formatReport(
       ),
 
     reason:
-      report.reason || null,
+      report.reason ||
+      null,
 
     status:
       report.status,
@@ -825,7 +1106,15 @@ async function formatReport(
         report.reporter_server,
 
       role:
-        report.reporter_role
+        report.reporter_role,
+
+      is_admin:
+        report.reporter_role ===
+        "admin",
+
+      is_moderator:
+        report.reporter_role ===
+        "moderator"
     },
 
     reported_user: {
@@ -843,20 +1132,29 @@ async function formatReport(
 
       is_admin:
         report.reported_role ===
-        "admin"
+        "admin",
+
+      is_moderator:
+        report.reported_role ===
+        "moderator"
     },
 
     message_id:
-      report.message_id || null,
+      report.message_id ||
+      null,
 
     whisper_message_id:
       report.whisper_message_id ||
       null
   };
 
+
   /*
+   * =================================================
    * WHISPER REPORT
+   * =================================================
    */
+
   if (
     base.report_type ===
       "whisper" ||
@@ -926,9 +1224,13 @@ async function formatReport(
     };
   }
 
+
   /*
+   * =================================================
    * PUBLIC REPORT
+   * =================================================
    */
+
   const message =
     await getPublicMessage(
       env,
@@ -989,26 +1291,21 @@ async function formatReport(
   };
 }
 
+
 /*
  * =====================================================
  * GET
  * =====================================================
  *
- * ADMIN:
- *
  * /api/chat/reports
- *     -> offene Reports + Kontext
+ *
+ * /api/chat/reports?status=reviewed
  *
  * /api/chat/reports?status=closed
- *     -> geschlossene Reports
  *
  * /api/chat/reports?status=all
- *     -> alle Reports
  *
  * /api/chat/reports?count=1
- *     -> NUR Anzahl offener Reports
- *
- * Das letzte Format verwenden wir für den V25-Badge.
  * =====================================================
  */
 
@@ -1022,42 +1319,53 @@ export async function onRequestGet(
     } = context;
 
     const auth =
-      await requireAdmin(
+      await requireModerator(
         request,
         env
       );
 
-    if (!auth.ok) {
+    if (
+      !auth.ok
+    ) {
       return auth.response;
     }
+
+    const actor =
+      auth.user;
 
     const url =
       new URL(
         request.url
       );
 
+
     /*
      * =================================================
      * FAST BADGE COUNT
      * =================================================
      */
+
     if (
       url.searchParams.get(
         "count"
-      ) === "1"
+      ) ===
+      "1"
     ) {
       const openCount =
         await getOpenReportCount(
-          env
+          env,
+          actor
         );
 
       return json({
-        ok: true,
+        ok:
+          true,
 
         open_count:
           openCount
       });
     }
+
 
     const status =
       (
@@ -1075,21 +1383,26 @@ export async function onRequestGet(
         "reviewed",
         "closed",
         "all"
-      ].includes(status)
+      ].includes(
+        status
+      )
     ) {
       return json({
-        ok: false,
+        ok:
+          false,
 
         error:
           "Ungültiger Meldungsstatus."
       }, 400);
     }
 
+
     let rawLimit =
       Number(
         url.searchParams.get(
           "limit"
-        ) || 100
+        ) ||
+        100
       );
 
     if (
@@ -1097,7 +1410,8 @@ export async function onRequestGet(
         rawLimit
       )
     ) {
-      rawLimit = 100;
+      rawLimit =
+        100;
     }
 
     const limit =
@@ -1109,121 +1423,129 @@ export async function onRequestGet(
         )
       );
 
-    let result;
 
-    if (status === "all") {
-      result =
-        await env.DB.prepare(`
-          SELECT
-            r.id,
-            r.reporter_id,
-            r.reported_user_id,
-            r.message_id,
-            r.whisper_message_id,
-            r.report_type,
-            r.reason,
-            r.status,
-            r.created_at,
+    /*
+     * =================================================
+     * REPORT QUERY
+     * =================================================
+     */
 
-            reporter.username
-              AS reporter_username,
+    let query = `
+      SELECT
+        r.id,
+        r.reporter_id,
+        r.reported_user_id,
+        r.message_id,
+        r.whisper_message_id,
+        r.report_type,
+        r.reason,
+        r.status,
+        r.created_at,
 
-            reporter.server
-              AS reporter_server,
+        reporter.username
+          AS reporter_username,
 
-            reporter.role
-              AS reporter_role,
+        reporter.server
+          AS reporter_server,
 
-            reported.username
-              AS reported_username,
+        reporter.role
+          AS reporter_role,
 
-            reported.server
-              AS reported_server,
+        reported.username
+          AS reported_username,
 
-            reported.role
-              AS reported_role
+        reported.server
+          AS reported_server,
 
-          FROM chat_reports r
+        reported.role
+          AS reported_role
 
-          JOIN users reporter
-            ON reporter.id =
-              r.reporter_id
+      FROM chat_reports r
 
-          JOIN users reported
-            ON reported.id =
-              r.reported_user_id
+      JOIN users reporter
+        ON reporter.id =
+          r.reporter_id
 
-          ORDER BY
-            r.created_at DESC,
-            r.id DESC
+      JOIN users reported
+        ON reported.id =
+          r.reported_user_id
 
-          LIMIT ?
-        `)
-          .bind(limit)
-          .all();
+      WHERE 1 = 1
+    `;
 
-    } else {
-      result =
-        await env.DB.prepare(`
-          SELECT
-            r.id,
-            r.reporter_id,
-            r.reported_user_id,
-            r.message_id,
-            r.whisper_message_id,
-            r.report_type,
-            r.reason,
-            r.status,
-            r.created_at,
+    const bindings =
+      [];
 
-            reporter.username
-              AS reporter_username,
 
-            reporter.server
-              AS reporter_server,
+    /*
+     * STATUS
+     */
 
-            reporter.role
-              AS reporter_role,
+    if (
+      status !==
+      "all"
+    ) {
+      query += `
+        AND r.status = ?
+      `;
 
-            reported.username
-              AS reported_username,
-
-            reported.server
-              AS reported_server,
-
-            reported.role
-              AS reported_role
-
-          FROM chat_reports r
-
-          JOIN users reporter
-            ON reporter.id =
-              r.reporter_id
-
-          JOIN users reported
-            ON reported.id =
-              r.reported_user_id
-
-          WHERE r.status = ?
-
-          ORDER BY
-            r.created_at DESC,
-            r.id DESC
-
-          LIMIT ?
-        `)
-          .bind(
-            status,
-            limit
-          )
-          .all();
+      bindings.push(
+        status
+      );
     }
 
-    const reports = [];
+
+    /*
+     * ROLE HIERARCHY
+     */
+
+    if (
+      isModerator(
+        actor
+      )
+    ) {
+      query += `
+        AND reported.role = 'user'
+      `;
+
+    } else {
+      query += `
+        AND reported.role != 'admin'
+      `;
+    }
+
+
+    query += `
+      ORDER BY
+        r.created_at DESC,
+        r.id DESC
+
+      LIMIT ?
+    `;
+
+    bindings.push(
+      limit
+    );
+
+
+    const result =
+      await env.DB
+        .prepare(
+          query
+        )
+        .bind(
+          ...bindings
+        )
+        .all();
+
+
+    const reports =
+      [];
 
     for (
       const report
-      of result.results || []
+      of result.results ||
+      []
     ) {
       reports.push(
         await formatReport(
@@ -1233,17 +1555,41 @@ export async function onRequestGet(
       );
     }
 
-    /*
-     * Die Zahl liefern wir zusätzlich auch beim
-     * normalen Abruf mit.
-     */
+
     const openCount =
       await getOpenReportCount(
-        env
+        env,
+        actor
       );
 
+
     return json({
-      ok: true,
+      ok:
+        true,
+
+      current_user: {
+        id:
+          actor.id,
+
+        username:
+          actor.username,
+
+        server:
+          actor.server,
+
+        role:
+          actor.role,
+
+        is_admin:
+          isAdmin(
+            actor
+          ),
+
+        is_moderator:
+          isModerator(
+            actor
+          )
+      },
 
       filter:
         status,
@@ -1261,7 +1607,8 @@ export async function onRequestGet(
     );
 
     return json({
-      ok: false,
+      ok:
+        false,
 
       error:
         "Die Meldungen konnten nicht geladen werden."
@@ -1269,24 +1616,25 @@ export async function onRequestGet(
   }
 }
 
+
 /*
  * =====================================================
  * POST
  * =====================================================
  *
- * Spieler meldet eine öffentliche Nachricht:
+ * Öffentliche Nachricht:
  *
  * {
- *   message_id: 123,
- *   reason: "Spam"
+ *   "message_id": 123,
+ *   "reason": "Spam"
  * }
  *
  *
- * oder Whisper:
+ * Whisper:
  *
  * {
- *   whisper_message_id: 456,
- *   reason: "Beleidigung"
+ *   "whisper_message_id": 456,
+ *   "reason": "Beleidigung"
  * }
  * =====================================================
  */
@@ -1308,12 +1656,14 @@ export async function onRequestPost(
 
     if (!user) {
       return json({
-        ok: false,
+        ok:
+          false,
 
         error:
           "Du musst eingeloggt sein."
       }, 401);
     }
+
 
     let body;
 
@@ -1323,60 +1673,95 @@ export async function onRequestPost(
 
     } catch {
       return json({
-        ok: false,
+        ok:
+          false,
 
         error:
           "Ungültige Anfrage."
       }, 400);
     }
 
+
     const reason =
       normalizeText(
         body.reason
       );
 
+
     if (
-      reason.length > 500
+      !reason
     ) {
       return json({
-        ok: false,
+        ok:
+          false,
+
+        error:
+          "Bitte gib einen Grund für die Meldung an."
+      }, 400);
+    }
+
+
+    if (
+      reason.length >
+      500
+    ) {
+      return json({
+        ok:
+          false,
 
         error:
           "Der Meldegrund darf maximal 500 Zeichen enthalten."
       }, 400);
     }
 
+
     const messageId =
       toPositiveInt(
         body.message_id
       );
+
 
     const whisperMessageId =
       toPositiveInt(
         body.whisper_message_id
       );
 
+
+    /*
+     * Genau eines von beiden.
+     */
+
     if (
-      Boolean(messageId) ===
-      Boolean(whisperMessageId)
+      Boolean(
+        messageId
+      ) ===
+      Boolean(
+        whisperMessageId
+      )
     ) {
       return json({
-        ok: false,
+        ok:
+          false,
 
         error:
           "Es muss genau eine Nachricht gemeldet werden."
       }, 400);
     }
 
+
     let targetUser;
     let reportType;
+
 
     /*
      * =================================================
      * PUBLIC
      * =================================================
      */
-    if (messageId) {
+
+    if (
+      messageId
+    ) {
       const message =
         await getPublicMessage(
           env,
@@ -1385,21 +1770,27 @@ export async function onRequestPost(
 
       if (!message) {
         return json({
-          ok: false,
+          ok:
+            false,
 
           error:
             "Die Nachricht wurde nicht gefunden."
         }, 404);
       }
 
-      if (message.deleted_at) {
+
+      if (
+        message.deleted_at
+      ) {
         return json({
-          ok: false,
+          ok:
+            false,
 
           error:
             "Gelöschte Nachrichten können nicht gemeldet werden."
         }, 409);
       }
+
 
       targetUser =
         await getUserById(
@@ -1407,16 +1798,21 @@ export async function onRequestPost(
           message.user_id
         );
 
+
       reportType =
         "public";
     }
+
 
     /*
      * =================================================
      * WHISPER
      * =================================================
      */
-    if (whisperMessageId) {
+
+    if (
+      whisperMessageId
+    ) {
       const message =
         await getWhisperMessage(
           env,
@@ -1425,28 +1821,34 @@ export async function onRequestPost(
 
       if (!message) {
         return json({
-          ok: false,
+          ok:
+            false,
 
           error:
             "Die Whisper-Nachricht wurde nicht gefunden."
         }, 404);
       }
 
-      if (message.deleted_at) {
+
+      if (
+        message.deleted_at
+      ) {
         return json({
-          ok: false,
+          ok:
+            false,
 
           error:
             "Gelöschte Nachrichten können nicht gemeldet werden."
         }, 409);
       }
 
+
       /*
-       * Reporter muss Mitglied dieses privaten
-       * Whisper-Raums sein.
+       * Reporter muss tatsächlich Mitglied sein.
        *
-       * Auch Admin bekommt hier keinen Sonderzugriff.
+       * Kein Admin-/Moderator-Bypass.
        */
+
       const membership =
         await env.DB.prepare(`
           SELECT 1
@@ -1464,14 +1866,19 @@ export async function onRequestPost(
           )
           .first();
 
-      if (!membership) {
+
+      if (
+        !membership
+      ) {
         return json({
-          ok: false,
+          ok:
+            false,
 
           error:
             "Du hast keinen Zugriff auf diesen Whisper-Chat."
         }, 403);
       }
+
 
       targetUser =
         await getUserById(
@@ -1479,53 +1886,75 @@ export async function onRequestPost(
           message.user_id
         );
 
+
       reportType =
         "whisper";
     }
 
-    if (!targetUser) {
+
+    if (
+      !targetUser
+    ) {
       return json({
-        ok: false,
+        ok:
+          false,
 
         error:
           "Der gemeldete Spieler wurde nicht gefunden."
       }, 404);
     }
 
+
     /*
      * =================================================
      * ADMIN IMMUNITY
      * =================================================
+     *
+     * Moderatoren DÜRFEN gemeldet werden.
+     *
+     * Diese Meldungen sieht später nur der Admin.
      */
+
     if (
       targetUser.role ===
       "admin"
     ) {
       return json({
-        ok: false,
+        ok:
+          false,
 
         error:
           "Der Administrator kann nicht gemeldet werden."
       }, 403);
     }
 
+
     if (
-      Number(targetUser.id) ===
-      Number(user.id)
+      Number(
+        targetUser.id
+      ) ===
+      Number(
+        user.id
+      )
     ) {
       return json({
-        ok: false,
+        ok:
+          false,
 
         error:
           "Du kannst deine eigene Nachricht nicht melden."
       }, 400);
     }
 
+
     /*
-     * Gleiche Nachricht nicht mehrfach offen durch
-     * denselben Spieler melden.
+     * =================================================
+     * DUPLICATE REPORT
+     * =================================================
      */
+
     let duplicate;
+
 
     if (
       reportType ===
@@ -1533,12 +1962,14 @@ export async function onRequestPost(
     ) {
       duplicate =
         await env.DB.prepare(`
-          SELECT id
+          SELECT
+            id
 
           FROM chat_reports
 
           WHERE reporter_id = ?
             AND message_id = ?
+
             AND status IN (
               'open',
               'reviewed'
@@ -1555,12 +1986,14 @@ export async function onRequestPost(
     } else {
       duplicate =
         await env.DB.prepare(`
-          SELECT id
+          SELECT
+            id
 
           FROM chat_reports
 
           WHERE reporter_id = ?
             AND whisper_message_id = ?
+
             AND status IN (
               'open',
               'reviewed'
@@ -1575,19 +2008,25 @@ export async function onRequestPost(
           .first();
     }
 
-    if (duplicate) {
+
+    if (
+      duplicate
+    ) {
       return json({
-        ok: false,
+        ok:
+          false,
 
         error:
           "Du hast diese Nachricht bereits gemeldet."
       }, 409);
     }
 
+
     const now =
       Math.floor(
         Date.now() / 1000
       );
+
 
     const insert =
       await env.DB.prepare(`
@@ -1616,16 +2055,20 @@ export async function onRequestPost(
         .bind(
           user.id,
           targetUser.id,
-          messageId || null,
-          whisperMessageId || null,
+          messageId ||
+          null,
+          whisperMessageId ||
+          null,
           reportType,
-          reason || null,
+          reason,
           now
         )
         .run();
 
+
     return json({
-      ok: true,
+      ok:
+        true,
 
       report: {
         id:
@@ -1636,12 +2079,35 @@ export async function onRequestPost(
         report_type:
           reportType,
 
+        reported_user: {
+          id:
+            targetUser.id,
+
+          username:
+            targetUser.username,
+
+          server:
+            targetUser.server,
+
+          role:
+            targetUser.role,
+
+          is_moderator:
+            targetUser.role ===
+            "moderator"
+        },
+
+        reason,
+
         status:
           "open",
 
         created_at:
           now
-      }
+      },
+
+      message:
+        "Die Nachricht wurde gemeldet."
     }, 201);
 
   } catch (error) {
@@ -1651,7 +2117,8 @@ export async function onRequestPost(
     );
 
     return json({
-      ok: false,
+      ok:
+        false,
 
       error:
         "Die Nachricht konnte nicht gemeldet werden."
@@ -1659,28 +2126,25 @@ export async function onRequestPost(
   }
 }
 
+
 /*
  * =====================================================
  * PUT
  * =====================================================
  *
- * Nur Admin.
+ * STAFF:
  *
  * {
- *   id: 12,
- *   status: "reviewed"
+ *   "id": 12,
+ *   "status": "reviewed"
  * }
  *
  * oder:
  *
  * {
- *   id: 12,
- *   status: "closed"
+ *   "id": 12,
+ *   "status": "closed"
  * }
- *
- * V25:
- * Sobald ein Report nicht mehr "open" ist,
- * verschwindet er aus dem roten Badge.
  * =====================================================
  */
 
@@ -1693,18 +2157,24 @@ export async function onRequestPut(
       env
     } = context;
 
+
     const auth =
-      await requireAdmin(
+      await requireModerator(
         request,
         env
       );
 
-    if (!auth.ok) {
+
+    if (
+      !auth.ok
+    ) {
       return auth.response;
     }
 
-    const admin =
+
+    const actor =
       auth.user;
+
 
     let body;
 
@@ -1714,12 +2184,14 @@ export async function onRequestPut(
 
     } catch {
       return json({
-        ok: false,
+        ok:
+          false,
 
         error:
           "Ungültige Anfrage."
       }, 400);
     }
+
 
     const reportId =
       toPositiveInt(
@@ -1727,46 +2199,68 @@ export async function onRequestPut(
         body.report_id
       );
 
+
     const status =
       normalizeText(
         body.status
       )
         .toLowerCase();
 
-    if (!reportId) {
+
+    if (
+      !reportId
+    ) {
       return json({
-        ok: false,
+        ok:
+          false,
 
         error:
           "Ungültige Meldungs-ID."
       }, 400);
     }
 
+
     if (
       ![
         "open",
         "reviewed",
         "closed"
-      ].includes(status)
+      ].includes(
+        status
+      )
     ) {
       return json({
-        ok: false,
+        ok:
+          false,
 
         error:
           "Ungültiger Meldungsstatus."
       }, 400);
     }
 
+
     const report =
       await env.DB.prepare(`
         SELECT
-          id,
-          reported_user_id,
-          status
+          r.id,
+          r.reported_user_id,
+          r.report_type,
+          r.message_id,
+          r.whisper_message_id,
+          r.reason,
+          r.status,
 
-        FROM chat_reports
+          target.username,
+          target.server,
+          target.role
 
-        WHERE id = ?
+        FROM chat_reports r
+
+        JOIN users target
+          ON target.id =
+            r.reported_user_id
+
+        WHERE r.id = ?
 
         LIMIT 1
       `)
@@ -1775,40 +2269,123 @@ export async function onRequestPut(
         )
         .first();
 
-    if (!report) {
+
+    if (
+      !report
+    ) {
       return json({
-        ok: false,
+        ok:
+          false,
 
         error:
           "Meldung wurde nicht gefunden."
       }, 404);
     }
 
-    const target =
-      await getUserById(
-        env,
-        report.reported_user_id
-      );
+
+    const target = {
+      id:
+        report.reported_user_id,
+
+      username:
+        report.username,
+
+      server:
+        report.server,
+
+      role:
+        report.role
+    };
+
 
     /*
-     * Zusätzliche Sicherheit:
-     * manipulierte Alt-Daten dürfen nicht zur
-     * Moderation eines Admins führen.
+     * =================================================
+     * ROLE HIERARCHY
+     * =================================================
      */
+
     if (
-      target?.role ===
-      "admin"
+      !canModerateTarget(
+        actor,
+        target
+      )
     ) {
+      if (
+        target.role ===
+        "admin"
+      ) {
+        return json({
+          ok:
+            false,
+
+          error:
+            "Meldungen gegen Administratoren können nicht bearbeitet werden."
+        }, 403);
+      }
+
+
+      if (
+        isModerator(
+          actor
+        ) &&
+        target.role ===
+        "moderator"
+      ) {
+        return json({
+          ok:
+            false,
+
+          error:
+            "Meldungen gegen Moderatoren können nur vom Administrator bearbeitet werden."
+        }, 403);
+      }
+
+
       return json({
-        ok: false,
+        ok:
+          false,
 
         error:
-          "Meldungen gegen Administratoren können nicht bearbeitet werden."
+          "Du darfst diese Meldung nicht bearbeiten."
       }, 403);
     }
 
+
     const oldStatus =
       report.status;
+
+
+    /*
+     * Nichts geändert.
+     */
+
+    if (
+      oldStatus ===
+      status
+    ) {
+      const openCount =
+        await getOpenReportCount(
+          env,
+          actor
+        );
+
+      return json({
+        ok:
+          true,
+
+        unchanged:
+          true,
+
+        report_id:
+          reportId,
+
+        status,
+
+        open_count:
+          openCount
+      });
+    }
+
 
     await env.DB.prepare(`
       UPDATE chat_reports
@@ -1823,14 +2400,30 @@ export async function onRequestPut(
       )
       .run();
 
+
     await addModerationLog(
       env,
-      admin.id,
+      actor.id,
       report.reported_user_id,
       "update_report_status",
       {
         report_id:
           reportId,
+
+        report_type:
+          report.report_type,
+
+        message_id:
+          report.message_id,
+
+        whisper_message_id:
+          report.whisper_message_id,
+
+        actor_role:
+          actor.role,
+
+        target_username:
+          report.username,
 
         old_status:
           oldStatus,
@@ -1840,13 +2433,20 @@ export async function onRequestPut(
       }
     );
 
+
     const openCount =
       await getOpenReportCount(
-        env
+        env,
+        actor
       );
 
+
     return json({
-      ok: true,
+      ok:
+        true,
+
+      unchanged:
+        false,
 
       report_id:
         reportId,
@@ -1854,7 +2454,16 @@ export async function onRequestPut(
       status,
 
       open_count:
-        openCount
+        openCount,
+
+      message:
+        status ===
+          "closed"
+          ? "Die Meldung wurde geschlossen."
+          : status ===
+              "reviewed"
+            ? "Die Meldung wurde als geprüft markiert."
+            : "Die Meldung wurde wieder geöffnet."
     });
 
   } catch (error) {
@@ -1864,7 +2473,8 @@ export async function onRequestPut(
     );
 
     return json({
-      ok: false,
+      ok:
+        false,
 
       error:
         "Die Meldung konnte nicht aktualisiert werden."
@@ -1872,19 +2482,20 @@ export async function onRequestPut(
   }
 }
 
+
 /*
  * =====================================================
  * DELETE
  * =====================================================
  *
- * Reports werden aus Moderationsgründen nicht
- * physisch gelöscht.
+ * Meldungen bleiben aus Moderationsgründen erhalten.
  * =====================================================
  */
 
 export async function onRequestDelete() {
   return json({
-    ok: false,
+    ok:
+      false,
 
     error:
       "Meldungen können nicht gelöscht werden. Schließe die Meldung stattdessen."
