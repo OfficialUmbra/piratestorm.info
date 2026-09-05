@@ -38,7 +38,7 @@ async function getCurrentUser(request, env) {
     FROM sessions
     JOIN users
       ON users.id = sessions.user_id
-    WHERE sessions.token = ?
+    WHERE sessions.id = ?
       AND sessions.expires_at > ?
     LIMIT 1
   `)
@@ -58,70 +58,18 @@ function isAdmin(user) {
 
 function safeParseDetails(value) {
   if (!value) {
-    return {};
+    return null;
+  }
+
+  if (typeof value !== "string") {
+    return value;
   }
 
   try {
-    const parsed = JSON.parse(value);
-
-    if (
-      parsed &&
-      typeof parsed === "object"
-    ) {
-      return parsed;
-    }
-
-    return {
-      value: parsed
-    };
+    return JSON.parse(value);
   } catch {
-    /*
-     * Falls ein älterer Eintrag kein JSON enthält,
-     * geht das Protokoll trotzdem nicht kaputt.
-     */
-    return {
-      text: value
-    };
+    return value;
   }
-}
-
-function getActionLabel(action) {
-  const labels = {
-    kick:
-      "Spieler gekickt",
-
-    ban:
-      "Spieler gebannt",
-
-    unban:
-      "Bann aufgehoben",
-
-    delete_message:
-      "Chatnachricht gelöscht",
-
-    message_delete:
-      "Chatnachricht gelöscht",
-
-    delete_chat_message:
-      "Chatnachricht gelöscht",
-
-    whisper_message_delete:
-      "Whisper-Nachricht gelöscht",
-
-    report_status:
-      "Meldestatus geändert",
-
-    whisper_report_status:
-      "Whisper-Meldestatus geändert",
-
-    announcement:
-      "Ankündigung erstellt",
-
-    announcement_delete:
-      "Ankündigung entfernt"
-  };
-
-  return labels[action] || action;
 }
 
 /*
@@ -129,33 +77,33 @@ function getActionLabel(action) {
  * GET
  * =====================================================
  *
- * Ausschließlich Admin.
+ * Moderationsprotokoll laden.
  *
- * Beispiele:
+ * Ausschließlich für Administratoren.
+ *
+ * Unterstützte Filter:
  *
  * /api/chat/modlog
  *
- * /api/chat/modlog?limit=50
+ * /api/chat/modlog?limit=100
  *
  * /api/chat/modlog?action=ban
  *
- * /api/chat/modlog?user_id=12
+ * /api/chat/modlog?user_id=123
  *
- * Kombinationen sind ebenfalls möglich:
- *
- * /api/chat/modlog?action=ban&user_id=12&limit=25
+ * Filter können kombiniert werden.
  */
 export async function onRequestGet(context) {
   try {
     const { request, env } = context;
 
-    const admin =
+    const user =
       await getCurrentUser(
         request,
         env
       );
 
-    if (!admin) {
+    if (!user) {
       return json({
         ok: false,
         error:
@@ -164,16 +112,14 @@ export async function onRequestGet(context) {
     }
 
     /*
-     * Server-seitiger Adminschutz.
-     *
-     * Manipulation des Frontends oder der URL
-     * reicht nicht aus, um das Protokoll zu sehen.
+     * Nur role=admin darf das Moderationsprotokoll
+     * einsehen.
      */
-    if (!isAdmin(admin)) {
+    if (!isAdmin(user)) {
       return json({
         ok: false,
         error:
-          "Nur der Administrator darf das Moderationsprotokoll ansehen."
+          "Nur der Administrator darf das Moderationsprotokoll einsehen."
       }, 403);
     }
 
@@ -181,8 +127,11 @@ export async function onRequestGet(context) {
       new URL(request.url);
 
     /*
-     * Maximal 200 Einträge pro Anfrage.
+     * =============================================
+     * LIMIT
+     * =============================================
      */
+
     const requestedLimit =
       Number(
         url.searchParams.get("limit") ||
@@ -195,32 +144,46 @@ export async function onRequestGet(context) {
             1,
             Math.min(
               Math.floor(requestedLimit),
-              200
+              250
             )
           )
         : 100;
 
-    const action =
-      (
-        url.searchParams.get("action") ||
-        ""
-      ).trim();
+    /*
+     * =============================================
+     * ACTION-FILTER
+     * =============================================
+     */
 
-    const targetUserRaw =
+    const actionRaw =
+      url.searchParams.get("action");
+
+    const action =
+      typeof actionRaw === "string"
+        ? actionRaw.trim()
+        : "";
+
+    /*
+     * =============================================
+     * USER-FILTER
+     * =============================================
+     */
+
+    const userIdRaw =
       url.searchParams.get("user_id");
 
     let targetUserId = null;
 
     if (
-      targetUserRaw !== null &&
-      targetUserRaw !== ""
+      userIdRaw !== null &&
+      userIdRaw !== ""
     ) {
-      targetUserId =
-        Number(targetUserRaw);
+      const parsed =
+        Number(userIdRaw);
 
       if (
-        !Number.isInteger(targetUserId) ||
-        targetUserId <= 0
+        !Number.isInteger(parsed) ||
+        parsed <= 0
       ) {
         return json({
           ok: false,
@@ -228,7 +191,15 @@ export async function onRequestGet(context) {
             "Ungültige Spieler-ID."
         }, 400);
       }
+
+      targetUserId = parsed;
     }
+
+    /*
+     * =============================================
+     * SQL dynamisch zusammensetzen
+     * =============================================
+     */
 
     let query = `
       SELECT
@@ -260,8 +231,7 @@ export async function onRequestGet(context) {
       FROM chat_moderation_log log
 
       JOIN users admin
-        ON admin.id =
-          log.admin_id
+        ON admin.id = log.admin_id
 
       LEFT JOIN users target
         ON target.id =
@@ -304,75 +274,89 @@ export async function onRequestGet(context) {
         .bind(...bindings)
         .all();
 
+    /*
+     * =============================================
+     * RESPONSE
+     * =============================================
+     */
+
     const entries =
       (result.results || []).map(
-        entry => {
-          const details =
+        entry => ({
+          id:
+            entry.id,
+
+          action:
+            entry.action,
+
+          created_at:
+            entry.created_at,
+
+          admin: {
+            id:
+              entry.admin_id,
+
+            username:
+              entry.admin_username,
+
+            server:
+              entry.admin_server,
+
+            role:
+              entry.admin_role,
+
+            is_admin:
+              entry.admin_role ===
+              "admin"
+          },
+
+          target:
+            entry.target_user_id
+              ? {
+                  id:
+                    entry.target_user_id,
+
+                  username:
+                    entry.target_username,
+
+                  server:
+                    entry.target_server,
+
+                  role:
+                    entry.target_role,
+
+                  is_admin:
+                    entry.target_role ===
+                    "admin"
+                }
+              : null,
+
+          details:
             safeParseDetails(
               entry.details
-            );
-
-          return {
-            id:
-              entry.id,
-
-            action:
-              entry.action,
-
-            action_label:
-              getActionLabel(
-                entry.action
-              ),
-
-            admin: {
-              id:
-                entry.admin_id,
-
-              username:
-                entry.admin_username,
-
-              server:
-                entry.admin_server,
-
-              role:
-                entry.admin_role,
-
-              is_admin:
-                entry.admin_role ===
-                "admin"
-            },
-
-            target:
-              entry.target_user_id
-                ? {
-                    id:
-                      entry.target_user_id,
-
-                    username:
-                      entry.target_username,
-
-                    server:
-                      entry.target_server,
-
-                    role:
-                      entry.target_role,
-
-                    is_admin:
-                      entry.target_role ===
-                      "admin"
-                  }
-                : null,
-
-            details,
-
-            created_at:
-              entry.created_at
-          };
-        }
+            )
+        })
       );
 
     return json({
       ok: true,
+
+      current_user: {
+        id:
+          user.id,
+
+        username:
+          user.username,
+
+        server:
+          user.server,
+
+        role:
+          user.role,
+
+        is_admin:
+          true
+      },
 
       filters: {
         action:
@@ -406,61 +390,36 @@ export async function onRequestGet(context) {
 
 /*
  * =====================================================
- * POST
+ * ALLE ANDEREN METHODEN SPERREN
  * =====================================================
  *
- * Nicht erlaubt.
+ * Das Moderationsprotokoll wird ausschließlich von
+ * den jeweiligen Moderations-Endpunkten geschrieben.
  *
- * Moderationseinträge dürfen ausschließlich durch
- * unsere serverseitigen Moderationsfunktionen erzeugt
- * werden, z. B.:
- *
- * - Ban
- * - Unban
- * - Kick
- * - Nachricht löschen
- * - Report bearbeiten
- *
- * So kann selbst ein Admin nicht über den Browser
- * beliebige Fake-Logeinträge erzeugen.
+ * Es darf deshalb nicht direkt über diese API
+ * manipuliert werden.
  */
+
 export async function onRequestPost() {
   return json({
     ok: false,
     error:
-      "Moderationseinträge können nicht manuell erstellt werden."
+      "Das Moderationsprotokoll kann nicht direkt erstellt werden."
   }, 405);
 }
 
-/*
- * =====================================================
- * PUT
- * =====================================================
- *
- * Logs sind unveränderbar.
- */
 export async function onRequestPut() {
   return json({
     ok: false,
     error:
-      "Moderationseinträge können nicht verändert werden."
+      "Das Moderationsprotokoll kann nicht direkt bearbeitet werden."
   }, 405);
 }
 
-/*
- * =====================================================
- * DELETE
- * =====================================================
- *
- * Logs werden nicht über die API gelöscht.
- *
- * Damit bleibt nachvollziehbar, welche
- * Moderationsaktionen durchgeführt wurden.
- */
 export async function onRequestDelete() {
   return json({
     ok: false,
     error:
-      "Moderationseinträge können nicht gelöscht werden."
+      "Das Moderationsprotokoll kann nicht direkt gelöscht werden."
   }, 405);
 }
