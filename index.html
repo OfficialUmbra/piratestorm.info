@@ -187,27 +187,15 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
       <div class="brand">⚓ PS Codex<small id="brandSub">Inoffizielle Fan- &amp; Community-Seite</small></div>
       <div id="onlineCount" class="online site-online"><span class="site-online-main">🟢 Online: –</span></div><button class="btn" id="langBtn">EN</button>
     </div>
-    <input id="search" class="search" placeholder="Schiffe, Decks, Sets, Kanonen, Items … durchsuchen">
+    
   </div>
 </header>
 
 <div class="layout">
 <aside><nav id="nav">
+<button class="active" data-sec="communityCalendar">📅 <span>Kalender</span></button>
 <button data-sec="forum">💬 <span data-t="navForum">Forum</span></button>
 <button data-sec="chat">☠ <span id="navChatLabel">Chat</span></button>
-<button class="active" data-sec="overview">⌂ <span data-t="navOverview">Start</span></button>
-<button data-sec="ships">◈ <span data-t="navShips">Schiffe</span></button>
-<button data-sec="decks">▤ <span data-t="navDecks">Decks</span></button>
-<button data-sec="upgrades">⚙ <span data-t="navUpgrades">Verbesserungen</span></button>
-<button data-sec="sets">✦ <span data-t="navSets">Sets</span></button>
-<button data-sec="cannons">● <span data-t="navCannons">Kanonen</span></button>
-<button data-sec="harpoonlaunchers">⌁ <span data-t="navHarpoons">Harpunenwerfer</span></button>
-<button data-sec="ammo">◎ <span data-t="navAmmo">Munition</span></button>
-<button data-sec="items">✚ <span data-t="navItems">Items</span></button>
-<button data-sec="pvp">⚔ <span data-t="navPvp">PvP</span></button>
-<button data-sec="materials">◆ <span data-t="navMaterials">Materialien</span></button>
-<button data-sec="guild">♜ <span data-t="navGuild">Gilden</span></button>
-<button data-sec="tools">∑ <span data-t="navTools">Rechner</span></button>
 </nav></aside>
 
 <main>
@@ -1477,8 +1465,7 @@ loadForumSession().then(()=>loadForumPosts(false));
 let siteVisitorId=null;
 function getSiteVisitorId(){if(siteVisitorId)return siteVisitorId;try{siteVisitorId=localStorage.getItem('ps_site_visitor_id');if(!siteVisitorId){siteVisitorId='ps_'+(crypto.randomUUID?crypto.randomUUID().replace(/-/g,'_'):(Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)));localStorage.setItem('ps_site_visitor_id',siteVisitorId)}}catch(_){siteVisitorId='ps_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)}return siteVisitorId}
 function renderSiteStatus(j){const e=document.getElementById('onlineCount');if(!e)return;const online=Number(j.online||0),guests=Number(j.guests||0),members=Number(j.members||0),registered=Number(j.registered||0);e.innerHTML=lang==='de'?`<span class="site-online-main">🟢 Online: ${online}</span><span class="site-online-detail">· ${guests} Gäste · ${members} Member · 👥 Registriert: ${registered}</span>`:`<span class="site-online-main">🟢 Online: ${online}</span><span class="site-online-detail">· ${guests} guests · ${members} members · 👥 Registered: ${registered}</span>`}
-async function updateOnline(){try{const r=await fetch('/api/site-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitor_id:getSiteVisitorId()}),cache:'no-store'});if(!r.ok)throw 0;renderSiteStatus(await r.json())}catch(e){const el=document.getElementById('onlineCount');if(el)el.innerHTML=lang==='de'?'<span class="site-online-main">🟢 Online: –</span>':'<span class="site-online-main">🟢 Online: –</span>'}}
-updateOnline(); setInterval(updateOnline,30000);
+
 
 
 /* =========================
@@ -1509,7 +1496,11 @@ updateOnline(); setInterval(updateOnline,30000);
       if(!r.ok || !d.ok) return;
       const el = $v26("onlineCount");
       if(el){
-        el.textContent = `🟢 Online: ${d.online ?? 0} · ${d.guests ?? 0} Gäste · ${d.members ?? 0} Member · 👥 Registriert: ${d.registered ?? 0}`;
+        const online = Number.isFinite(Number(d.online)) ? Number(d.online) : 0;
+        const guests = Number.isFinite(Number(d.guests)) ? Number(d.guests) : 0;
+        const members = Number.isFinite(Number(d.members)) ? Number(d.members) : 0;
+        const registered = Number.isFinite(Number(d.registered)) ? Number(d.registered) : 0;
+        el.textContent = `🟢 Online: ${online} · ${guests} Gäste · ${members} Member · 👥 Registriert: ${registered}`;
         el.style.cursor = (forumCurrentUser?.role === "admin") ? "pointer" : "default";
       }
     }catch(_){}
