@@ -125,6 +125,12 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 .chat-compose{position:relative}
 @media(max-width:700px){.site-online{justify-content:flex-start}.tools-stack{gap:14px}}
 
+
+/* PS Codex community-only presentation */
+#overview > .hero,
+#overview > .stats { display:none !important; }
+#search { display:none !important; }
+
 </style>
 
 <style>
@@ -187,40 +193,19 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
       <div class="brand">⚓ PS Codex<small id="brandSub">Inoffizielle Fan- &amp; Community-Seite</small></div>
       <div id="onlineCount" class="online site-online"><span class="site-online-main">🟢 Online: lädt …</span></div><button class="btn" id="langBtn">EN</button>
     </div>
-    
+    <input id="search" class="search" placeholder="Schiffe, Decks, Sets, Kanonen, Items … durchsuchen">
   </div>
 </header>
 
 <div class="layout">
 <aside><nav id="nav">
-<button class="active" data-sec="communityCalendar">📅 <span>Kalender</span></button>
+<button class="active" data-sec="overview">📅 <span>Kalender</span></button>
 <button data-sec="forum">💬 <span data-t="navForum">Forum</span></button>
 <button data-sec="chat">☠ <span id="navChatLabel">Chat</span></button>
 </nav></aside>
 
 <main>
 
-
-<section id="communityCalendar" class="active-section">
-  <div class="section-head">
-    <div><h2>Community-Kalender</h2><p class="sub">Von Spielern gepflegt · nicht offiziell</p></div>
-  </div>
-  <div class="sub" style="margin:0 0 10px">Die Termine sind Community-Angaben und nicht offiziell. Sie können abweichen oder von Bigpoint geändert werden.</div><div class="event-calendar" id="eventCalendar">
-    <div class="calendar-head">
-      <div>
-        <h3 id="calendarTitle">📅 Eventkalender</h3>
-        <div class="sub" id="calendarSub">Community-Eventkalender – bekannte und erwartete Pirate-Storm-Events</div>
-      </div>
-      <div class="calendar-nav">
-        <button id="calendarPrev" type="button" aria-label="Vorheriger Monat">‹</button>
-        <div id="calendarMonth" class="calendar-month"></div>
-        <button id="calendarNext" type="button" aria-label="Nächster Monat">›</button>
-      </div>
-    </div>
-    <div class="sub" style="margin-bottom:10px">September 2026: Termine nach offiziellem Pirate-Storm-Forumkalender, Stand 02.09.2026.</div><div id="calendarGrid" class="calendar-grid"></div>
-    <div class="calendar-legend" id="calendarLegend">Der heutige Tag und heutige Events werden automatisch hervorgehoben. Termine sind Community-Angaben, nicht offiziell und können von Bigpoint geändert werden.</div>
-  </div>
-</section>
 <section id="forum">
   <div class="section-head"><div><h2 id="forumHeading">💬 Forum</h2><div class="sub" id="forumSub">PirateStorm Community – echte Beiträge, Kommentare und Likes für alle Spieler.</div></div></div>
   <div class="forum-shell">
@@ -310,7 +295,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 
     <div class="legal-card" id="fanDisclaimer">
       <h3>Inoffizielles Fanprojekt / Rechtehinweis</h3>
-      <p><b>PS Codex ist eine unabhängige, inoffizielle Fan- und Community-Seite.</b> Sie steht in keiner Verbindung zur Bigpoint GmbH und wird von Bigpoint weder betrieben, unterstützt noch autorisiert.</p><p class="legal-note">PS Codex stellt keine vollständige Reproduktion des Spiels oder der offiziellen Spieldokumentation dar. Die Plattform konzentriert sich auf eigenständige Community-Funktionen wie Livechat, Forum und einen von Spielern gepflegten Community-Kalender.</p>
+      <p><b>PS Codex ist eine unabhängige, inoffizielle Fan- und Community-Seite.</b> Sie steht in keiner Verbindung zur Bigpoint GmbH und wird von Bigpoint weder betrieben, unterstützt noch autorisiert.</p>
       <p>Pirate Storm ist ein Spiel der Bigpoint GmbH. Rechte an Pirate Storm, dessen Marken und Original-Spielinhalten verbleiben bei den jeweiligen Rechteinhabern. Eigener Quellcode, selbst entwickelte Rechner sowie eigenständige Community-Inhalte dieser Seite sind davon getrennt.</p>
       <p>Spielwerte werden redaktionell durch Community-Beobachtungen und Ingame-Prüfungen dokumentiert. Sie können unvollständig, fehlerhaft oder nach Spielupdates veraltet sein und stellen keine offiziellen Angaben von Bigpoint dar.</p>
     </div>
@@ -413,20 +398,55 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 
 <div class="chat-modal" id="chatModal"><div class="chat-modal-card"><div id="chatModalBody"></div><button class="forum-action" id="chatModalClose" style="margin-top:10px">Schließen</button></div></div>
 
+<section id="overview" class="active-section">
+  <div class="hero">
+    <h1>PirateStorm</h1>
+    <p id="heroText">Von der Community dokumentierte Spielwerte, Ausrüstung, Rechner und Erfahrungswissen zu Pirate Storm an einem Ort.</p>
+    <div class="hero-actions">
+      <button data-jump="ships" data-t="jumpShips">Schiffe ansehen</button>
+      <button data-jump="sets" data-t="jumpSets">Sets vergleichen</button>
+      <button data-jump="tools" data-t="jumpTools">Rechner öffnen</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="statShips">0</b><span data-t="statShips">Schiffe</span></div>
+      <div class="stat"><b id="statDecks">0</b><span data-t="statDecks">Decks</span></div>
+      <div class="stat"><b id="statCannons">0</b><span data-t="statCannons">Kanonen</span></div>
+      <div class="stat"><b id="statHarpoons">0</b><span data-t="statHarpoons">Harpunenwerfer</span></div>
+      <div class="stat"><b id="statSets">0</b><span data-t="statSets">Sets</span></div>
+      <div class="stat"><b id="statItems">0</b><span data-t="statItems">Items</span></div>
+    </div>
+  </div>
 
+  <div class="event-calendar" id="eventCalendar">
+    <div class="calendar-head">
+      <div>
+        <h3 id="calendarTitle">📅 Eventkalender</h3>
+        <div class="sub" id="calendarSub">Community-Eventkalender – von Spielern zusammengetragene Termine</div>
+      </div>
+      <div class="calendar-nav">
+        <button id="calendarPrev" type="button" aria-label="Vorheriger Monat">‹</button>
+        <div id="calendarMonth" class="calendar-month"></div>
+        <button id="calendarNext" type="button" aria-label="Nächster Monat">›</button>
+      </div>
+    </div>
+    <div class="sub" style="margin-bottom:10px">September 2026: Community-Termine · Stand 02.09.2026.</div><div id="calendarGrid" class="calendar-grid"></div>
+    <div class="calendar-legend" id="calendarLegend">Der heutige Tag und heutige Events werden automatisch hervorgehoben. Termine sind Community-Angaben, nicht offiziell und können von Bigpoint geändert werden.</div>
+  </div>
 
+</section>
 
-
-
-
-
-
-
-
-
-
-
-
+<section id="ships"><div class="section-head"><div><h2 data-t="shipsTitle">Schiffe</h2><div class="sub" data-t="shipsSub">Nach Event/Herkunft sortiert. Alle lesbaren Werte werden direkt angezeigt.</div></div></div><div id="shipsContent"></div></section>
+<section id="decks"><div class="section-head"><div><h2 data-t="decksTitle">Decks</h2><div class="sub" data-t="decksSub">Nach Event/Herkunft sortiert – ohne doppelte Darstellung.</div></div></div><div id="decksContent"></div></section>
+<section id="upgrades"><div class="section-head"><div><h2 data-t="upgradesTitle">Verbesserungen</h2><div class="sub" data-t="upgradesSub">Schiffsverbesserungen nach Event/Herkunft.</div></div></div><div id="upgradesContent"></div></section>
+<section id="sets"><div class="section-head"><div><h2 data-t="setsTitle">Sets</h2><div class="sub" data-t="setsSub">Set-Gegenstände, Effekte und Setstufen.</div></div></div><div id="setsContent"></div></section>
+<section id="cannons"><div class="section-head"><div><h2 data-t="cannonsTitle">Kanonen</h2><div class="sub" data-t="cannonsSub">Nach Event/Herkunft sortiert.</div></div></div><div id="cannonsContent"></div></section>
+<section id="harpoonlaunchers"><div class="section-head"><div><h2 data-t="harpoonsTitle">Harpunenwerfer</h2><div class="sub" data-t="harpoonsSub">Nach Event/Herkunft sortiert.</div></div></div><div id="harpoonsContent"></div></section>
+<section id="ammo"><div class="section-head"><div><h2 data-t="ammoTitle">Munition</h2><div class="sub" data-t="ammoSub">Kanonenkugeln und Harpunen, getrennt nach Standard- und Eventmunition.</div></div></div><div id="ammoContent"></div></section>
+<section id="items"><div class="section-head"><div><h2 data-t="itemsTitle">Items</h2><div class="sub" data-t="itemsSub">Ingame-Items mit ihren bekannten Effekten.</div></div></div><div id="itemsContent"></div></section>
+<section id="pvp"><div class="section-head"><div><h2 data-t="pvpTitle">PvP</h2><div class="sub" data-t="pvpSub">Kriegsrang-Belohnungen, PvP-Schutz und PvP-relevante Ausrüstung.</div></div></div><div id="pvpContent"></div></section>
+<section id="materials"><div class="section-head"><div><h2 data-t="materialsTitle">Materialien</h2><div class="sub" data-t="materialsSub">Fundorte und bekannte Bezugsquellen.</div></div></div><div id="materialsContent"></div></section>
+<section id="guild"><div class="section-head"><div><h2 data-t="guildTitle">Gilden</h2><div class="sub" data-t="guildSub">Gildenbelohnungen, Gilden-XP und Gildengold.</div></div></div><div id="guildContent"></div></section>
+<section id="tools"><div class="section-head"><div><h2 data-t="toolsTitle">Rechner</h2><div class="sub" data-t="toolsSub">Schadensrechner, Schiffs-Konfigurator und Gilden-XP-Rechner.</div></div></div><div id="toolsContent"></div></section>
 </main>
 </div>
 
@@ -440,14 +460,14 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
   <span>·</span>
   <button data-legal-jump="contact" data-footer-legal="contact">Kontakt</button>
 </div>
-<div id="footerCopy">PS Codex ist eine unabhängige, inoffizielle Fan- &amp; Community-Seite und steht in keiner Verbindung zu Bigpoint. Pirate Storm ist ein Spiel der Bigpoint GmbH; Rechte an Marken und Original-Spielinhalten verbleiben bei den jeweiligen Rechteinhabern.</div>
+<div id="footerCopy">PS Codex ist eine unabhängige, inoffizielle Fan- &amp; Community-Seite und steht in keiner Verbindung zu Bigpoint. Pirate Storm ist ein Spiel der Bigpoint GmbH; Rechte an Marken und Original-Spielinhalten verbleiben bei den jeweiligen Rechteinhabern. Spielwerte werden von der Community dokumentiert und können sich durch Updates ändern.</div>
 </footer>
 
 <script>
 const t={
 de:{
 navForum:'Forum',navOverview:'Start',navShips:'Schiffe',navDecks:'Decks',navUpgrades:'Verbesserungen',navSets:'Sets',navCannons:'Kanonen',navHarpoons:'Harpunenwerfer',navAmmo:'Munition',navItems:'Items',navPvp:'PvP',navMaterials:'Materialien',navGuild:'Gilden',navTools:'Rechner',
-heroText:'Der unabhängige Treffpunkt für die Pirate-Storm-Community – Livechat, Forum und Community-Eventkalender an einem Ort.',jumpShips:'Schiffe ansehen',jumpSets:'Sets vergleichen',jumpTools:'Rechner öffnen',
+heroText:'Von der Community dokumentierte Spielwerte, Ausrüstung, Rechner und Erfahrungswissen zu Pirate Storm an einem Ort.',jumpShips:'Schiffe ansehen',jumpSets:'Sets vergleichen',jumpTools:'Rechner öffnen',
 statShips:'Schiffe',statDecks:'Decks',statCannons:'Kanonen',statHarpoons:'Harpunenwerfer',statSets:'Sets',statItems:'Items',
 shipsTitle:'Schiffe',shipsSub:'Nach Event/Herkunft sortiert. Alle lesbaren Werte werden direkt angezeigt.',
 decksTitle:'Decks',decksSub:'Nach Event/Herkunft sortiert – ohne doppelte Darstellung.',
@@ -464,7 +484,7 @@ toolsTitle:'Rechner',toolsSub:'Schadensrechner, Schiffs-Konfigurator und Gilden-
 },
 en:{
 navForum:'Forum',navOverview:'Home',navShips:'Ships',navDecks:'Decks',navUpgrades:'Upgrades',navSets:'Sets',navCannons:'Cannons',navHarpoons:'Harpoon Launchers',navAmmo:'Ammo',navItems:'Items',navPvp:'PvP',navMaterials:'Materials',navGuild:'Guilds',navTools:'Calculators',
-heroText:'An independent meeting place for the Pirate Storm community – live chat, forum and community event calendar in one place.',jumpShips:'View ships',jumpSets:'Compare sets',jumpTools:'Open calculators',
+heroText:'Community-documented game values, equipment, calculators and player knowledge about Pirate Storm in one place.',jumpShips:'View ships',jumpSets:'Compare sets',jumpTools:'Open calculators',
 statShips:'Ships',statDecks:'Decks',statCannons:'Cannons',statHarpoons:'Harpoon launchers',statSets:'Sets',statItems:'Items',
 shipsTitle:'Ships',shipsSub:'Sorted by event/source. All readable values are shown directly.',
 decksTitle:'Decks',decksSub:'Sorted by event/source – no duplicate blocks.',
@@ -777,7 +797,7 @@ const guildXP=[
 
 const fmt=n=>typeof n==='number'?new Intl.NumberFormat(lang==='de'?'de-DE':'en-US').format(n):n;
 const kv=(k,v)=>`<div class="kv"><span>${k}</span><b>${v ?? '—'}</b></div>`;
-const tags=status=>status==='historical'?`<div class="tags"><span class="tag hist">${lang==='de'?'Historischer Community-Wert':'Historical community value'}</span></div>`:`<div class="tags"><span class="tag ver">${lang==='de'?'Community-Dokumentation · Stand ':'Community-checked · as of '}${verified}</span></div>`;
+const tags=status=>status==='historical'?`<div class="tags"><span class="tag hist">${lang==='de'?'Historischer Community-Wert':'Historical community value'}</span></div>`:`<div class="tags"><span class="tag ver">${lang==='de'?'Community-geprüft · Stand ':'Community-checked · as of '}${verified}</span></div>`;
 const stripHtml=s=>String(s??'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
 const escAttr=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const EN_EXACT={
@@ -809,7 +829,7 @@ const EN_NAMES={
 'Macht des Winters':'Power of Winter','Macht der Geister':'Power of Ghosts','Blutmond-Leuchten':'Blood Moon Glow','Macht des Panthers':'Power of the Panther','Macht des Sommers':'Power of Summer','Macht des Adlers':'Power of the Eagle','Macht des Skorpions':'Power of the Scorpion',
 'Verstärktes Bugschott':'Reinforced Bow Bulkhead','Arena-Anker':'Arena Anchor','Arena-Ruder':'Arena Rudder','Arena-Kiel':'Arena Keel','Arena-Mast':'Arena Mast','Arena-Glocke':'Arena Bell','Galionsfigur Hades':'Hades Figurehead','Kriegsschott':'War Bulkhead','Kriegerkiel':'Warrior Keel','Verstärkter Schiffskiel':'Reinforced Ship Keel','Professioneller Treibanker':'Professional Sea Anchor','Leinensegel':'Linen Sail','Hanfsegel':'Hemp Sail','Einfacher Schiffskiel':'Simple Ship Keel','Einfaches Bugschott':'Simple Bow Bulkhead','Improvisierter Treibanker':'Improvised Sea Anchor','Grobe Leinensegel':'Coarse Linen Sail','Grobe Hanfsegel':'Coarse Hemp Sail','Kleines Sturmschott':'Small Storm Bulkhead','Großes Sturmschott':'Large Storm Bulkhead',
 'Eiszapfen-Ruder':'Icicle Rudder','Eissturm-Segel':'Ice Storm Sail','Arktischer Kiel':'Arctic Keel','Gefrorener Mast':'Frozen Mast','Seelen Segel':'Soul Sail','Ruder des Verdammten':'Rudder of the Damned','Höllen-Mast':'Hell Mast','Hum-Bug':'Hum-Bug','Mondgeschmiedetes Ankergewicht':'Moon-Forged Anchor Weight','Mondlicht-Galionsfigurlack':'Moonlight Figurehead Coating','Mondstrahl-Ruderverlängerung':'Moonbeam Rudder Extension','Blutmond-Bugschottenverstärkung':'Blood Moon Bow Bulkhead Reinforcement','Obsidian-Anker':'Obsidian Anchor','Netjerets Galionsfigur':'Netjeret’s Figurehead','Dunkler Schrei':'Dark Scream','Donner-Rumpf':'Thunder Hull','Flossen-Ruder':'Fin Rudder','Flatter-Segel':'Flutter Sail','Reißzahn-Kiel':'Fang Keel','Basilisken Mast':'Basilisk Mast','Kuguar-Schott':'Cougar Bulkhead','Riff-Deck':'Reef Deck',
-'Allgemein':'General','Fragen & Hilfe':'Questions & Help','Gameplay & Tipps':'Gameplay & Tips','Gilden':'Guilds','Ankündigung':'Announcements','Ankündigungen':'Announcements'
+'Allgemein':'General','Fragen & Hilfe':'Questions & Help','Schiffe & Builds':'Ships & Builds','Gilden':'Guilds','Ankündigung':'Announcements','Ankündigungen':'Announcements'
 };
 function tr(v){
   if(lang==='de'||v==null)return v;
@@ -853,7 +873,7 @@ function renderUpgrades(){
     (u.effect?kv(lang==='de'?'Effekt':'Effect',tr(u.effect)):'')+(u.unlock?kv(lang==='de'?'Freischaltung':'Unlock',tr(u.unlock)):''),u.status));
 }
 function renderSets(){
-  setsContent.innerHTML=sets.map(s=>`<div class="group">${s.group} · ${s.name}</div><div class="grid"><article class="card searchable" data-search="${escAttr((s.group+' '+s.name+' '+JSON.stringify(s)).toLowerCase())}"><h3>${tr(s.name)}</h3><div class="tags"><span class="tag ver">${lang==='de'?'Community-Dokumentation · Stand ':'Community-checked · as of '}${verified}</span></div><div class="sub">${lang==='de'?'Gegenstände':'Items'}</div>${s.pieces.map(p=>`<div class="level"><b>${tr(p[0])}</b><br>${tr(p[1])}</div>`).join('')}<div class="sub" style="margin-top:9px">${lang==='de'?'Setstufen':'Set levels'}</div>${s.levels.map(l=>`<div class="level"><b>${tr(l[0])}</b><br>${tr(l[1])}</div>`).join('')}</article></div>`).join('');
+  setsContent.innerHTML=sets.map(s=>`<div class="group">${s.group} · ${s.name}</div><div class="grid"><article class="card searchable" data-search="${escAttr((s.group+' '+s.name+' '+JSON.stringify(s)).toLowerCase())}"><h3>${tr(s.name)}</h3><div class="tags"><span class="tag ver">${lang==='de'?'Community-geprüft · Stand ':'Community-checked · as of '}${verified}</span></div><div class="sub">${lang==='de'?'Gegenstände':'Items'}</div>${s.pieces.map(p=>`<div class="level"><b>${tr(p[0])}</b><br>${tr(p[1])}</div>`).join('')}<div class="sub" style="margin-top:9px">${lang==='de'?'Setstufen':'Set levels'}</div>${s.levels.map(l=>`<div class="level"><b>${tr(l[0])}</b><br>${tr(l[1])}</div>`).join('')}</article></div>`).join('');
 }
 function renderWeapons(){
   cannonsContent.innerHTML=grouped(cannons,c=>card(`${tr(c.name)} · Lvl ${c.level}`,kv(lang==='de'?'Gegnertyp':'Target',lang==='de'?'Schiffe':'Ships')+kv(lang==='de'?'Basis-Schaden':'Base damage',c.damage)+kv(lang==='de'?'Streuung':'Spread',`${c.spread}%`)+kv(lang==='de'?'Zerstörbar':'Destructible',tr(c.destroy))+(c.source?kv(lang==='de'?'Quelle':'Source',tr(c.source)):'') ,c.status));
@@ -949,10 +969,16 @@ const FORUM_CATEGORY_EN={
   'Guides':'Guides',
   'Arena':'Arena',
   'PvP':'PvP',
-  'Gameplay & Tipps':'Gameplay & Tips',
-  'Gilden':'Guilds','Ankündigung':'Announcements',
+  'Schiffe & Builds':'Ships & Builds',
+  'Gilden':'Guilds',
+  
+  'Ankündigung':'Announcements',
   'Ankündigungen':'Announcements'
 };
+
+const psCodexVisibleForumCategories = list =>
+  (Array.isArray(list) ? list : []).filter(c => !String(c?.name ?? c ?? '').trim().toLowerCase().startsWith('screen'));
+
 const forumCategoryLabel=name=>lang==='de'?String(name??''):(FORUM_CATEGORY_EN[String(name??'')]||String(name??''));
 
 const forumTranslationCache=new Map();
@@ -1071,7 +1097,7 @@ async function loadForumCategories(){
 function renderCategoryAdmin(){
   if(!categoryAdminList)return;
   if(!isForumAdmin()){categoryAdminList.innerHTML='';return;}
-  categoryAdminList.innerHTML=forumCategories.map(c=>`<div class="comment-row"><input maxlength="60" value="${esc(c.name)}" data-category-name="${c.id}"><button class="forum-action" data-category-save="${c.id}">${lang==='de'?'Umbenennen':'Rename'}</button><button class="forum-action" data-category-delete="${c.id}">${lang==='de'?'Löschen':'Delete'}</button><span class="forum-meta">${Number(c.thread_count||0)} ${lang==='de'?'Threads':'threads'}</span></div>`).join('')||`<div class="forum-note">${lang==='de'?'Keine Überthemen vorhanden.':'No categories yet.'}</div>`;
+  categoryAdminList.innerHTML=psCodexVisibleForumCategories(forumCategories).map(c=>`<div class="comment-row"><input maxlength="60" value="${esc(c.name)}" data-category-name="${c.id}"><button class="forum-action" data-category-save="${c.id}">${lang==='de'?'Umbenennen':'Rename'}</button><button class="forum-action" data-category-delete="${c.id}">${lang==='de'?'Löschen':'Delete'}</button><span class="forum-meta">${Number(c.thread_count||0)} ${lang==='de'?'Threads':'threads'}</span></div>`).join('')||`<div class="forum-note">${lang==='de'?'Keine Überthemen vorhanden.':'No categories yet.'}</div>`;
 }
 async function loadForumPosts(showLoading=true){
   if(forumLoading)return;
@@ -1117,7 +1143,7 @@ function renderForum(){
   if(forumView==='categories'){
     forumHeading.textContent='💬 Forum';
     forumSub.textContent=lang==='de'?'Wähle zuerst ein Überthema.':'Choose a category first.';
-    feed.innerHTML=`<div class="forum-category-grid">${forumCategories.map(c=>`<div class="forum-category-card" data-open-category="${esc(c.name)}"><h3>${esc(forumCategoryLabel(c.name))}</h3><div class="sub">${lang==='de'?'Threads und Diskussionen in diesem Überthema.':'Threads and discussions in this category.'}</div><div class="forum-meta">💬 ${Number(c.thread_count||0)} ${lang==='de'?'Threads':'threads'}</div></div>`).join('')}</div>`;
+    feed.innerHTML=`<div class="forum-category-grid">${psCodexVisibleForumCategories(forumCategories).map(c=>`<div class="forum-category-card" data-open-category="${esc(c.name)}"><h3>${esc(forumCategoryLabel(c.name))}</h3><div class="sub">${lang==='de'?'Threads und Diskussionen in diesem Überthema.':'Threads and discussions in this category.'}</div><div class="forum-meta">💬 ${Number(c.thread_count||0)} ${lang==='de'?'Threads':'threads'}</div></div>`).join('')}</div>`;
     if(!forumCategories.length)feed.innerHTML=`<div class="note">${lang==='de'?'Noch keine Überthemen vorhanden.':'No categories yet.'}</div>`;
     return;
   }
@@ -1271,7 +1297,7 @@ function renderCalendar(){
   const sub=document.getElementById('calendarSub');
   const legend=document.getElementById('calendarLegend');
   if(title) title.textContent=lang==='de'?'📅 Eventkalender':'📅 Event calendar';
-  if(sub) sub.textContent=lang==='de'?'Community-Eventkalender – bekannte und erwartete Pirate-Storm-Events':'Community event calendar – known and expected Pirate Storm events';
+  if(sub) sub.textContent=lang==='de'?'Community-Eventkalender – von Spielern zusammengetragene Termine':'Community event calendar – dates collected by players';
   if(legend) legend.textContent=lang==='de'
     ?'Der heutige Tag und heutige Events werden automatisch hervorgehoben. Termine sind Community-Angaben, nicht offiziell und können von Bigpoint geändert werden.'
     :'Today and today’s events are highlighted automatically. Dates are community information, are not official, and may be changed by Bigpoint.';
@@ -1292,9 +1318,9 @@ function translate(){
   document.documentElement.lang=lang;
   document.querySelectorAll('[data-t]').forEach(el=>{const k=el.dataset.t;if(t[lang][k])el.textContent=t[lang][k]});
   heroText.textContent=t[lang].heroText;
-  brandSub.textContent=lang==='de'?'Inoffizielle Fan- & Community-Seite':'Unofficial fan & community site';
+  brandSub.textContent=lang==='de'?'Inoffizielle Community für Pirate-Storm-Spieler':'Unofficial community for Pirate Storm players';
   search.placeholder=lang==='de'?'Schiffe, Decks, Sets, Kanonen, Items … durchsuchen':'Search ships, decks, sets, cannons, items …';
-  const footerCopy=document.getElementById('footerCopy');if(footerCopy)footerCopy.textContent=lang==='de'?'PirateStorm.info ist eine unabhängige, inoffizielle Fan- & Community-Seite und steht in keiner Verbindung zu Bigpoint. Pirate Storm ist ein Spiel der Bigpoint GmbH; Rechte an Marken und Original-Spielinhalten verbleiben bei den jeweiligen Rechteinhabern. Spielwerte werden von der Community dokumentiert und können sich durch Updates ändern.':'PirateStorm.info is an independent, unofficial fan & community site and is not affiliated with Bigpoint. Pirate Storm is a game by Bigpoint GmbH; rights in trademarks and original game content remain with their respective rights holders. Game values are community-documented and may change with updates.';
+  const footerCopy=document.getElementById('footerCopy');if(footerCopy)footerCopy.textContent=lang==='de'?'PS Codex ist eine unabhängige, inoffizielle Fan- & Community-Seite und steht in keiner Verbindung zu Bigpoint. Pirate Storm ist ein Spiel der Bigpoint GmbH; Rechte an Marken und Original-Spielinhalten verbleiben bei den jeweiligen Rechteinhabern. Spielwerte werden von der Community dokumentiert und können sich durch Updates ändern.':'PS Codex is an independent, unofficial fan & community site and is not affiliated with Bigpoint. Pirate Storm is a game by Bigpoint GmbH; rights in trademarks and original game content remain with their respective rights holders. Game values are community-documented and may change with updates.';
   if(document.getElementById('forumSub')) forumSub.textContent=lang==='de'?'PirateStorm Community – echte Beiträge, Kommentare und Likes für alle Spieler.':'PirateStorm community – shared posts, comments and likes for all players.';
   if(document.getElementById('loginTitle')) loginTitle.textContent=lang==='de'?'Anmelden / Registrieren':'Sign in / Register';
   if(document.getElementById('forumRegister')) forumRegister.textContent=lang==='de'?'Registrieren':'Register';
@@ -1465,8 +1491,9 @@ loadForumSession().then(()=>loadForumPosts(false));
 let siteVisitorId=null;
 function getSiteVisitorId(){if(siteVisitorId)return siteVisitorId;try{siteVisitorId=localStorage.getItem('ps_site_visitor_id');if(!siteVisitorId){siteVisitorId='ps_'+(crypto.randomUUID?crypto.randomUUID().replace(/-/g,'_'):(Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)));localStorage.setItem('ps_site_visitor_id',siteVisitorId)}}catch(_){siteVisitorId='ps_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)}return siteVisitorId}
 function renderSiteStatus(j){const e=document.getElementById('onlineCount');if(!e)return;const online=Number(j.online||0),guests=Number(j.guests||0),members=Number(j.members||0),registered=Number(j.registered||0);e.innerHTML=lang==='de'?`<span class="site-online-main">🟢 Online: ${online}</span><span class="site-online-detail">· ${guests} Gäste · ${members} Member · 👥 Registriert: ${registered}</span>`:`<span class="site-online-main">🟢 Online: ${online}</span><span class="site-online-detail">· ${guests} guests · ${members} members · 👥 Registered: ${registered}</span>`}
-async function updateOnline(){try{const r=await fetch('/api/site-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitor_id:getSiteVisitorId()}),cache:'no-store'});if(!r.ok)throw 0;renderSiteStatus(await r.json())}catch(e){/* Letzten gültigen Online-Stand beibehalten. */}}
+async function updateOnline(){try{const r=await fetch('/api/site-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitor_id:getSiteVisitorId()}),cache:'no-store'});if(!r.ok)throw 0;renderSiteStatus(await r.json())}catch(e){/* Keep the last valid online value on temporary request errors. */}}
 updateOnline(); setInterval(updateOnline,30000);
+
 
 /* =========================
    V26 PUBLIC RELEASE ADDITIONS
@@ -1496,11 +1523,7 @@ updateOnline(); setInterval(updateOnline,30000);
       if(!r.ok || !d.ok) return;
       const el = $v26("onlineCount");
       if(el){
-        const online = Number.isFinite(Number(d.online)) ? Number(d.online) : 0;
-        const guests = Number.isFinite(Number(d.guests)) ? Number(d.guests) : 0;
-        const members = Number.isFinite(Number(d.members)) ? Number(d.members) : 0;
-        const registered = Number.isFinite(Number(d.registered)) ? Number(d.registered) : 0;
-        el.textContent = `🟢 Online: ${online} · ${guests} Gäste · ${members} Member · 👥 Registriert: ${registered}`;
+        el.textContent = `🟢 Online: ${d.online ?? 0} · ${d.guests ?? 0} Gäste · ${d.members ?? 0} Member · 👥 Registriert: ${d.registered ?? 0}`;
         el.style.cursor = (forumCurrentUser?.role === "admin") ? "pointer" : "default";
       }
     }catch(_){}
@@ -1508,6 +1531,20 @@ updateOnline(); setInterval(updateOnline,30000);
 
   // Remove obsolete persistent V25 visitor ID.
   try{ localStorage.removeItem("ps_site_visitor_id"); }catch(_){}
+
+  v26SiteHeartbeat();
+  setInterval(v26SiteHeartbeat, 30000);
+
+  addEventListener("pagehide", () => {
+    try{
+      fetch("/api/site-status", {
+        method:"DELETE",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({visitor_id:v26SiteVisitorId}),
+        keepalive:true
+      });
+    }catch(_){}
+  });
 
   function openV26Modal(content){
     const modal = $v26("chatModal");
@@ -1631,7 +1668,7 @@ updateOnline(); setInterval(updateOnline,30000);
           if(!r.ok||!d.ok)throw new Error(d.error||"Account konnte nicht gelöscht werden.");
           alert(`${name} wurde gelöscht und anonymisiert.`);
           await load($v26("v26UserSearch")?.value||"");
-          await updateOnline();
+          await v26SiteHeartbeat();
         }
       }catch(err){
         alert(err.message);
