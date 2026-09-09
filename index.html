@@ -185,7 +185,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
   <div class="head">
     <div class="top">
       <div class="brand">⚓ PS Codex<small id="brandSub">Inoffizielle Fan- &amp; Community-Seite</small></div>
-      <div id="onlineCount" class="online site-online"><span class="site-online-main">🟢 Online: –</span></div><button class="btn" id="langBtn">EN</button>
+      <div id="onlineCount" class="online site-online"><span class="site-online-main">🟢 Online: lädt …</span></div><button class="btn" id="langBtn">EN</button>
     </div>
     
   </div>
@@ -206,20 +206,20 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
     <div><h2>Community-Kalender</h2><p class="sub">Von Spielern gepflegt · nicht offiziell</p></div>
   </div>
   <div class="sub" style="margin:0 0 10px">Die Termine sind Community-Angaben und nicht offiziell. Sie können abweichen oder von Bigpoint geändert werden.</div><div class="event-calendar" id="eventCalendar">
-<div class="calendar-head">
-<div>
-<h3 id="calendarTitle">📅 Eventkalender</h3>
-<div class="sub" id="calendarSub">Community-Eventkalender – von Spielern zusammengetragene Termine</div>
-</div>
-<div class="calendar-nav">
-<button aria-label="Vorheriger Monat" id="calendarPrev" type="button">‹</button>
-<div class="calendar-month" id="calendarMonth"></div>
-<button aria-label="Nächster Monat" id="calendarNext" type="button">›</button>
-</div>
-</div>
-<div class="sub" style="margin-bottom:10px">September 2026: Termine nach offiziellem Pirate-Storm-Forumkalender, Stand 02.09.2026.</div><div class="calendar-grid" id="calendarGrid"></div>
-<div class="calendar-legend" id="calendarLegend">Der heutige Tag und heutige Events werden automatisch hervorgehoben. Termine sind Community-Angaben, nicht offiziell und können von Bigpoint geändert werden.</div>
-</div>
+    <div class="calendar-head">
+      <div>
+        <h3 id="calendarTitle">📅 Eventkalender</h3>
+        <div class="sub" id="calendarSub">Community-Eventkalender – bekannte und erwartete Pirate-Storm-Events</div>
+      </div>
+      <div class="calendar-nav">
+        <button id="calendarPrev" type="button" aria-label="Vorheriger Monat">‹</button>
+        <div id="calendarMonth" class="calendar-month"></div>
+        <button id="calendarNext" type="button" aria-label="Nächster Monat">›</button>
+      </div>
+    </div>
+    <div class="sub" style="margin-bottom:10px">September 2026: Termine nach offiziellem Pirate-Storm-Forumkalender, Stand 02.09.2026.</div><div id="calendarGrid" class="calendar-grid"></div>
+    <div class="calendar-legend" id="calendarLegend">Der heutige Tag und heutige Events werden automatisch hervorgehoben. Termine sind Community-Angaben, nicht offiziell und können von Bigpoint geändert werden.</div>
+  </div>
 </section>
 <section id="forum">
   <div class="section-head"><div><h2 id="forumHeading">💬 Forum</h2><div class="sub" id="forumSub">PirateStorm Community – echte Beiträge, Kommentare und Likes für alle Spieler.</div></div></div>
@@ -1271,7 +1271,7 @@ function renderCalendar(){
   const sub=document.getElementById('calendarSub');
   const legend=document.getElementById('calendarLegend');
   if(title) title.textContent=lang==='de'?'📅 Eventkalender':'📅 Event calendar';
-  if(sub) sub.textContent=lang==='de'?'Community-Eventkalender – von Spielern zusammengetragene Termine':'Community event calendar – dates collected by players';
+  if(sub) sub.textContent=lang==='de'?'Community-Eventkalender – bekannte und erwartete Pirate-Storm-Events':'Community event calendar – known and expected Pirate Storm events';
   if(legend) legend.textContent=lang==='de'
     ?'Der heutige Tag und heutige Events werden automatisch hervorgehoben. Termine sind Community-Angaben, nicht offiziell und können von Bigpoint geändert werden.'
     :'Today and today’s events are highlighted automatically. Dates are community information, are not official, and may be changed by Bigpoint.';
@@ -1292,9 +1292,9 @@ function translate(){
   document.documentElement.lang=lang;
   document.querySelectorAll('[data-t]').forEach(el=>{const k=el.dataset.t;if(t[lang][k])el.textContent=t[lang][k]});
   heroText.textContent=t[lang].heroText;
-  brandSub.textContent=lang==='de'?'Inoffizielle Community für Pirate-Storm-Spieler':'Unofficial community for Pirate Storm players';
+  brandSub.textContent=lang==='de'?'Inoffizielle Fan- & Community-Seite':'Unofficial fan & community site';
   search.placeholder=lang==='de'?'Schiffe, Decks, Sets, Kanonen, Items … durchsuchen':'Search ships, decks, sets, cannons, items …';
-  const footerCopy=document.getElementById('footerCopy');if(footerCopy)footerCopy.textContent=lang==='de'?'PS Codex ist ein unabhängiges, inoffizielles Community-Fanprojekt für Spieler von Pirate Storm. Es besteht keine Verbindung zur Bigpoint GmbH. PS Codex wird von Bigpoint weder betrieben noch unterstützt oder autorisiert. Pirate Storm wird ausschließlich zur Bezeichnung des Spiels genannt, auf das sich die Community bezieht. Rechte an Marken und Original-Spielinhalten verbleiben bei den jeweiligen Rechteinhabern.':'PS Codex is an independent, unofficial fan & community site and is not affiliated with Bigpoint. Pirate Storm is a game by Bigpoint GmbH; rights in trademarks and original game content remain with their respective rights holders. Game values are community-documented and may change with updates.';
+  const footerCopy=document.getElementById('footerCopy');if(footerCopy)footerCopy.textContent=lang==='de'?'PirateStorm.info ist eine unabhängige, inoffizielle Fan- & Community-Seite und steht in keiner Verbindung zu Bigpoint. Pirate Storm ist ein Spiel der Bigpoint GmbH; Rechte an Marken und Original-Spielinhalten verbleiben bei den jeweiligen Rechteinhabern. Spielwerte werden von der Community dokumentiert und können sich durch Updates ändern.':'PirateStorm.info is an independent, unofficial fan & community site and is not affiliated with Bigpoint. Pirate Storm is a game by Bigpoint GmbH; rights in trademarks and original game content remain with their respective rights holders. Game values are community-documented and may change with updates.';
   if(document.getElementById('forumSub')) forumSub.textContent=lang==='de'?'PirateStorm Community – echte Beiträge, Kommentare und Likes für alle Spieler.':'PirateStorm community – shared posts, comments and likes for all players.';
   if(document.getElementById('loginTitle')) loginTitle.textContent=lang==='de'?'Anmelden / Registrieren':'Sign in / Register';
   if(document.getElementById('forumRegister')) forumRegister.textContent=lang==='de'?'Registrieren':'Register';
@@ -1435,9 +1435,9 @@ chatEl('chatWindow').addEventListener('click',async e=>{const b=e.target.closest
 chatEl('chatModalBody').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;try{if(b.dataset.onlineWarn){await chatWarn(b.dataset.onlineWarn,b.dataset.onlineName)}else if(b.dataset.onlineHistory){await openWarningHistory(b.dataset.onlineHistory,b.dataset.onlineName)}else if(b.dataset.onlineKick){await chatAdminAction('kick',b.dataset.onlineKick,b.dataset.onlineName)}else if(b.dataset.onlineBan){await chatAdminAction('ban',b.dataset.onlineBan,b.dataset.onlineName)}else if(b.dataset.roleUser){await changeChatRole(b.dataset.roleUser,b.dataset.roleName,b.dataset.roleSet)}else if(b.dataset.resolveReport){await apiJson('/api/chat/reports',{method:'PUT',body:JSON.stringify({id:Number(b.dataset.resolveReport),status:'closed'})});await openReports();await updateReportBadge()}else if(b.dataset.reportWarn){await chatWarn(b.dataset.reportWarn,b.dataset.reportUser);await openReports();await updateReportBadge()}else if(b.dataset.reportKick){await chatAdminAction('kick',b.dataset.reportKick,b.dataset.reportUser);await openReports();await updateReportBadge()}else if(b.dataset.reportBan){const card=b.closest('.chat-report'),duration=card?.querySelector('[data-report-duration]')?.value||'30m',reason=prompt(lang==='de'?`Ban-Grund für ${b.dataset.reportUser} (optional):`:`Ban reason for ${b.dataset.reportUser} (optional):`,'');if(reason===null)return;const internal_note=prompt(lang==='de'?'Interne Moderationsnotiz (optional, nicht öffentlich):':'Internal moderation note (optional, not public):','');if(internal_note===null)return;await apiJson('/api/chat/bans',{method:'POST',body:JSON.stringify({action:'ban',user_id:Number(b.dataset.reportBan),duration,reason,internal_note})});await openReports();await updateReportBadge()}else if(b.dataset.unban){await apiJson('/api/chat/bans?id='+encodeURIComponent(b.dataset.unban),{method:'DELETE'});await openBans()}else if(b.dataset.unblock){await apiJson('/api/chat/blocks?user_id='+encodeURIComponent(b.dataset.unblock),{method:'DELETE'});await openBlockedPlayers();await loadChatMessages()}else if(b.dataset.whisperInvite){await apiJson('/api/chat/whispers',{method:'PUT',body:JSON.stringify({invite_id:Number(b.dataset.whisperInvite),response:b.dataset.whisperResponse})});chatEl('chatModal').classList.remove('open');await loadChatWhispers()}else if(b.dataset.editAnnouncement){const old=decodeURIComponent(b.dataset.announcementMessage||''),message=prompt(lang==='de'?'Ankündigung bearbeiten:':'Edit announcement:',old);if(message===null||!message.trim())return;await apiJson('/api/chat/announcements',{method:'PUT',body:JSON.stringify({id:Number(b.dataset.editAnnouncement),message:message.trim()})});await openAnnouncements();await loadChatMessages()}else if(b.dataset.deleteAnnouncement){if(!confirm(lang==='de'?'Ankündigung wirklich löschen?':'Delete announcement?'))return;await apiJson('/api/chat/announcements?id='+encodeURIComponent(b.dataset.deleteAnnouncement),{method:'DELETE'});await openAnnouncements();await loadChatMessages()}}catch(err){alert(err.message)}});
 
 function renderAll(){
-  translate();
-  renderCalendar();
-  renderForum();
+  translate();renderCalendar();renderForum();renderShips();renderDecks();renderUpgrades();renderSets();renderWeapons();renderAmmo();renderItems();renderPvp();renderMaterials();renderGuild();renderTools();
+  statShips.textContent=ships.length;statDecks.textContent=decks.length;statCannons.textContent=cannons.length;statHarpoons.textContent=harpoonlaunchers.length;statSets.textContent=sets.length;statItems.textContent=items.length;
+  applySearch();
 }
 function applySearch(){
   const q=search.value.trim().toLowerCase();
@@ -1456,7 +1456,7 @@ function applySearch(){
     document.getElementById(currentSection||'overview').classList.add('active-section');
   }
 }
-
+search.addEventListener('input',applySearch);
 nav.addEventListener('click',e=>{const b=e.target.closest('button[data-sec]');if(!b)return;currentSection=b.dataset.sec;document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('main section').forEach(s=>s.classList.remove('active-section'));document.getElementById(currentSection).classList.add('active-section');if(currentSection==='forum')loadForumPosts(false);if(currentSection==='chat'){renderChatShell();startChatPolling();}window.scrollTo({top:0,behavior:'smooth'});});
 document.querySelectorAll('[data-jump]').forEach(b=>b.addEventListener('click',()=>document.querySelector(`nav button[data-sec="${b.dataset.jump}"]`).click()));
 langBtn.addEventListener('click',()=>{lang=lang==='de'?'en':'de';langBtn.textContent=lang==='de'?'EN':'DE';renderAll();updateOnline();});
@@ -1465,8 +1465,8 @@ loadForumSession().then(()=>loadForumPosts(false));
 let siteVisitorId=null;
 function getSiteVisitorId(){if(siteVisitorId)return siteVisitorId;try{siteVisitorId=localStorage.getItem('ps_site_visitor_id');if(!siteVisitorId){siteVisitorId='ps_'+(crypto.randomUUID?crypto.randomUUID().replace(/-/g,'_'):(Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)));localStorage.setItem('ps_site_visitor_id',siteVisitorId)}}catch(_){siteVisitorId='ps_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)}return siteVisitorId}
 function renderSiteStatus(j){const e=document.getElementById('onlineCount');if(!e)return;const online=Number(j.online||0),guests=Number(j.guests||0),members=Number(j.members||0),registered=Number(j.registered||0);e.innerHTML=lang==='de'?`<span class="site-online-main">🟢 Online: ${online}</span><span class="site-online-detail">· ${guests} Gäste · ${members} Member · 👥 Registriert: ${registered}</span>`:`<span class="site-online-main">🟢 Online: ${online}</span><span class="site-online-detail">· ${guests} guests · ${members} members · 👥 Registered: ${registered}</span>`}
-
-
+async function updateOnline(){try{const r=await fetch('/api/site-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitor_id:getSiteVisitorId()}),cache:'no-store'});if(!r.ok)throw 0;renderSiteStatus(await r.json())}catch(e){/* Letzten gültigen Online-Stand beibehalten. */}}
+updateOnline(); setInterval(updateOnline,30000);
 
 /* =========================
    V26 PUBLIC RELEASE ADDITIONS
@@ -1508,20 +1508,6 @@ function renderSiteStatus(j){const e=document.getElementById('onlineCount');if(!
 
   // Remove obsolete persistent V25 visitor ID.
   try{ localStorage.removeItem("ps_site_visitor_id"); }catch(_){}
-
-  v26SiteHeartbeat();
-  setInterval(v26SiteHeartbeat, 30000);
-
-  addEventListener("pagehide", () => {
-    try{
-      fetch("/api/site-status", {
-        method:"DELETE",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({visitor_id:v26SiteVisitorId}),
-        keepalive:true
-      });
-    }catch(_){}
-  });
 
   function openV26Modal(content){
     const modal = $v26("chatModal");
@@ -1645,7 +1631,7 @@ function renderSiteStatus(j){const e=document.getElementById('onlineCount');if(!
           if(!r.ok||!d.ok)throw new Error(d.error||"Account konnte nicht gelöscht werden.");
           alert(`${name} wurde gelöscht und anonymisiert.`);
           await load($v26("v26UserSearch")?.value||"");
-          await v26SiteHeartbeat();
+          await updateOnline();
         }
       }catch(err){
         alert(err.message);
