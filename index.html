@@ -191,7 +191,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
   <div class="head">
     <div class="top">
       <div class="brand">⚓ PS Codex<small id="brandSub">Inoffizielle Fan- &amp; Community-Seite</small></div>
-      <div id="onlineCount" class="online site-online"><span class="site-online-main">🟢 Online: lädt …</span></div><button class="btn" id="langBtn">EN</button>
+      <div id="onlineCount" class="online site-online"><span class="site-online-main">🟢 Online: lädt …</span></div><label id="presenceConsentControl" style="display:inline-flex;align-items:center;gap:6px;font-size:11px;margin-left:10px;cursor:pointer"><input type="checkbox" id="presenceConsentToggle" style="accent-color:#58bfa5"> Am Onlinezähler teilnehmen (freiwillig)</label><button class="btn" id="langBtn">EN</button>
     </div>
     <input id="search" class="search" placeholder="Schiffe, Decks, Sets, Kanonen, Items … durchsuchen">
   </div>
@@ -323,12 +323,15 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 
       <p><b>Meldung mutmaßlich rechtswidriger Inhalte:</b> Bei Nutzung des gesonderten Meldeformulars können Name, E-Mail-Adresse, Art und Fundstelle des Inhalts, Referenzangaben, Begründung sowie die Bestätigung nach bestem Wissen verarbeitet werden. Die Daten werden ausschließlich zur Prüfung, Dokumentation, Kommunikation und Bearbeitung der Meldung genutzt.</p>
 
-      <p><b>Online-Status / Besucherzahl:</b> Für die Anzeige aktueller Besucherzahlen verwendet PS Codex eine zufällig erzeugte Browser-Kennung, die im localStorage gespeichert wird. Dadurch wird derselbe Browser beim Neuladen nicht mehrfach gezählt. Die Kennung wird zusammen mit dem Zeitpunkt des letzten Aufrufs vorübergehend in der Cloudflare-D1-Datenbank verarbeitet; bei angemeldeten Nutzern kann sie mit der Benutzerkennung verknüpft werden. Inaktive Online-Einträge werden nach etwa fünf Minuten entfernt. Die Browser-Kennung bleibt im localStorage erhalten, bis die Browserdaten gelöscht werden. Für die Besucherzählung speichert PS Codex selbst keine IP-Adresse in der D1-Datenbank; Cloudflare kann im Rahmen der Bereitstellung technische Verbindungsdaten verarbeiten.</p>
+      <p><b>Freiwillige Teilnahme am Onlinezähler:</b> Die Anzeige der aggregierten Besucherzahlen ist ohne Teilnahme möglich. Erst nach deiner ausdrücklichen Aktivierung erzeugt PS Codex eine zufällige Browser-Kennung und speichert sie im localStorage, damit Neuladen nicht zu Doppelzählungen führt. Die Kennung wird zusammen mit dem letzten Aktivitätszeitpunkt in Cloudflare D1 verarbeitet und kann bei eingeloggten Nutzern mit der Account-ID verknüpft werden. Inaktive Einträge werden nach etwa fünf Minuten gelöscht. Die Einwilligung kannst du jederzeit über den Schalter „Am Onlinezähler teilnehmen“ widerrufen. Beim Widerruf wird die Kennung aus deinem Browser entfernt und ein Löschversuch für den Onlineeintrag ausgelöst. Bei Verbindungsfehlern endet die Zählung spätestens nach dem Timeout. Rechtsgrundlage für die freiwillige Kennung ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG). Die Entscheidung wird lokal gespeichert, um sie bei weiteren Besuchen zu beachten. PS Codex speichert für diese Zählung keine IP-Adresse in D1; Cloudflare kann technisch bedingte Verbindungsdaten verarbeiten.</p>
+      <p><b>Einwilligung und Widerruf:</b> Die Teilnahme ist standardmäßig ausgeschaltet. Du kannst die Einwilligung jederzeit mit Wirkung für die Zukunft ändern, ohne dass deine Registrierung oder die Community-Nutzung davon abhängt.</p>
 
       <p><b>Hosting und Empfänger:</b> PS Codex nutzt Cloudflare-Infrastruktur, insbesondere Cloudflare Pages/Workers und D1. Dabei kann Cloudflare im Rahmen der technischen Bereitstellung Verbindungs-, Sicherheits- und Protokolldaten verarbeiten. Soweit Daten außerhalb des Europäischen Wirtschaftsraums verarbeitet werden, sind die vom Dienstleister vorgesehenen datenschutzrechtlichen Garantien und Übermittlungsmechanismen maßgeblich.</p>
 
       <p><b>Weitere Speicherdauer:</b> Accounts werden grundsätzlich bis zur Löschung geführt. Bei einer Accountlöschung werden Accountdaten soweit möglich gelöscht oder anonymisiert; bereits veröffentlichte Beiträge können anonymisiert als Bestandteil bestehender Unterhaltungen erhalten bleiben, soweit kein überwiegender Löschgrund entgegensteht. Presence-Daten werden kurzfristig entfernt. Moderations- und Rechtsmeldedaten können länger gespeichert werden, wenn dies für Sicherheit, Missbrauchsschutz, Bearbeitung, Nachweis oder Rechtsansprüche erforderlich ist.</p>
 
+      <p><b>Kontaktstelle für Meldungen und Beschwerden:</b> Hinweise auf mutmaßlich rechtswidrige Inhalte und Beschwerden über Moderationsentscheidungen können über das Meldeformular oder per E-Mail an die im Impressum genannte Adresse gesendet werden. Die Bearbeitung erfolgt nach Prüfung des Einzelfalls; gegebenenfalls wird eine Begründung zur Entscheidung übermittelt.</p>
+      <p><b>Speicherfristen und externe Dienste:</b> Konkrete Löschfristen für Moderationsprotokolle, Meldungen und Backups müssen noch anhand der tatsächlich eingesetzten Datenbank- und Cloudflare-Einstellungen festgelegt und umgesetzt werden. Diese Erklärung ist deshalb erst nach technischer Überprüfung aller Backend-Funktionen und Cloudflare-Einstellungen vollständig.</p>
       <p><b>Betroffenenrechte:</b> Nach Maßgabe der gesetzlichen Voraussetzungen bestehen insbesondere Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Außerdem besteht das Recht, sich bei einer zuständigen Datenschutzaufsichtsbehörde zu beschweren. Datenschutzanfragen können an Justinh2111@outlook.de gerichtet werden.</p>
     </div>
 
@@ -1486,11 +1489,44 @@ langBtn.addEventListener('click',()=>{lang=lang==='de'?'en':'de';langBtn.textCon
 renderAll();
 loadForumSession().then(()=>loadForumPosts(false));
 let siteVisitorId=null;
-function getSiteVisitorId(){if(siteVisitorId)return siteVisitorId;try{siteVisitorId=localStorage.getItem('ps_site_visitor_id');if(!siteVisitorId){siteVisitorId='ps_'+(crypto.randomUUID?crypto.randomUUID().replace(/-/g,'_'):(Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)));localStorage.setItem('ps_site_visitor_id',siteVisitorId)}}catch(_){siteVisitorId='ps_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)}return siteVisitorId}
+const PRESENCE_CONSENT_KEY='ps_presence_consent_v1';
+const PRESENCE_ID_KEY='ps_site_visitor_id';
+function hasPresenceConsent(){try{return localStorage.getItem(PRESENCE_CONSENT_KEY)==='yes'}catch(_){return false}}
+function getSiteVisitorId(){
+ if(!hasPresenceConsent())return null;
+ if(siteVisitorId)return siteVisitorId;
+ try{
+   siteVisitorId=localStorage.getItem(PRESENCE_ID_KEY);
+   if(!siteVisitorId){siteVisitorId='ps_'+(crypto.randomUUID?crypto.randomUUID().replace(/-/g,'_'):(Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)));localStorage.setItem(PRESENCE_ID_KEY,siteVisitorId)}
+ }catch(_){siteVisitorId='ps_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2)}
+ return siteVisitorId;
+}
 function renderSiteStatus(j){const e=document.getElementById('onlineCount');if(!e)return;const online=Number(j.online||0),guests=Number(j.guests||0),members=Number(j.members||0),registered=Number(j.registered||0);e.innerHTML=lang==='de'?`<span class="site-online-main">🟢 Online: ${online}</span><span class="site-online-detail">· ${guests} Gäste · ${members} Member · 👥 Registriert: ${registered}</span>`:`<span class="site-online-main">🟢 Online: ${online}</span><span class="site-online-detail">· ${guests} guests · ${members} members · 👥 Registered: ${registered}</span>`}
-async function updateOnline(){try{const r=await fetch('/api/site-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitor_id:getSiteVisitorId()}),cache:'no-store'});if(!r.ok)throw 0;renderSiteStatus(await r.json())}catch(e){/* Keep the last valid online value on temporary request errors. */}}
-updateOnline(); setInterval(updateOnline,30000);
-
+async function updateOnline(){
+ try{
+  const id=getSiteVisitorId();
+  const opts=id?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitor_id:id}),cache:'no-store'}:{method:'GET',cache:'no-store'};
+  const r=await fetch('/api/site-status',opts);
+  if(!r.ok)throw Error('Status unavailable');
+  renderSiteStatus(await r.json());
+ }catch(e){/* Last valid count stays visible during transient errors. */}
+}
+const presenceToggle=document.getElementById('presenceConsentToggle');
+if(presenceToggle){
+ presenceToggle.checked=hasPresenceConsent();
+ presenceToggle.addEventListener('change',async()=>{
+  if(presenceToggle.checked){
+   try{localStorage.setItem(PRESENCE_CONSENT_KEY,'yes')}catch(_){presenceToggle.checked=false;alert('Dein Browser verhindert die Speicherung der Einwilligung.');return}
+  }else{
+   const oldId=siteVisitorId||(()=>{try{return localStorage.getItem(PRESENCE_ID_KEY)}catch(_){return null}})();
+   try{localStorage.removeItem(PRESENCE_ID_KEY);localStorage.removeItem(PRESENCE_CONSENT_KEY)}catch(_){}
+   siteVisitorId=null;
+   if(oldId)try{await fetch('/api/site-status',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitor_id:oldId}),cache:'no-store'})}catch(_){}
+  }
+  updateOnline();
+ });
+}
+updateOnline();setInterval(updateOnline,30000);
 
 /* =========================
    V26 PUBLIC RELEASE ADDITIONS
