@@ -267,7 +267,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
     <div class="chat-panel">
       <div id="chatLoggedOut" class="chat-login-note">Bitte melde dich im Forum an, um den Chat zu benutzen.</div>
       <div id="chatApp" style="display:none">
-        <div class="chat-toolbar"><div class="chat-tabs" id="chatTabs"></div><div class="chat-toolbar-actions"><button id="whisperManageBtn" class="forum-action" style="display:none">⚙ Flüsterchat</button><button id="whisperInvitesBtn" class="forum-action" style="display:none">✉ Einladungen</button><button id="chatSettingsBtn" class="forum-action">⚙ Chat</button><button id="newWhisperBtn">+ Flüsterchat</button></div></div>
+        <div class="chat-toolbar"><div class="chat-tabs" id="chatTabs"></div><div class="chat-toolbar-actions"><button id="whisperManageBtn" class="forum-action" style="display:none">⚙ Flüsterchat</button><button id="whisperInvitesBtn" class="forum-action" style="display:none">✉ Einladungen</button><button id="chatAdminUsersBtn" class="forum-action" style="display:none">👥 Registrierte Spieler</button><button id="chatSettingsBtn" class="forum-action">⚙ Chat</button><button id="newWhisperBtn">+ Flüsterchat</button></div></div>
         <div id="chatAnnouncement"></div>
         <div class="chat-window" id="chatWindow"></div>
         <div class="reply-preview" id="replyPreview"><span id="replyPreviewText"></span><button id="cancelReply">×</button></div>
@@ -302,14 +302,14 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 
     <div class="legal-card" id="impressum">
       <h3>Impressum / Anbieterangaben</h3>
-      <p><b>[VORNAME NACHNAME]</b><br>[LADUNGSFÄHIGE ANSCHRIFT]<br>[PLZ ORT]<br>Deutschland</p>
-      <p>E-Mail: <b>[KONTAKT-E-MAIL]</b></p>
+      <p><b>Justin Hergesell</b><br>Tommesweg 36<br>45149 Essen<br>Deutschland</p>
+      <p>E-Mail: <b>Justinh2111@outlook.de</b></p>
       <p>PS Codex ist ein kostenloses, unabhängiges und inoffizielles Fan- und Community-Projekt.</p>
     </div>
 
     <div class="legal-card" id="privacy">
       <h3>Datenschutzerklärung</h3>
-      <p><b>Verantwortlicher:</b><br>[VORNAME NACHNAME], [LADUNGSFÄHIGE ANSCHRIFT], [PLZ ORT], Deutschland<br>E-Mail: [KONTAKT-E-MAIL]</p>
+      <p><b>Verantwortlicher:</b><br>Justin Hergesell, Tommesweg 36, 45149 Essen, Deutschland<br>E-Mail: Justinh2111@outlook.de</p>
 
       <p><b>Zwecke und Datenkategorien:</b> Verarbeitet werden nur Daten, die für Betrieb, Sicherheit und Community-Funktionen erforderlich sind. Dazu können insbesondere Spielername, gewählter Spielserver, Account- und Sitzungsdaten, Beiträge, Kommentare, Likes, öffentliche Chatnachrichten, private Flüsterinhalte, Einstellungen, Meldungen, Verwarnungen, Sperren sowie weitere Moderationsinformationen gehören.</p>
 
@@ -333,7 +333,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 
       <p><b>Weitere Speicherdauer:</b> Accounts werden grundsätzlich bis zur Löschung geführt. Bei einer Accountlöschung werden Accountdaten soweit möglich gelöscht oder anonymisiert; bereits veröffentlichte Beiträge können anonymisiert als Bestandteil bestehender Unterhaltungen erhalten bleiben, soweit kein überwiegender Löschgrund entgegensteht. Presence-Daten werden kurzfristig entfernt. Moderations- und Rechtsmeldedaten können länger gespeichert werden, wenn dies für Sicherheit, Missbrauchsschutz, Bearbeitung, Nachweis oder Rechtsansprüche erforderlich ist.</p>
 
-      <p><b>Betroffenenrechte:</b> Nach Maßgabe der gesetzlichen Voraussetzungen bestehen insbesondere Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Außerdem besteht das Recht, sich bei einer zuständigen Datenschutzaufsichtsbehörde zu beschweren. Datenschutzanfragen können an [KONTAKT-E-MAIL] gerichtet werden.</p>
+      <p><b>Betroffenenrechte:</b> Nach Maßgabe der gesetzlichen Voraussetzungen bestehen insbesondere Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Außerdem besteht das Recht, sich bei einer zuständigen Datenschutzaufsichtsbehörde zu beschweren. Datenschutzanfragen können an Justinh2111@outlook.de gerichtet werden.</p>
     </div>
 
     <div class="legal-card" id="terms">
@@ -368,9 +368,9 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 
     <div class="legal-card" id="contact">
       <h3>Kontakt</h3>
-      <p><b>Allgemeine Anfragen:</b><br>[KONTAKT-E-MAIL]</p>
-      <p><b>Datenschutzanfragen:</b><br>[KONTAKT-E-MAIL]</p>
-      <p><b>Überprüfung von Moderationsmaßnahmen:</b><br>[KONTAKT-E-MAIL]</p>
+      <p><b>Allgemeine Anfragen:</b><br>Justinh2111@outlook.de</p>
+      <p><b>Datenschutzanfragen:</b><br>Justinh2111@outlook.de</p>
+      <p><b>Überprüfung von Moderationsmaßnahmen:</b><br>Justinh2111@outlook.de</p>
       <p>Für konkrete Hinweise auf mutmaßlich rechtswidrige Community-Inhalte nutze bitte das gesonderte Meldeformular.</p>
     </div>
 
@@ -1071,9 +1071,10 @@ function renderForumProfile(){
   if(!isForumAdmin())categoryManager.classList.remove('open');
 }
 async function loadForumSession(){
-  try{const data=await apiJson('/api/me',{method:'GET'});forumCurrentUser=data.loggedIn?data.user:null;}
-  catch(e){forumCurrentUser=null;}
+  try{const data=await apiJson('/api/me',{method:'GET'});forumCurrentUser=data.loggedIn?data.user:null; if(forumCurrentUser?.is_admin===true)forumCurrentUser.role='admin';}
+  catch(e){forumCurrentUser=null;console.error('PS Codex: Sitzung konnte nicht geladen werden:',e);setForumStatus('Anmeldung konnte nicht geprüft werden: '+e.message,true);}
   renderForumProfile();
+  if(forumCurrentUser)console.info('PS Codex: Sitzungsrolle',forumCurrentUser.role,'Admin-Flag',forumCurrentUser.is_admin===true);
   renderChatShell(); startChatPolling();
   await loadForumCategories();
 }
@@ -1166,7 +1167,7 @@ function renderForum(){
 }
 async function forumLoginRequest(username,password,server){
   const data=await apiJson('/api/login',{method:'POST',body:JSON.stringify({username,password,server})});
-  forumCurrentUser=data.user;renderForumProfile();await loadForumCategories();return data;
+  forumCurrentUser=data.user;if(forumCurrentUser?.is_admin===true)forumCurrentUser.role='admin';renderForumProfile();await loadForumCategories();return data;
 }
 forumRegister?.addEventListener('click',async()=>{const username=forumName.value.trim(),password=forumPassword.value,server=forumServer.value,consent=Boolean(document.getElementById('forumLegalConsent')?.checked);if(username.length<2||password.length<12)return alert(lang==='de'?'Spielername und Passwort (mind. 12 Zeichen) eingeben.':'Enter a player name and password (min. 12 characters).');if(!consent)return alert(lang==='de'?'Bitte akzeptiere zuerst die Nutzungsbedingungen und lies die Datenschutzerklärung.':'Please accept the terms of use and read the privacy notice first.');forumRegister.disabled=true;try{await apiJson('/api/register',{method:'POST',body:JSON.stringify({username,password,server,terms_version:'2026-09',privacy_version:'2026-09'})});await forumLoginRequest(username,password,server);forumPassword.value='';const c=document.getElementById('forumLegalConsent');if(c)c.checked=false;alert(lang==='de'?'Account erstellt und du bist angemeldet.':'Account created and you are signed in.');await loadForumPosts(false);}catch(e){alert(e.message);}finally{forumRegister.disabled=false;}});
 forumLogin?.addEventListener('click',async()=>{const username=forumName.value.trim(),password=forumPassword.value,server=forumServer.value;forumLogin.disabled=true;try{await forumLoginRequest(username,password,server);forumPassword.value='';await loadForumPosts(false);}catch(e){alert(e.message);}finally{forumLogin.disabled=false;}});
@@ -1365,7 +1366,7 @@ let chatBanned=false,chatBan=null,chatBanTimer=null,lastKickId=null,lastWarningI
 let chatSettings={show_system_messages:true,show_timestamps:true,emoji_picker_enabled:true};
 let mentionTimer=null,mentionUsers=[];
 const chatEl=id=>document.getElementById(id);
-function chatIsAdmin(){return !!forumCurrentUser&&(forumCurrentUser.role==='admin'||forumCurrentUser.is_admin===true)}
+function chatIsAdmin(){return isForumAdmin()}
 function chatIsModerator(){return !!forumCurrentUser&&(forumCurrentUser.role==='moderator'||forumCurrentUser.is_moderator===true)}
 function chatCanModerate(){return chatIsAdmin()||chatIsModerator()}
 function chatCanModerateRole(role,userId=null){if(!chatCanModerate())return false;if(userId!==null&&Number(userId)===Number(forumCurrentUser?.id))return false;if(role==='admin')return false;if(chatIsModerator()&&role==='moderator')return false;return true}
@@ -1382,7 +1383,7 @@ function renderChatLegend(){const colors=[['Admin','#FF3B3B'],['MOD','#FF9F43'],
 function renderEmojiPicker(){const p=chatEl('emojiPicker');if(p)p.innerHTML=CHAT_EMOJIS.map(e=>`<button type="button" data-emoji="${e}">${e}</button>`).join('')}
 function applyChatSettings(){if(chatEl('emojiBtn'))chatEl('emojiBtn').style.display=chatSettings.emoji_picker_enabled?'inline-block':'none';if(!chatSettings.emoji_picker_enabled)chatEl('emojiPicker')?.classList.remove('open');renderChatMessages()}
 async function loadChatSettings(){if(!forumCurrentUser)return;try{const d=await apiJson('/api/chat/settings');chatSettings={...chatSettings,...(d.settings||{})};applyChatSettings()}catch(_){}}
-function renderChatShell(){const logged=!!forumCurrentUser;chatEl('chatLoggedOut').style.display=logged?'none':'block';chatEl('chatApp').style.display=logged?'block':'none';chatEl('chatAdminPanel').style.display=logged&&chatCanModerate()?'block':'none';if(chatEl('announceBtn'))chatEl('announceBtn').style.display=logged&&chatIsAdmin()?'block':'none';if(!logged){stopReportBadgePolling();return}renderChatTabs();renderChatLegend();renderEmojiPicker();updateChatLock();loadChatSettings();startReportBadgePolling()}
+function renderChatShell(){const logged=!!forumCurrentUser;chatEl('chatLoggedOut').style.display=logged?'none':'block';chatEl('chatApp').style.display=logged?'block':'none';chatEl('chatAdminPanel').style.display=logged&&chatCanModerate()?'block':'none';if(chatEl('announceBtn'))chatEl('announceBtn').style.display=logged&&chatIsAdmin()?'block':'none';if(chatEl('chatAdminUsersBtn'))chatEl('chatAdminUsersBtn').style.display=logged&&chatIsAdmin()?'inline-block':'none';if(!logged){stopReportBadgePolling();return}renderChatTabs();renderChatLegend();renderEmojiPicker();updateChatLock();loadChatSettings();startReportBadgePolling()}
 function updateInviteButton(){const b=chatEl('whisperInvitesBtn');if(!b)return;const n=chatInvites.length;b.style.display=n?'inline-block':'none';b.classList.toggle('invite-pulse',n>0);b.textContent=`✉ ${lang==='de'?'Einladungen':'Invites'}${n?' ('+n+')':''}`}
 function updateWhisperManageButton(){const b=chatEl('whisperManageBtn');if(!b)return;b.style.display=chatRoom.type==='whisper'?'inline-block':'none';b.textContent=lang==='de'?'⚙ Flüsterchat':'⚙ Whisper'}
 function renderChatTabs(){if(!forumCurrentUser)return;const own=chatServerCode(forumCurrentUser.server,forumCurrentUser.role,forumCurrentUser.server_code);let tabs=[{type:'global',id:'global',label:'Global'}];if(chatCanModerate())Object.entries(CHAT_SERVER).forEach(([server,code])=>tabs.push({type:'server',id:server,label:code}));else tabs.push({type:'server',id:forumCurrentUser.server,label:own});chatWhispers.forEach(w=>{const others=(w.members||[]).filter(x=>Number(x.id)!==Number(forumCurrentUser.id)).map(x=>x.username).join(', ');tabs.push({type:'whisper',id:String(w.id),label:'✉ '+(w.name||others||(lang==='de'?'Flüstern':'Whisper'))})});chatEl('chatTabs').innerHTML=tabs.map(t=>`<button class="chat-tab ${chatRoom.type===t.type&&String(chatRoom.id)===String(t.id)?'active':''}" data-chat-type="${t.type}" data-chat-id="${esc(String(t.id))}" data-chat-label="${esc(t.label)}"><span>${esc(t.label)}</span>${chatUnread[t.type+':'+t.id]?`<span class="chat-badge">${chatUnread[t.type+':'+t.id]}</span>`:''}${t.type==='whisper'?`<span class="whisper-leave" data-leave-whisper="${esc(String(t.id))}" title="${lang==='de'?'Verlassen':'Leave'}">×</span>`:''}</button>`).join('');updateInviteButton();updateWhisperManageButton()}
@@ -1555,7 +1556,7 @@ updateOnline(); setInterval(updateOnline,30000);
   }
 
   async function openAdminUsers(){
-    if(forumCurrentUser?.role !== "admin") return;
+    if(!isForumAdmin()) return;
     openV26Modal(`
       <h3>👥 Registrierte Spieler</h3>
       <div class="comment-row">
@@ -1682,6 +1683,7 @@ updateOnline(); setInterval(updateOnline,30000);
     if(forumCurrentUser?.role === "admin") openAdminUsers();
   });
   $v26("adminUsersBtn")?.addEventListener("click", openAdminUsers);
+  $v26("chatAdminUsersBtn")?.addEventListener("click", openAdminUsers);
 
   $v26("myDataBtn")?.addEventListener("click", async () => {
     openV26Modal(`<h3>Meine Daten</h3><div class="privacy-data" id="v26DataBox">Lade …</div><p class="forum-note">Diese Self-Service-Ansicht ersetzt nicht zwingend eine formelle Datenschutzanfrage.</p>`);
@@ -1763,14 +1765,14 @@ updateOnline(); setInterval(updateOnline,30000);
 
   // Keep admin-only account button in sync with the existing login state.
   const v26AdminObserver = new MutationObserver(() => {
-    const isAdmin = forumCurrentUser?.role === "admin";
+    const isAdmin = isForumAdmin();
     if($v26("adminUsersBtn")) $v26("adminUsersBtn").style.display = isAdmin ? "" : "none";
     if($v26("deleteAccountBtn")) $v26("deleteAccountBtn").style.display = forumCurrentUser ? "" : "none";
   });
   const profile = $v26("loggedInBox");
   if(profile) v26AdminObserver.observe(profile, {attributes:true,subtree:true,childList:true});
   setInterval(() => {
-    const isAdmin = forumCurrentUser?.role === "admin";
+    const isAdmin = isForumAdmin();
     if($v26("adminUsersBtn")) $v26("adminUsersBtn").style.display = isAdmin ? "" : "none";
   }, 1500);
 })();
