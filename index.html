@@ -1505,47 +1505,14 @@ updateOnline(); setInterval(updateOnline,30000);
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[ch]));
 
-  // Temporary page-only presence ID: deliberately not stored in local/session storage.
-  const v26SiteVisitorId = "page_" + (
-    globalThis.crypto?.randomUUID
-      ? crypto.randomUUID().replaceAll("-", "_")
-      : `${Date.now()}_${Math.random().toString(36).slice(2)}`
-  );
-
+  // A single persistent browser ID is used by the existing updateOnline()
+  // heartbeat. Reuse that heartbeat for admin refreshes; do not register
+  // a second presence or delete it during reload/navigation.
   async function v26SiteHeartbeat(){
-    try{
-      const r = await fetch("/api/site-status", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({visitor_id:v26SiteVisitorId}),
-        cache:"no-store"
-      });
-      const d = await r.json();
-      if(!r.ok || !d.ok) return;
-      const el = $v26("onlineCount");
-      if(el){
-        el.textContent = `🟢 Online: ${d.online ?? 0} · ${d.guests ?? 0} Gäste · ${d.members ?? 0} Member · 👥 Registriert: ${d.registered ?? 0}`;
-        el.style.cursor = (forumCurrentUser?.role === "admin") ? "pointer" : "default";
-      }
-    }catch(_){}
+    await updateOnline();
+    const el = $v26("onlineCount");
+    if(el) el.style.cursor = (forumCurrentUser?.role === "admin") ? "pointer" : "default";
   }
-
-  // Remove obsolete persistent V25 visitor ID.
-  try{ localStorage.removeItem("ps_site_visitor_id"); }catch(_){}
-
-  v26SiteHeartbeat();
-  setInterval(v26SiteHeartbeat, 30000);
-
-  addEventListener("pagehide", () => {
-    try{
-      fetch("/api/site-status", {
-        method:"DELETE",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({visitor_id:v26SiteVisitorId}),
-        keepalive:true
-      });
-    }catch(_){}
-  });
 
   function openV26Modal(content){
     const modal = $v26("chatModal");
