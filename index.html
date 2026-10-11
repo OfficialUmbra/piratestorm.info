@@ -185,18 +185,53 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 .legal-inline-link{border:0;background:transparent;color:#9edff0;padding:0;text-decoration:underline;cursor:pointer;font:inherit}
 .legal-inline-link:hover{color:#d9f6ff}
 </style>
+
+<style>
+/* Freiwillige Onlinezähler-Einwilligung: klarer, gleichwertiger Cookie-Banner */
+#presenceConsentBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99990;display:none}
+#presenceConsentBackdrop.open{display:block}
+#presenceConsentBanner{position:fixed;bottom:0;left:0;right:0;z-index:99991;display:none;
+ background:#172333;color:#f4f7fb;border-top:2px solid #58bfa5;box-shadow:0 -12px 45px #0009;
+ padding:clamp(18px,3vw,32px);font-family:inherit}
+#presenceConsentBanner.open{display:block}
+#presenceConsentBanner .presence-inner{max-width:1080px;margin:auto;display:flex;gap:22px;align-items:center;justify-content:space-between}
+#presenceConsentBanner h2{font-size:22px;margin:0 0 10px;color:#fff}
+#presenceConsentBanner p{font-size:14px;line-height:1.6;margin:0;color:#e0e7ee}
+#presenceConsentBanner .presence-actions{display:flex;gap:10px;flex-wrap:wrap;min-width:290px;justify-content:flex-end}
+#presenceConsentBanner .presence-actions button{padding:12px 18px;border-radius:8px;cursor:pointer;font-weight:700;font-size:14px;border:1px solid #9eafbd}
+#presenceAccept{background:#58bfa5;color:#071e1a;border-color:#58bfa5!important}
+#presenceDecline{background:transparent;color:#fff}
+#presenceConsentBanner .presence-privacy-link{color:#a6e5f3;text-decoration:underline;cursor:pointer}
+@media(max-width:720px){#presenceConsentBanner .presence-inner{display:block}
+#presenceConsentBanner .presence-actions{justify-content:stretch;min-width:0;margin-top:18px}
+#presenceConsentBanner .presence-actions button{flex:1}}
+</style>
 </head>
 <body>
 <header>
   <div class="head">
     <div class="top">
       <div class="brand">⚓ PS Codex<small id="brandSub">Inoffizielle Fan- &amp; Community-Seite</small></div>
-      <div id="onlineCount" class="online site-online"><span class="site-online-main">🟢 Online: lädt …</span></div><label id="presenceConsentControl" style="display:inline-flex;align-items:center;gap:6px;font-size:11px;margin-left:10px;cursor:pointer"><input type="checkbox" id="presenceConsentToggle" style="accent-color:#58bfa5"> Am Onlinezähler teilnehmen (freiwillig)</label><button class="btn" id="langBtn">EN</button>
+      <div id="onlineCount" class="online site-online"><span class="site-online-main">🟢 Online: lädt …</span></div><button type="button" class="btn" id="presenceSettingsBtn" aria-haspopup="dialog">Datenschutz</button><button class="btn" id="langBtn">EN</button>
     </div>
     <input id="search" class="search" placeholder="Schiffe, Decks, Sets, Kanonen, Items … durchsuchen">
   </div>
 </header>
 
+
+<div id="presenceConsentBackdrop" aria-hidden="true"></div>
+<div id="presenceConsentBanner" role="dialog" aria-modal="true" aria-labelledby="presenceConsentTitle" aria-describedby="presenceConsentDescription" aria-hidden="true">
+ <div class="presence-inner">
+  <div>
+   <h2 id="presenceConsentTitle">Deine Privatsphäre bei PS Codex</h2>
+   <p id="presenceConsentDescription">Möchtest du freiwillig im Onlinezähler mitgezählt werden? Nur mit deiner Zustimmung speichern wir eine zufällige Kennung in deinem Browser und melden deine Anwesenheit an unseren Server. Ohne Zustimmung kannst du Chat und Forum weiterhin nutzen. Deine Entscheidung kannst du jederzeit unter „Datenschutz“ ändern. <a class="presence-privacy-link" href="#privacy" id="presencePrivacyLink">Datenschutzerklärung ansehen</a>.</p>
+  </div>
+  <div class="presence-actions">
+   <button type="button" id="presenceDecline">Ablehnen</button>
+   <button type="button" id="presenceAccept">Zustimmen</button>
+  </div>
+ </div>
+</div>
 <div class="layout">
 <aside><nav id="nav">
 <button class="active" data-sec="overview">📅 <span>Kalender</span></button>
@@ -323,7 +358,7 @@ footer{max-width:1500px;margin:auto;padding:0 18px 35px;color:#748a97;font-size:
 
       <p><b>Meldung mutmaßlich rechtswidriger Inhalte:</b> Bei Nutzung des gesonderten Meldeformulars können Name, E-Mail-Adresse, Art und Fundstelle des Inhalts, Referenzangaben, Begründung sowie die Bestätigung nach bestem Wissen verarbeitet werden. Die Daten werden ausschließlich zur Prüfung, Dokumentation, Kommunikation und Bearbeitung der Meldung genutzt.</p>
 
-      <p><b>Freiwillige Teilnahme am Onlinezähler:</b> Die Anzeige der aggregierten Besucherzahlen ist ohne Teilnahme möglich. Erst nach deiner ausdrücklichen Aktivierung erzeugt PS Codex eine zufällige Browser-Kennung und speichert sie im localStorage, damit Neuladen nicht zu Doppelzählungen führt. Die Kennung wird zusammen mit dem letzten Aktivitätszeitpunkt in Cloudflare D1 verarbeitet und kann bei eingeloggten Nutzern mit der Account-ID verknüpft werden. Inaktive Einträge werden nach etwa fünf Minuten gelöscht. Die Einwilligung kannst du jederzeit über den Schalter „Am Onlinezähler teilnehmen“ widerrufen. Beim Widerruf wird die Kennung aus deinem Browser entfernt und ein Löschversuch für den Onlineeintrag ausgelöst. Bei Verbindungsfehlern endet die Zählung spätestens nach dem Timeout. Rechtsgrundlage für die freiwillige Kennung ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG). Die Entscheidung wird lokal gespeichert, um sie bei weiteren Besuchen zu beachten. PS Codex speichert für diese Zählung keine IP-Adresse in D1; Cloudflare kann technisch bedingte Verbindungsdaten verarbeiten.</p>
+      <p><b>Freiwillige Teilnahme am Onlinezähler:</b> Die Anzeige der aggregierten Besucherzahlen ist ohne Teilnahme möglich. Erst nach deiner ausdrücklichen Aktivierung erzeugt PS Codex eine zufällige Browser-Kennung und speichert sie im localStorage, damit Neuladen nicht zu Doppelzählungen führt. Die Kennung wird zusammen mit dem letzten Aktivitätszeitpunkt in Cloudflare D1 verarbeitet und kann bei eingeloggten Nutzern mit der Account-ID verknüpft werden. Inaktive Einträge werden nach etwa fünf Minuten gelöscht. Die Einwilligung kannst du jederzeit über die Schaltfläche „Datenschutz“ widerrufen. Beim Widerruf wird die Kennung aus deinem Browser entfernt und ein Löschversuch für den Onlineeintrag ausgelöst. Bei Verbindungsfehlern endet die Zählung spätestens nach dem Timeout. Rechtsgrundlage für die freiwillige Kennung ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG). Die Entscheidung (Zustimmung oder Ablehnung) wird lokal gespeichert, um sie bei weiteren Besuchen zu beachten. Bei Ablehnung wird keine Besucherkennung für den Onlinezähler angelegt. PS Codex speichert für diese Zählung keine IP-Adresse in D1; Cloudflare kann technisch bedingte Verbindungsdaten verarbeiten.</p>
       <p><b>Einwilligung und Widerruf:</b> Die Teilnahme ist standardmäßig ausgeschaltet. Du kannst die Einwilligung jederzeit mit Wirkung für die Zukunft ändern, ohne dass deine Registrierung oder die Community-Nutzung davon abhängt.</p>
 
       <p><b>Hosting und Empfänger:</b> PS Codex nutzt Cloudflare-Infrastruktur, insbesondere Cloudflare Pages/Workers und D1. Dabei kann Cloudflare im Rahmen der technischen Bereitstellung Verbindungs-, Sicherheits- und Protokolldaten verarbeiten. Soweit Daten außerhalb des Europäischen Wirtschaftsraums verarbeitet werden, sind die vom Dienstleister vorgesehenen datenschutzrechtlichen Garantien und Übermittlungsmechanismen maßgeblich.</p>
@@ -1511,21 +1546,42 @@ async function updateOnline(){
   renderSiteStatus(await r.json());
  }catch(e){/* Last valid count stays visible during transient errors. */}
 }
-const presenceToggle=document.getElementById('presenceConsentToggle');
-if(presenceToggle){
- presenceToggle.checked=hasPresenceConsent();
- presenceToggle.addEventListener('change',async()=>{
-  if(presenceToggle.checked){
-   try{localStorage.setItem(PRESENCE_CONSENT_KEY,'yes')}catch(_){presenceToggle.checked=false;alert('Dein Browser verhindert die Speicherung der Einwilligung.');return}
-  }else{
-   const oldId=siteVisitorId||(()=>{try{return localStorage.getItem(PRESENCE_ID_KEY)}catch(_){return null}})();
-   try{localStorage.removeItem(PRESENCE_ID_KEY);localStorage.removeItem(PRESENCE_CONSENT_KEY)}catch(_){}
-   siteVisitorId=null;
-   if(oldId)try{await fetch('/api/site-status',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitor_id:oldId}),cache:'no-store'})}catch(_){}
-  }
-  updateOnline();
- });
+const presenceBanner=document.getElementById('presenceConsentBanner');
+const presenceBackdrop=document.getElementById('presenceConsentBackdrop');
+function showPresenceBanner(){
+ presenceBanner?.classList.add('open');
+ presenceBackdrop?.classList.add('open');
+ presenceBanner?.setAttribute('aria-hidden','false');
+ document.getElementById('presenceAccept')?.focus();
 }
+function hidePresenceBanner(){
+ presenceBanner?.classList.remove('open');
+ presenceBackdrop?.classList.remove('open');
+ presenceBanner?.setAttribute('aria-hidden','true');
+}
+async function setPresenceChoice(accepted){
+ if(accepted){
+  try{localStorage.setItem(PRESENCE_CONSENT_KEY,'yes')}
+  catch(_){alert('Dein Browser verhindert das Speichern der Einwilligung. Du wirst nicht gezählt.');return}
+ }else{
+  const oldId=siteVisitorId||(()=>{try{return localStorage.getItem(PRESENCE_ID_KEY)}catch(_){return null}})();
+  try{localStorage.removeItem(PRESENCE_ID_KEY);localStorage.setItem(PRESENCE_CONSENT_KEY,'no')}catch(_){}
+  siteVisitorId=null;
+  if(oldId)try{await fetch('/api/site-status',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({visitor_id:oldId}),cache:'no-store'})}catch(_){}
+ }
+ hidePresenceBanner();
+ updateOnline();
+}
+document.getElementById('presenceAccept')?.addEventListener('click',()=>setPresenceChoice(true));
+document.getElementById('presenceDecline')?.addEventListener('click',()=>setPresenceChoice(false));
+document.getElementById('presenceSettingsBtn')?.addEventListener('click',showPresenceBanner);
+document.getElementById('presencePrivacyLink')?.addEventListener('click',e=>{
+ e.preventDefault();hidePresenceBanner();
+ document.querySelectorAll('main > section').forEach(el=>el.classList.remove('active-section'));
+ document.getElementById('legal')?.classList.add('active-section');
+ document.getElementById('privacy')?.scrollIntoView({behavior:'smooth',block:'start'});
+});
+try{if(localStorage.getItem(PRESENCE_CONSENT_KEY)!=='yes'&&localStorage.getItem(PRESENCE_CONSENT_KEY)!=='no')showPresenceBanner()}catch(_){showPresenceBanner()}
 updateOnline();setInterval(updateOnline,30000);
 
 /* =========================
